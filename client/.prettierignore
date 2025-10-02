@@ -1,0 +1,14 @@
+.next
+.vscode
+.github
+.yarn
+*.css
+README.md
+eslint.config.mjs
+site.webmanifest
+node_modules
+out
+coverage
+*.json
+*.topojson
+*.js
