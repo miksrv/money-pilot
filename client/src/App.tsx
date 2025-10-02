@@ -5,7 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { store } from '@/store'
 import { useAppSelector } from '@/store/hooks'
 
-import { logout } from './store/authSlice'
+import { login, logout } from './store/authSlice'
 import { useAppDispatch } from './store/hooks'
 import { useMeQuery } from './api'
 import { Categories, Dashboard, Login, Recurring, Register, Settings, Transactions } from './screens'
@@ -102,12 +102,20 @@ const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
 
     const authSlice = useAppSelector((state) => state.auth)
 
-    // const authMeQuery = useMeQuery({}, { skip: !authSlice.isAuth })
-    const authMeQuery = useMeQuery()
+    const authMeQuery = useMeQuery({}, { skip: !authSlice.token || authSlice.isAuth })
 
     useEffect(() => {
-        if (authMeQuery?.error && authMeQuery?.error?.status === 401 && authSlice.isAuth) {
+        if (authMeQuery?.error && authMeQuery?.error?.status === 401 && authSlice.token) {
             // dispatch(logout())
+            console.log('logout')
+
+            return
+        }
+
+        if (authMeQuery?.data?.token) {
+            dispatch(login(authMeQuery.data.token))
+
+            return
         }
     }, [authMeQuery?.data, authMeQuery?.error])
 

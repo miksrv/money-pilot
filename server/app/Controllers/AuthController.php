@@ -8,14 +8,13 @@ use App\Models\SessionModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
-use Firebase\JWT\JWT;
 
 class AuthController extends ResourceController
 {
     use ResponseTrait;
 
-    protected $userModel;
-    protected $sessionModel;
+    protected UserModel $userModel;
+    protected SessionModel $sessionModel;
 
     public function __construct()
     {
@@ -28,18 +27,13 @@ class AuthController extends ResourceController
         $authLibrary = new Auth();
 
         if (!$authLibrary->isAuth || !$authLibrary->user) {
-            return $this->failUnauthorized('Unauthorized');
+            return $this->failUnauthorized();
         }
 
-        $user = $authLibrary->user;
-
         return $this->respond([
-            'id'       => $user->id,
-            'email'    => $user->email,
-            'name'     => $user->name,
-            'is_active'=> $user->is_active,
-            'created_at' => $user->created_at,
-            'updated_at' => $user->updated_at,
+            'id'    => $authLibrary->user->id,
+            'name'  => $authLibrary->user->name,
+            'token' => $authLibrary->refresh()
         ]);
     }
 
@@ -83,26 +77,5 @@ class AuthController extends ResourceController
         }
 
         return $this->respondDeleted(['message' => 'Logged out successfully']);
-    }
-
-    private function generateId(): string
-    {
-        return substr(bin2hex(random_bytes(8)), 0, 15);
-    }
-
-    private function generateAccessToken(string $userId): string
-    {
-        $payload = [
-            'iss' => 'moneyflow',
-            'sub' => $userId,
-            'iat' => time(),
-            'exp' => time() + (60 * 60), // 1 hour
-        ];
-        return JWT::encode($payload, getenv('JWT_SECRET'), 'HS256');
-    }
-
-    private function generateRefreshToken(): string
-    {
-        return bin2hex(random_bytes(32));
     }
 }

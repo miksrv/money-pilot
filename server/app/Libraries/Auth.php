@@ -17,6 +17,7 @@ class Auth
 {
     public User | null $user = null;
     public bool $isAuth = false;
+    public string | null $sessionId = null;
 
     protected SessionModel $sessionModel;
     protected UserModel $userModel;
@@ -61,10 +62,12 @@ class Auth
             'token'      => $token,
             'device'     => $this->request->getUserAgent()->getAgentString(),
             'ip_address' => $this->request->getIPAddress(),
-            'expires_at' => date('Y-m-d H:i:s', time() + getenv('auth.token.live')),
+            'expires_at' => date('Y-m-d H:i:s', time() + (getenv('auth.token.live') / 1000)),
         ]);
 
         $this->userModel->update($userId, ['last_login' => date('Y-m-d H:i:s')]);
+
+        $this->sessionId = $sessionId;
 
         return $token;
     }
@@ -81,24 +84,22 @@ class Auth
     }
 
     /**
-     * Refreshes the JWT token for a user by generating a new token and deleting the old session.
-     * @param string $userId
+     * Refreshes the JWT token for the authenticated user.
      * @return string The new JWT token.
      * @throws Exception
      */
-    public function refresh(string $userId): string {
+    public function refresh(): string {
         if (!$this->user) {
             throw new Exception('Invalid token');
         }
 
-        $token     = $this->generateAccessToken($userId);
-        $sessionId = $this->sessionModel->findByUserId($userId);
+        $token = $this->generateAccessToken($this->sessionId);
 
-        $this->sessionModel->update($sessionId, [
+        $this->sessionModel->update($this->sessionId, [
             'token'      => $token,
             'device'     => $this->request->getUserAgent()->getAgentString(),
             'ip_address' => $this->request->getIPAddress(),
-            'expires_at' => date('Y-m-d H:i:s', time() + getenv('auth.token.live')),
+            'expires_at' => date('Y-m-d H:i:s', time() + (getenv('auth.token.live') / 1000)),
         ]);
 
        return $token;
@@ -136,7 +137,10 @@ class Auth
 
         try {
             $decoded  = JWT::decode($token, new Key(getenv('auth.token.secret'), 'HS256'));
-            return $this->sessionModel->getUserBySessionId($decoded->sub) ?? null;
+
+            $this->sessionId = $decoded->sub;
+
+            return $this->sessionModel->getUserBySessionId($decoded->sub, $token) ?? null;
         } catch (\Throwable $e) {
             log_message('error', $e);
 

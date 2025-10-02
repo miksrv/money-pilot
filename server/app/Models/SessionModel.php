@@ -74,12 +74,18 @@ class SessionModel extends ApplicationBaseModel
     }
 
     /**
-     * Связь с user (many-to-one)
+     * Gets the user associated with a given session ID and token.
+     * @param string $sessionId
+     * @param string $token
+     * @return User|null
      */
-    public function getUserBySessionId(string $sessionId): ?User
+    public function getUserBySessionId(string $sessionId, string $token): ?User
     {
         return model('UserModel')
-            ->where('id', $this->where('expires_at <', date('Y-m-d H:i:s'))->find($sessionId)->user_id)
+            ->where('id', $this
+                ->where('expires_at >', date('Y-m-d H:i:s'))
+                ->where('token', $token)
+                ->find($sessionId)->user_id)
             ->first();
     }
 }
