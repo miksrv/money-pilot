@@ -18,9 +18,10 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
     $routes->group('auth', static function ($routes) {
         $routes->get('me', 'AuthController::me');
         $routes->post('login', 'AuthController::login');
-        $routes->post('logout', 'AuthController::logout');
+        $routes->get('logout', 'AuthController::logout');
         $routes->options('me', static function () {});
         $routes->options('login', static function () {});
+        $routes->options('logout', static function () {});
     });
 
     // RegisterController Routes

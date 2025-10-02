@@ -45,6 +45,14 @@ export const api = createApi({
                 url: 'auth/login'
             })
         }),
+        logout: builder.mutation<void, void>({
+            transformErrorResponse: (response) => response.data as ApiError,
+            query: () => ({
+                method: 'GET',
+                url: 'auth/logout'
+            })
+        }),
+        /* Get me */
         me: builder.query<ApiType.Registration.Response, void>({
             transformErrorResponse: (response) => response.data as ApiError,
             query: () => 'auth/me'
@@ -52,4 +60,4 @@ export const api = createApi({
     })
 })
 
-export const { useRegistrationMutation, useLoginMutation, useMeQuery } = api
+export const { useRegistrationMutation, useLoginMutation, useLogoutMutation, useMeQuery } = api

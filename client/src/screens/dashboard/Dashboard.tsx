@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { AppLayout } from '@/components'
+
 export const Dashboard: React.FC = () => {
-    return <>{'Dashboard'}</>
+    return <AppLayout>{'Dashboard'}</AppLayout>
 }
