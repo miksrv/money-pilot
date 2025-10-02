@@ -90,11 +90,6 @@ const App: React.FC = () => (
     </Provider>
 )
 
-// const AuthWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-//     const isAuthenticated = useAppSelector((state) => !!state.auth.isAuth)
-//     return isAuthenticated ? <>{children}</> : <Navigate to='/login' />
-// }
-
 const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
     const location = useLocation()
     const navigate = useNavigate()
@@ -121,6 +116,17 @@ const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
             return
         }
     }, [authMeQuery?.data, authMeQuery?.error])
+
+    useEffect(() => {
+        if (
+            !authSlice.isAuth &&
+            !authSlice.token &&
+            location.pathname !== '/login' &&
+            location.pathname !== '/register'
+        ) {
+            void navigate('/login')
+        }
+    }, [])
 
     return children
 }
