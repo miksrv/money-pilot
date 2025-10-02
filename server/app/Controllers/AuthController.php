@@ -62,20 +62,20 @@ class AuthController extends ResourceController
         return $this->respond(['token' => $token]);
     }
 
-    public function logout()
+    /**
+     * Logout the current user by deleting their session.
+     * @return ResponseInterface
+     */
+    public function logout(): ResponseInterface
     {
-        $data = $this->request->getJSON(true);
-        $refreshToken = $data['refresh_token'] ?? null;
+        $authLibrary = new Auth();
 
-        if (!$refreshToken) {
-            return $this->failValidationErrors('Refresh token is required');
+        if (!$authLibrary->isAuth) {
+            return $this->failUnauthorized();
         }
 
-        $session = $this->sessionModel->findByToken($refreshToken);
-        if ($session) {
-            $this->sessionModel->delete($session->id);
-        }
+        $this->sessionModel->delete($authLibrary->sessionId);
 
-        return $this->respondDeleted(['message' => 'Logged out successfully']);
+        return $this->respondDeleted();
     }
 }
