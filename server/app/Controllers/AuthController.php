@@ -23,6 +23,26 @@ class AuthController extends ResourceController
         $this->sessionModel = new SessionModel();
     }
 
+    public function me(): ResponseInterface
+    {
+        $authLibrary = new Auth();
+
+        if (!$authLibrary->isAuth || !$authLibrary->user) {
+            return $this->failUnauthorized('Unauthorized');
+        }
+
+        $user = $authLibrary->user;
+
+        return $this->respond([
+            'id'       => $user->id,
+            'email'    => $user->email,
+            'name'     => $user->name,
+            'is_active'=> $user->is_active,
+            'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+        ]);
+    }
+
     public function login(): ResponseInterface
     {
         $data = $this->request->getJSON(true);
@@ -46,45 +66,6 @@ class AuthController extends ResourceController
         $token = (new Auth())->login($user->id);
 
         return $this->respond(['token' => $token]);
-    }
-
-    public function refresh()
-    {
-        $data = $this->request->getJSON(true);
-        $refreshToken = $data['refresh_token'] ?? null;
-
-        if (!$refreshToken) {
-            return $this->failValidationErrors('Refresh token is required');
-        }
-
-        $session = $this->sessionModel->findByToken($refreshToken);
-        if (!$session || $session->expires_at < date('Y-m-d H:i:s')) {
-            return $this->failUnauthorized('Invalid or expired refresh token');
-        }
-
-        $user = $this->userModel->find($session->user_id);
-        if (!$user || !$user->is_active) {
-            return $this->failForbidden('User not found or deactivated');
-        }
-
-        $newAccessToken = $this->generateAccessToken($user->id);
-        $newRefreshToken = $this->generateRefreshToken();
-
-        $this->sessionModel->update($session->id, [
-            'token' => $newRefreshToken,
-            'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        return $this->respond([
-            'token' => $newAccessToken,
-            'refresh_token' => $newRefreshToken,
-            'user' => [
-                'id' => $user->id,
-                'email' => $user->email,
-                'name' => $user->name,
-            ],
-        ]);
     }
 
     public function logout()

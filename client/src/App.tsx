@@ -5,7 +5,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { store } from '@/store'
 import { useAppSelector } from '@/store/hooks'
 
-import { useMeMutation } from './api'
+import { logout } from './store/authSlice'
+import { useAppDispatch } from './store/hooks'
+import { useMeQuery } from './api'
 import { Categories, Dashboard, Login, Recurring, Register, Settings, Transactions } from './screens'
 
 const App: React.FC = () => {
@@ -96,15 +98,18 @@ const App: React.FC = () => {
 // }
 
 const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
+    const dispatch = useAppDispatch()
+
     const authSlice = useAppSelector((state) => state.auth)
 
-    const [meMutation] = useMeMutation()
+    // const authMeQuery = useMeQuery({}, { skip: !authSlice.isAuth })
+    const authMeQuery = useMeQuery()
 
     useEffect(() => {
-        if (authSlice?.token) {
-            void meMutation()
+        if (authMeQuery?.error && authMeQuery?.error?.status === 401 && authSlice.isAuth) {
+            // dispatch(logout())
         }
-    }, [])
+    }, [authMeQuery?.data, authMeQuery?.error])
 
     return children
 }

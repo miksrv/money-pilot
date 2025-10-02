@@ -47,15 +47,16 @@ class Auth
      */
     public function login(string $userId): string
     {
-        $token = $this->generateAccessToken($userId);
-
-        $userData = $this->userModel->find($userId);
+        $sessionId = uniqid();
+        $token     = $this->generateAccessToken($sessionId);
+        $userData  = $this->userModel->find($userId);
 
         if (!$userData) {
             throw new Exception('User not found');
         }
 
         $this->sessionModel->insert([
+            'id'         => $sessionId,
             'user_id'    => $userId,
             'token'      => $token,
             'device'     => $this->request->getUserAgent()->getAgentString(),
@@ -105,18 +106,18 @@ class Auth
 
     /**
      * Generates a JWT access token for a given user ID.
-     * @param string $userId
+     * @param string $sessionId
      * @return string
      * @throws Exception
      */
-    protected function generateAccessToken(string $userId): string
+    protected function generateAccessToken(string $sessionId): string
     {
         $issuedAtTime    = time();
         $tokenTimeToLive = getenv('auth.token.live');
         $tokenExpiration = $issuedAtTime + ($tokenTimeToLive);
 
         $payload = [
-            'sub' => $userId,
+            'sub' => $sessionId,
             'iat' => $issuedAtTime,
             'exp' => $tokenExpiration,
         ];

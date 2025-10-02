@@ -9,7 +9,7 @@ class SessionModel extends ApplicationBaseModel
 {
     protected $table          = 'sessions';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['user_id', 'token', 'device', 'ip_address', 'expires_at'];
+    protected $allowedFields  = ['id', 'user_id', 'token', 'device', 'ip_address', 'expires_at'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
@@ -20,7 +20,7 @@ class SessionModel extends ApplicationBaseModel
     protected $useAutoIncrement = false;
 
     protected $allowCallbacks = true;
-    protected $beforeInsert   = ['generateId'];
+    protected $beforeInsert   = [];
     protected $afterInsert    = [];
     protected $beforeUpdate   = [];
     protected $afterUpdate    = [];
@@ -30,6 +30,7 @@ class SessionModel extends ApplicationBaseModel
     protected $afterDelete    = [];
 
     protected $validationRules = [
+        'id'         => 'required|is_unique[sessions.id]',
         'user_id'    => 'required',
         'token'      => 'required|is_unique[sessions.token,id,{id}]',
         'device'     => 'permit_empty|string|max_length[255]',

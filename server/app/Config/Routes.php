@@ -16,9 +16,10 @@ $routes->setAutoRoute(false);
 $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes) {
     // AuthController Routes
     $routes->group('auth', static function ($routes) {
+        $routes->get('me', 'AuthController::me');
         $routes->post('login', 'AuthController::login');
-        $routes->post('refresh', 'AuthController::refresh');
         $routes->post('logout', 'AuthController::logout');
+        $routes->options('me', static function () {});
         $routes->options('login', static function () {});
     });
 

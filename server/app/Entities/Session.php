@@ -9,7 +9,7 @@ class Session extends Entity
     protected $datamap = [];
     protected $dates = ['created_at', 'updated_at', 'expires_at'];
     protected $casts = [
-        'id' => 'string',
+        'id'      => 'string',
         'user_id' => 'string',
     ];
 }
