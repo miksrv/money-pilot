@@ -1,7 +1,11 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 
-import { removeItem, setItem } from '@/utils/localStorage'
+import { LocalStorage } from '@/utils/localStorage'
+
+const AUTH_TOKEN = 'auth'
+
+export const getStorageToken = (): string | null => LocalStorage.getItem(AUTH_TOKEN)
 
 interface AuthState {
     token: string | null
@@ -9,7 +13,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-    token: null,
+    token: getStorageToken(),
     isAuth: false
 }
 
@@ -21,13 +25,13 @@ const authSlice = createSlice({
             state.token = action.payload
             state.isAuth = true
 
-            setItem('auth', action.payload)
+            LocalStorage.setItem(AUTH_TOKEN, action.payload)
         },
         logout: (state) => {
             state.token = null
             state.isAuth = false
 
-            removeItem('auth')
+            LocalStorage.removeItem(AUTH_TOKEN)
         }
     }
 })

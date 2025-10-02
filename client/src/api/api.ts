@@ -20,7 +20,7 @@ export const api = createApi({
             const token = (getState() as RootState).auth.token
 
             if (token) {
-                headers.set('Authorization', `Bearer ${String(token)}`)
+                headers.set('Authorization', String(token))
             }
 
             return headers
@@ -44,8 +44,15 @@ export const api = createApi({
                 method: 'POST',
                 url: 'auth/login'
             })
+        }),
+        me: builder.mutation<ApiType.Registration.Response, void>({
+            transformErrorResponse: (response) => response.data as ApiError,
+            query: () => ({
+                method: 'GET',
+                url: 'auth/me'
+            })
         })
     })
 })
 
-export const { useRegistrationMutation, useLoginMutation } = api
+export const { useRegistrationMutation, useLoginMutation, useMeMutation } = api

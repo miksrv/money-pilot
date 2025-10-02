@@ -1,10 +1,11 @@
-import * as React from 'react'
+import React, { PropsWithChildren, useEffect } from 'react'
 import { Provider } from 'react-redux'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { store } from '@/store'
 import { useAppSelector } from '@/store/hooks'
 
+import { useMeMutation } from './api'
 import { Categories, Dashboard, Login, Recurring, Register, Settings, Transactions } from './screens'
 
 const App: React.FC = () => {
@@ -15,65 +16,73 @@ const App: React.FC = () => {
                     <Route
                         path='/'
                         element={
-                            <ProtectedRoute>
+                            <AuthWrapper>
                                 <Navigate to='/dashboard' />
-                            </ProtectedRoute>
+                            </AuthWrapper>
                         }
                     />
 
                     <Route
                         path='/categories'
                         element={
-                            <ProtectedRoute>
+                            <AuthWrapper>
                                 <Categories />
-                            </ProtectedRoute>
+                            </AuthWrapper>
                         }
                     />
 
                     <Route
                         path='/dashboard'
                         element={
-                            <ProtectedRoute>
+                            <AuthWrapper>
                                 <Dashboard />
-                            </ProtectedRoute>
+                            </AuthWrapper>
                         }
                     />
 
                     <Route
                         path='/reccuring'
                         element={
-                            <ProtectedRoute>
+                            <AuthWrapper>
                                 <Recurring />
-                            </ProtectedRoute>
+                            </AuthWrapper>
                         }
                     />
 
                     <Route
                         path='/settings'
                         element={
-                            <ProtectedRoute>
+                            <AuthWrapper>
                                 <Settings />
-                            </ProtectedRoute>
+                            </AuthWrapper>
                         }
                     />
 
                     <Route
                         path='/transactions'
                         element={
-                            <ProtectedRoute>
+                            <AuthWrapper>
                                 <Transactions />
-                            </ProtectedRoute>
+                            </AuthWrapper>
                         }
                     />
 
                     <Route
                         path='/login'
-                        element={<Login />}
+                        element={
+                            <AuthWrapper>
+                                <Login />
+                            </AuthWrapper>
+                        }
                     />
 
                     <Route
                         path='/register'
-                        element={<Register />}
+                        element={
+                            <AuthWrapper>
+                                <Register />
+                            </AuthWrapper>
+                        }
                     />
                 </Routes>
             </BrowserRouter>
@@ -81,9 +90,23 @@ const App: React.FC = () => {
     )
 }
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const isAuthenticated = useAppSelector((state) => !!state.auth.isAuth)
-    return isAuthenticated ? <>{children}</> : <Navigate to='/login' />
+// const AuthWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+//     const isAuthenticated = useAppSelector((state) => !!state.auth.isAuth)
+//     return isAuthenticated ? <>{children}</> : <Navigate to='/login' />
+// }
+
+const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
+    const authSlice = useAppSelector((state) => state.auth)
+
+    const [meMutation] = useMeMutation()
+
+    useEffect(() => {
+        if (authSlice?.token) {
+            void meMutation()
+        }
+    }, [])
+
+    return children
 }
 
 export default App
