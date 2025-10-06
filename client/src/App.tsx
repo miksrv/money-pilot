@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useEffect } from 'react'
 import { Provider } from 'react-redux'
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import { store } from '@/store'
 import { useAppSelector } from '@/store/hooks'
@@ -8,7 +8,7 @@ import { useAppSelector } from '@/store/hooks'
 import { login, logout } from './store/authSlice'
 import { useAppDispatch } from './store/hooks'
 import { useMeQuery } from './api'
-import { Categories, Dashboard, Login, Recurring, Register, Settings, Transactions } from './screens'
+import { Accounts, Categories, Dashboard, Login, Recurring, Register, Settings, Transactions } from './screens'
 
 const App: React.FC = () => (
     <Provider store={store}>
@@ -18,7 +18,16 @@ const App: React.FC = () => (
                     path='/'
                     element={
                         <AuthWrapper>
-                            <Navigate to='/dashboard' />
+                            <Dashboard />
+                        </AuthWrapper>
+                    }
+                />
+
+                <Route
+                    path='/transactions'
+                    element={
+                        <AuthWrapper>
+                            <Transactions />
                         </AuthWrapper>
                     }
                 />
@@ -33,10 +42,10 @@ const App: React.FC = () => (
                 />
 
                 <Route
-                    path='/dashboard'
+                    path='/accounts'
                     element={
                         <AuthWrapper>
-                            <Dashboard />
+                            <Accounts />
                         </AuthWrapper>
                     }
                 />
@@ -55,15 +64,6 @@ const App: React.FC = () => (
                     element={
                         <AuthWrapper>
                             <Settings />
-                        </AuthWrapper>
-                    }
-                />
-
-                <Route
-                    path='/transactions'
-                    element={
-                        <AuthWrapper>
-                            <Transactions />
                         </AuthWrapper>
                     }
                 />
@@ -110,7 +110,7 @@ const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
             dispatch(login(authMeQuery.data.token))
 
             if (location.pathname === '/login' || location.pathname === '/register') {
-                void navigate('/dashboard')
+                void navigate('/')
             }
 
             return
