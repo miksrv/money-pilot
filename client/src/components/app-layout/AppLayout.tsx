@@ -1,32 +1,28 @@
-import React, { PropsWithChildren, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Button } from 'simple-react-ui-kit'
+import React, { PropsWithChildren } from 'react'
+import { cn } from 'simple-react-ui-kit'
 
-import { useLogoutMutation } from '@/api'
-import { logout } from '@/store/authSlice'
-import { useAppDispatch } from '@/store/hooks'
+import { AppBar, AppBarProps } from '../app-bar'
 
-export const AppLayout: React.FC<PropsWithChildren> = (props) => {
-    const dispatch = useAppDispatch()
-    const navigate = useNavigate()
+import Menu from './Menu'
 
-    const [logoutMutation, { isSuccess }] = useLogoutMutation()
+import styles from './styles.module.sass'
 
-    const handleLogout = async () => {
-        await logoutMutation()
-    }
+export interface AppLayoutProps extends PropsWithChildren<AppBarProps> {
+    size?: 'small' | 'medium' | 'large'
+}
 
-    useEffect(() => {
-        if (isSuccess) {
-            dispatch(logout())
-            void navigate('/login')
-        }
-    }, [isSuccess])
-
+export const AppLayout: React.FC<AppLayoutProps> = (props) => {
     return (
-        <>
-            <Button onClick={handleLogout}>{'Logout'}</Button>
-            {props.children}
-        </>
+        <div className={styles.appLayout}>
+            <aside className={cn(styles.sidebar)}>
+                <Menu />
+            </aside>
+
+            <main className={styles.main}>
+                <AppBar actions={props.actions} />
+
+                <div className={styles.content}>{props.children}</div>
+            </main>
+        </div>
     )
 }
