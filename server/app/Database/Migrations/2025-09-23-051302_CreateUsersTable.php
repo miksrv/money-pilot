@@ -18,7 +18,7 @@ class CreateUsersTable extends Migration
                 'constraint' => '255',
                 'unique'     => true,
             ],
-            'password_hash' => [
+            'password' => [
                 'type'       => 'VARCHAR',
                 'constraint' => '255',
             ],

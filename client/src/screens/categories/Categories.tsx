@@ -22,6 +22,7 @@ export const Categories: React.FC = () => {
             name: '',
             type: 'expense',
             parent_id: undefined,
+            budget: undefined,
             color: undefined,
             icon: undefined
         }

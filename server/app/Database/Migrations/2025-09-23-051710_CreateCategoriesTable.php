@@ -50,7 +50,7 @@ class CreateCategoriesTable extends Migration
             'budget' => [
                 'type'       => 'DECIMAL',
                 'constraint' => '15,2',
-                'default'    => '0.00',
+                'null'       => true,
             ],
             'created_at' => [
                 'type' => 'TIMESTAMP',

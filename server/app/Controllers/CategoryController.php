@@ -52,6 +52,9 @@ class CategoryController extends ApplicationBaseController
                 'user_id'   => $this->authLibrary->user->id,
                 'name'      => $input['name'],
                 'type'      => $input['type'] ?? null,
+                'icon'      => $input['icon'] ?? null,
+                'color'     => $input['color'] ?? null,
+                'budget'    => $input['budget'] ?? null,
                 'parent_id' => !empty($input['parent_id']) ? $input['parent_id'] : null,
             ]);
 

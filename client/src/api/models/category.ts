@@ -3,6 +3,7 @@ export interface Category {
     name: string
     type: 'income' | 'expense'
     parent_id?: string
+    budget: number
     icon?: string
     color?: string
 }
