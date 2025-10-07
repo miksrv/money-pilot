@@ -81,6 +81,18 @@ export const api = createApi({
                 method: 'POST',
                 body
             })
+        }),
+        /* List transactions */
+        listCategories: builder.query<ApiType.Category.Response[], void>({
+            query: () => '/categories'
+        }),
+        /* Add transaction */
+        addCategory: builder.mutation<void, ApiType.Category.Request>({
+            query: (body) => ({
+                url: 'categories',
+                method: 'POST',
+                body
+            })
         })
     })
 })
@@ -93,5 +105,7 @@ export const {
     useAddTransactionMutation,
     useListTransactionsQuery,
     useAddAccountMutation,
-    useListAccountQuery
+    useListAccountQuery,
+    useAddCategoryMutation,
+    useListCategoriesQuery
 } = api
