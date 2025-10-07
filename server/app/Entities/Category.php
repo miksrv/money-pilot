@@ -11,7 +11,10 @@ class Category extends Entity
     protected $casts = [
         'id'        => 'string',
         'user_id'   => 'string',
+        'group_id'  => '?string',
         'parent_id' => '?string',
-        'is_active' => 'boolean',
+        'icon'      => '?string',
+        'color'     => '?string',
+        'budget'    => 'float',
     ];
 }

@@ -30,10 +30,13 @@ class CategoryModel extends ApplicationBaseModel
 
     protected $validationRules = [
         'user_id'   => 'permit_empty',
+        'group_id'  => 'permit_empty',
         'name'      => 'required|string|max_length[100]',
         'type'      => 'required|in_list[income,expense]',
         'parent_id' => 'permit_empty|valid_id[categories,id]',
-        'is_active' => 'permit_empty|boolean',
+        'icon'      => 'permit_empty|string|max_length[50]',
+        'color'     => 'permit_empty|string|max_length[50]',
+        'budget'    => 'permit_empty|decimal',
     ];
 
     protected $validationMessages = [
@@ -50,6 +53,15 @@ class CategoryModel extends ApplicationBaseModel
         ],
         'parent_id' => [
             'valid_id' => 'Invalid parent category ID.',
+        ],
+        'icon' => [
+            'max_length' => 'Icon cannot exceed 50 characters.',
+        ],
+        'color' => [
+            'max_length' => 'Color cannot exceed 50 characters.',
+        ],
+        'budget' => [
+            'decimal' => 'Balance must be a valid decimal number.',
         ],
     ];
 
