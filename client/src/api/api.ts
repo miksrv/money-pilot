@@ -58,17 +58,29 @@ export const api = createApi({
             transformErrorResponse: (response) => response.data as ApiError,
             query: () => 'auth/me'
         }),
-        /** Add account */
-        addAccount: builder.mutation<ApiType.Account.Response, ApiType.Account.Request>({
+        /* Add account */
+        addAccount: builder.mutation<void, ApiType.Account.Request>({
             query: (body) => ({
                 url: 'accounts',
                 method: 'POST',
                 body
             })
         }),
-        /** List accounts */
+        /* List accounts */
         listAccount: builder.query<ApiType.Account.Response[], void>({
             query: () => 'accounts'
+        }),
+        /* List transactions */
+        listTransactions: builder.query<ApiType.Transaction.Response[], void>({
+            query: () => '/transactions'
+        }),
+        /* Add transaction */
+        addTransaction: builder.mutation<void, ApiType.Transaction.Request>({
+            query: (body) => ({
+                url: 'transactions',
+                method: 'POST',
+                body
+            })
         })
     })
 })
@@ -78,6 +90,8 @@ export const {
     useLoginMutation,
     useLogoutMutation,
     useMeQuery,
+    useAddTransactionMutation,
+    useListTransactionsQuery,
     useAddAccountMutation,
     useListAccountQuery
 } = api
