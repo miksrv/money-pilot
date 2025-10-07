@@ -5,99 +5,128 @@ namespace App\Controllers;
 use App\Libraries\Auth;
 use App\Models\CategoryModel;
 use CodeIgniter\API\ResponseTrait;
+use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
-class CategoryController extends ResourceController
+class CategoryController extends ApplicationBaseController
 {
     use ResponseTrait;
 
-    protected $modelName = 'App\Models\CategoryModel';
-    protected $format = 'json';
+    protected Auth $authLibrary;
 
     public function __construct()
     {
-        $this->model = new $this->modelName();
+        $this->model = new CategoryModel();
+        $this->authLibrary = new Auth();
+
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
     }
 
-    // GET /api/categories - Получить категории
-    public function index()
-    {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
-        }
 
-        $categories = $this->model->where('user_id', $userId)->findAll();
+    /**
+     * GET /categories - List all categories for the authenticated user
+     * @return ResponseInterface
+     */
+    public function index(): ResponseInterface
+    {
+        $categories = $this->model->findByUserId($this->authLibrary->user->id);
         return $this->respond($categories);
     }
 
-    // POST /api/categories - Создать категорию
-    public function create()
+    /**
+     * POST /categories - Create a new category
+     * @return ResponseInterface
+     */
+    public function create(): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
+        $input = $this->request->getJSON(true);
+
+        if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
+            return $this->failValidationErrors(['error' => '1001', 'messages' => $this->validator->getErrors()]);
         }
 
-        $data = $this->request->getJSON(true);
-        $data['user_id'] = $userId;
-        $data['type'] = $data['type'] ?? 'expense';
+        try {
+            $this->model->insert([
+                'user_id'   => $this->authLibrary->user->id,
+                'name'      => $input['name'],
+                'type'      => $input['category_id'] ?? null,
+                'parent_id' => $input['parent_id'] ?? null,
+            ]);
 
-        if (!$this->model->insert($data)) {
-            return $this->fail($this->model->errors());
+            return $this->respondCreated();
+        } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
+            return $this->fail($e->getMessage());
         }
-
-        $category = $this->model->find($data['id']);
-        return $this->respondCreated($category);
     }
 
-    // GET /api/categories/{id} - Получить категорию по ID
-    public function show($id = null)
+    /**
+     * GET /categories/{id} - Get a specific category by ID
+     * @param $id
+     * @return ResponseInterface
+     */
+    public function show($id = null): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
-        }
+        $category = $this->model->getById($id);
 
-        $category = $this->model->where(['id' => $id, 'user_id' => $userId])->first();
         if (!$category) {
-            return $this->failNotFound('Category not found');
+            return $this->failNotFound();
         }
 
         return $this->respond($category);
     }
 
-    // PUT /api/categories/{id} - Обновить категорию
-    public function update($id = null)
+    /**
+     * PUT /categories/{id} - Update a specific category by ID
+     * @param $id
+     * @return ResponseInterface
+     */
+    public function update($id = null): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
+        $input = $this->request->getJSON(true);
+
+        if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
 
-        $data = $this->request->getJSON(true);
-        unset($data['id'], $data['user_id']);
+        try {
+            unset($input['id'], $input['user_id']);
 
-        if (!$this->model->update($id, $data, ['user_id' => $userId])) {
-            return $this->fail($this->model->errors());
+            if (!$this->model->updateById($id, $this->authLibrary->user->id, $input)) {
+                return $this->failValidationErrors($this->model->errors());
+            }
+
+            return $this->respondUpdated();
+        } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
+            return $this->fail($e->getMessage());
         }
-
-        $category = $this->model->find($id);
-        return $this->respondUpdated($category);
     }
 
-    // DELETE /api/categories/{id} - Удалить категорию
-    public function delete($id = null)
+    /**
+     * DELETE /categories/{id} - Delete a specific category by ID
+     * @param $id
+     * @return ResponseInterface
+     */
+    public function delete($id = null): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
+        $category = $this->model->getById($id);
+
+        if (!$category) {
+            return $this->failNotFound();
         }
 
-        if (!$this->model->delete($id, ['user_id' => $userId])) {
-            return $this->fail('Failed to delete category');
-        }
+        try {
+            if (!$this->model->deleteById($id, $this->authLibrary->user->id)) {
+                return $this->fail(['error' => '1003', 'messages' => 'Failed to delete category']);
+            }
 
-        return $this->respondDeleted(['message' => 'Category deleted successfully']);
+            return $this->respondDeleted();
+        } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
+            return $this->fail($e->getMessage());
+        }
     }
 }
