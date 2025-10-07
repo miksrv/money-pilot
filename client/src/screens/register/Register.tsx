@@ -34,7 +34,7 @@ export const Register: React.FC = () => {
     const onSubmit = async (data: RegisterFormData) => {
         try {
             await registerMutation({ email: data.email, password: data.password })
-            // await navigate('/dashboard')
+            await navigate('/')
         } catch (err) {
             console.error('Login failed:', err)
         }
