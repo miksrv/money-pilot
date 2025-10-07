@@ -1,18 +1,12 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { Button, Dialog, Input } from 'simple-react-ui-kit'
 
-import { useAddCategoryMutation, useListCategoriesQuery } from '@/api'
-import { AppLayout } from '@/components'
+import { ApiModel, useAddCategoryMutation, useListCategoriesQuery } from '@/api'
+import { AppLayout, ColorPicker, EmojiPicker } from '@/components'
 
-type CategoryFormData = {
-    name: string
-    type: 'income' | 'expense'
-    parent_id: string
-    icon?: string
-}
+type CategoryFormData = ApiModel.Category
 
 export const Categories: React.FC = () => {
     const { t } = useTranslation()
@@ -28,6 +22,7 @@ export const Categories: React.FC = () => {
             name: '',
             type: 'expense',
             parent_id: undefined,
+            color: undefined,
             icon: undefined
         }
     })
@@ -107,14 +102,16 @@ export const Categories: React.FC = () => {
                     className='form-wrapper'
                 >
                     <EmojiPicker
-                        theme={Theme.DARK}
-                        lazyLoad={true}
-                        skinTonesDisabled={true}
-                        previewConfig={{
-                            showPreview: false
+                        value={getValues('icon')}
+                        onSelect={(icon) => {
+                            reset({ ...getValues(), icon })
                         }}
-                        onEmojiClick={(emoji) => {
-                            reset({ ...getValues(), icon: emoji.emoji })
+                    />
+
+                    <ColorPicker
+                        value={getValues('color')}
+                        onSelect={(color) => {
+                            reset({ ...getValues(), color })
                         }}
                     />
 
