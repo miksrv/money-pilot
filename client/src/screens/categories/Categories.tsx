@@ -25,8 +25,8 @@ export const Categories: React.FC = () => {
         defaultValues: {
             name: '',
             type: 'expense',
-            parent_id: '',
-            icon: ''
+            parent_id: undefined,
+            icon: undefined
         }
     })
     const [addCategory, { isLoading, error: apiError }] = useAddCategoryMutation()

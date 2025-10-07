@@ -51,9 +51,13 @@ class CategoryController extends ApplicationBaseController
             $this->model->insert([
                 'user_id'   => $this->authLibrary->user->id,
                 'name'      => $input['name'],
-                'type'      => $input['category_id'] ?? null,
-                'parent_id' => $input['parent_id'] ?? null,
+                'type'      => $input['type'] ?? null,
+                'parent_id' => !empty($input['parent_id']) ? $input['parent_id'] : null,
             ]);
+
+            if ($this->model->errors()) {
+                return $this->failValidationErrors($this->model->errors());
+            }
 
             return $this->respondCreated();
         } catch (\Exception $e) {
