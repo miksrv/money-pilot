@@ -5,128 +5,130 @@ namespace App\Controllers;
 use App\Libraries\Auth;
 use App\Models\TransactionModel;
 use CodeIgniter\API\ResponseTrait;
-use CodeIgniter\RESTful\ResourceController;
+use CodeIgniter\HTTP\ResponseInterface;
 
-class TransactionController extends ResourceController
+class TransactionController extends ApplicationBaseController
 {
     use ResponseTrait;
 
-    protected $modelName = 'App\Models\TransactionModel';
-    protected $format = 'json';
+    protected Auth $authLibrary;
 
     public function __construct()
     {
-        $this->model = new $this->modelName();
+        $this->model = new TransactionModel();
+        $this->authLibrary = new Auth();
+
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
     }
 
-    // GET /api/transactions - Получить транзакции
-    public function index()
+    /**
+     * GET /transactions - List all transactions for the authenticated user
+     * @return ResponseInterface
+     */
+    public function index(): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
-        }
-
-        $limit = $this->request->getGet('limit') ?? 5;
-        $transactions = $this->model->where('user_id', $userId)->limit($limit)->findAll();
+        $transactions = $this->model->findByUserId($this->authLibrary->user->id);
         return $this->respond($transactions);
     }
 
-    // POST /api/transactions - Создать транзакцию
-    public function create()
+    /**
+     * POST /transactions - Create a new transaction
+     * @return ResponseInterface
+     */
+    public function create(): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
+        $input = $this->request->getJSON(true);
+
+        if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
+            return $this->failValidationErrors(['error' => '1001', 'messages' => $this->validator->getErrors()]);
         }
 
-        $data = $this->request->getJSON(true);
-        $data['user_id'] = $userId;
+        try {
+            $this->model->insert([
+                'user_id'     => $this->authLibrary->user->id,
+                'account_id'  => $input['account_id'],
+                'category_id' => $input['category_id'] ?? null,
+                'payee_id'    => $input['payee_id'] ?? null,
+                'amount'      => $input['amount'],
+                'type'        => $input['type'],
+                'date'        => $input['date'],
+                'description' => $input['description'] ?? null,
+            ]);
 
-        if (!$this->model->insert($data)) {
-            return $this->fail($this->model->errors());
+            return $this->respondCreated();
+        } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
+            return $this->fail($e->getMessage());
         }
-
-        // Обновить баланс аккаунта
-        $this->updateAccountBalance($data['account_id'], $data['amount']);
-
-        $transaction = $this->model->find($data['id']);
-        return $this->respondCreated($transaction);
     }
 
-    // GET /api/transactions/{id} - Получить транзакцию по ID
-    public function show($id = null)
+    /**
+     * GET /transactions/{id} - Get a specific transaction by ID
+     * @param string|null $id
+     * @return ResponseInterface
+     */
+    public function show($id = null): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
-        }
+        $transaction = $this->model->getById($id, $this->authLibrary->user->id);
 
-        $transaction = $this->model->where(['id' => $id, 'user_id' => $userId])->first();
         if (!$transaction) {
-            return $this->failNotFound('Transaction not found');
+            return $this->failNotFound();
         }
 
         return $this->respond($transaction);
     }
 
-    // PUT /api/transactions/{id} - Обновить транзакцию
-    public function update($id = null)
+    /**
+     * PUT /transactions/{id} - Update a transaction
+     * @param string|null $id
+     * @return ResponseInterface
+     */
+    public function update($id = null): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
+        $input = $this->request->getJSON(true);
+
+        if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
+            return $this->failValidationErrors($this->validator->getErrors());
         }
 
-        $data = $this->request->getJSON(true);
-        unset($data['id'], $data['user_id']);
+        try {
+            unset($input['id'], $input['user_id']);
 
-        // Обновить баланс перед обновлением
-        $oldTransaction = $this->model->find($id);
-        if ($oldTransaction) {
-            $this->updateAccountBalance($oldTransaction->account_id, -$oldTransaction->amount);
+            if (!$this->model->updateById($id, $this->authLibrary->user->id, $input)) {
+                return $this->failValidationErrors($this->model->errors());
+            }
+
+            return $this->respondUpdated();
+        } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
+            return $this->fail($e->getMessage());
         }
-
-        if (!$this->model->update($id, $data, ['user_id' => $userId])) {
-            return $this->fail($this->model->errors());
-        }
-
-        $transaction = $this->model->find($id);
-        if ($transaction) {
-            $this->updateAccountBalance($transaction->account_id, $transaction->amount);
-        }
-
-        return $this->respondUpdated($transaction);
     }
 
-    // DELETE /api/transactions/{id} - Удалить транзакцию
-    public function delete($id = null)
+    /**
+     * DELETE /transactions/{id} - Delete a transaction
+     * @param string|null $id
+     * @return ResponseInterface
+     */
+    public function delete($id = null): ResponseInterface
     {
-        $userId = Auth::getUserIdFromToken();
-        if (!$userId) {
-            return $this->failUnauthorized('Invalid token');
-        }
+        $transaction = $this->model->getById($id, $this->authLibrary->user->id);
 
-        $transaction = $this->model->where(['id' => $id, 'user_id' => $userId])->first();
         if (!$transaction) {
-            return $this->failNotFound('Transaction not found');
+            return $this->failNotFound();
         }
 
-        $this->updateAccountBalance($transaction->account_id, -$transaction->amount);
+        try {
+            if (!$this->model->deleteById($id, $this->authLibrary->user->id)) {
+                return $this->fail(['error' => '1003', 'messages' => 'Failed to delete transaction']);
+            }
 
-        if (!$this->model->delete($id)) {
-            return $this->fail('Failed to delete transaction');
-        }
-
-        return $this->respondDeleted(['message' => 'Transaction deleted successfully']);
-    }
-
-    private function updateAccountBalance(string $accountId, float $amount): void
-    {
-        $accountModel = new AccountModel();
-        $account = $accountModel->find($accountId);
-        if ($account) {
-            $accountModel->update($accountId, ['balance' => $account->balance + $amount]);
+            return $this->respondDeleted();
+        } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
+            return $this->fail($e->getMessage());
         }
     }
 }

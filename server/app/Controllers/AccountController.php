@@ -12,7 +12,6 @@ class AccountController extends ApplicationBaseController
     use ResponseTrait;
 
     protected Auth $authLibrary;
-    protected $format = 'json';
 
     public function __construct()
     {
@@ -57,6 +56,7 @@ class AccountController extends ApplicationBaseController
 
             return $this->respondCreated();
         } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
@@ -94,11 +94,12 @@ class AccountController extends ApplicationBaseController
             unset($input['id'], $input['user_id']);
 
             if (!$this->model->updateById($id, $this->authLibrary->user->id, $input)) {
-                return $this->failValidationErrors(['error' => '1001', 'messages' => $this->model->errors()]);
+                return $this->failValidationErrors($this->model->errors());
             }
 
             return $this->respondUpdated();
         } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
@@ -119,6 +120,7 @@ class AccountController extends ApplicationBaseController
 
             return $this->respondDeleted();
         } catch (\Exception $e) {
+            log_message('error', $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
