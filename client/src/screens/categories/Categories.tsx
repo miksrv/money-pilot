@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { Button, Dialog, Input } from 'simple-react-ui-kit'
 
 import { useAddCategoryMutation, useListCategoriesQuery } from '@/api'
@@ -20,7 +21,8 @@ export const Categories: React.FC = () => {
         register,
         handleSubmit,
         formState: { errors },
-        reset
+        reset,
+        getValues
     } = useForm<CategoryFormData>({
         defaultValues: {
             name: '',
@@ -104,6 +106,18 @@ export const Categories: React.FC = () => {
                     onSubmit={handleSubmit(onSubmit)}
                     className='form-wrapper'
                 >
+                    <EmojiPicker
+                        theme={Theme.DARK}
+                        lazyLoad={true}
+                        skinTonesDisabled={true}
+                        previewConfig={{
+                            showPreview: false
+                        }}
+                        onEmojiClick={(emoji) => {
+                            reset({ ...getValues(), icon: emoji.emoji })
+                        }}
+                    />
+
                     <div>
                         <label htmlFor='name'>{t('categories.name')}</label>
                         <Input
