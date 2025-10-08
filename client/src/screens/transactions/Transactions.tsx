@@ -4,9 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button, Dialog, Input } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddTransactionMutation, useListTransactionsQuery } from '@/api'
-import { AppLayout } from '@/components'
-
-import { CategorySelectField } from '../../components/category-select-field'
+import { AccountSelectField, AppLayout, CategorySelectField } from '@/components'
 
 type TransactionFormData = Pick<
     ApiModel.Transaction,
@@ -116,7 +114,9 @@ export const Transactions: React.FC = () => {
                     onSubmit={handleSubmit(onSubmit)}
                     className='form-wrapper'
                 >
-                    <CategorySelectField />
+                    <CategorySelectField onSelect={(option) => console.log(option)} />
+
+                    <AccountSelectField />
 
                     <div>
                         <label htmlFor='account_id'>{t('transactions.account', 'Счет')}</label>
