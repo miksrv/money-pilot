@@ -17,10 +17,20 @@ class TransactionController extends ApplicationBaseController
     {
         $this->model = new TransactionModel();
         $this->authLibrary = new Auth();
+        $this->ensureAuthenticated();
+    }
 
+    /**
+     * Ensure the user is authenticated
+     * @return ResponseInterface|null
+     */
+    protected function ensureAuthenticated(): ?ResponseInterface
+    {
         if (!$this->authLibrary->isAuth) {
             return $this->failUnauthorized();
         }
+
+        return null;
     }
 
     /**

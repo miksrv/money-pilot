@@ -18,12 +18,21 @@ class CategoryController extends ApplicationBaseController
     {
         $this->model = new CategoryModel();
         $this->authLibrary = new Auth();
+        $this->ensureAuthenticated();
+    }
 
+    /**
+     * Ensure the user is authenticated
+     * @return ResponseInterface|null
+     */
+    protected function ensureAuthenticated(): ?ResponseInterface
+    {
         if (!$this->authLibrary->isAuth) {
             return $this->failUnauthorized();
         }
-    }
 
+        return null;
+    }
 
     /**
      * GET /categories - List all categories for the authenticated user
