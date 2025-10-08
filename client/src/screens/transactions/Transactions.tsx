@@ -6,6 +6,8 @@ import { Button, Dialog, Input } from 'simple-react-ui-kit'
 import { ApiModel, useAddTransactionMutation, useListTransactionsQuery } from '@/api'
 import { AccountSelectField, AppLayout, CategorySelectField } from '@/components'
 
+import { MoneyInput } from '../../components'
+
 type TransactionFormData = Pick<
     ApiModel.Transaction,
     'account_id' | 'amount' | 'type' | 'date' | 'description' | 'category_id' | 'payee_id'
@@ -18,7 +20,8 @@ export const Transactions: React.FC = () => {
         register,
         handleSubmit,
         formState: { errors },
-        reset
+        reset,
+        getValues
     } = useForm<TransactionFormData>({
         defaultValues: {
             account_id: '',
@@ -114,23 +117,32 @@ export const Transactions: React.FC = () => {
                     onSubmit={handleSubmit(onSubmit)}
                     className='form-wrapper'
                 >
-                    <CategorySelectField onSelect={(option) => console.log(option)} />
+                    <CategorySelectField
+                        value={getValues('category_id')}
+                        error={errors?.category_id?.message}
+                        onSelect={(option) => reset({ ...getValues(), category_id: option?.key })}
+                    />
 
-                    <AccountSelectField />
+                    <br />
 
-                    <div>
-                        <label htmlFor='account_id'>{t('transactions.account', 'Счет')}</label>
-                        <Input
-                            id='account_id'
-                            type='text'
-                            size='medium'
-                            placeholder={t('transactions.account', 'Счет')}
-                            {...register('account_id', {
-                                required: t('transactions.account', 'Счет') + ' ' + t('common.required', 'обязательно')
-                            })}
-                        />
-                        {errors.account_id && <p className='error'>{errors.account_id.message}</p>}
-                    </div>
+                    <AccountSelectField
+                        value={getValues('account_id')}
+                        error={errors?.account_id?.message}
+                        onSelect={(option) => reset({ ...getValues(), account_id: option?.key })}
+                    />
+
+                    <br />
+
+                    <MoneyInput
+                        {...register('amount', {
+                            required: t('transactions.amount', 'Сумма') + ' ' + t('common.required', 'обязательно'),
+                            min: {
+                                value: 0,
+                                message: t('transactions.amount.min', 'Сумма не может быть отрицательной')
+                            }
+                        })}
+                    />
+
                     <div>
                         <label htmlFor='amount'>{t('transactions.amount', 'Сумма')}</label>
                         <Input
@@ -194,17 +206,6 @@ export const Transactions: React.FC = () => {
                             })}
                         />
                         {errors.description && <p className='error'>{errors.description.message}</p>}
-                    </div>
-                    <div>
-                        <label htmlFor='category_id'>{t('transactions.category', 'Категория')}</label>
-                        <Input
-                            id='category_id'
-                            type='text'
-                            size='medium'
-                            placeholder={t('transactions.category', 'Категория')}
-                            {...register('category_id')}
-                        />
-                        {errors.category_id && <p className='error'>{errors.category_id.message}</p>}
                     </div>
                     <div>
                         <label htmlFor='payee_id'>{t('transactions.payee', 'Получатель')}</label>
