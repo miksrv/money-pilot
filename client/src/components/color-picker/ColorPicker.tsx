@@ -99,7 +99,6 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ onSelect, value }) => 
             {selectedColor && (
                 <Button
                     mode='secondary'
-                    icon='X'
                     onClick={() => {
                         setSelectedColor('')
                         onSelect('' as ColorName)

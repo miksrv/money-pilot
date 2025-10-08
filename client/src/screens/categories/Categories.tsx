@@ -53,6 +53,15 @@ export const Categories: React.FC = () => {
         >
             <h2>{t('categories.title')}</h2>
 
+            {/*{categories?.map((category) => (*/}
+            {/*    <Badge*/}
+            {/*        icon={<>{category.icon}</>}*/}
+            {/*        key={category.id}*/}
+            {/*        label={category.name}*/}
+            {/*        style={{ backgroundColor: getColorHex(category?.color as ColorName) }}*/}
+            {/*    />*/}
+            {/*))}*/}
+
             {categories?.map((category) => (
                 <div
                     key={category.id}
@@ -187,5 +196,3 @@ export const Categories: React.FC = () => {
         </AppLayout>
     )
 }
-
-export default Categories

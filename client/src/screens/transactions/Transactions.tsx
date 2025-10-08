@@ -6,6 +6,8 @@ import { Button, Dialog, Input } from 'simple-react-ui-kit'
 import { ApiModel, useAddTransactionMutation, useListTransactionsQuery } from '@/api'
 import { AppLayout } from '@/components'
 
+import { CategorySelectField } from '../../components/category-select-field'
+
 type TransactionFormData = Pick<
     ApiModel.Transaction,
     'account_id' | 'amount' | 'type' | 'date' | 'description' | 'category_id' | 'payee_id'
@@ -114,6 +116,8 @@ export const Transactions: React.FC = () => {
                     onSubmit={handleSubmit(onSubmit)}
                     className='form-wrapper'
                 >
+                    <CategorySelectField />
+
                     <div>
                         <label htmlFor='account_id'>{t('transactions.account', 'Счет')}</label>
                         <Input

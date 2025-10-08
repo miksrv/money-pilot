@@ -14,6 +14,7 @@ export interface ApiError {
 
 export const api = createApi({
     reducerPath: 'api',
+    tagTypes: ['Category'],
     baseQuery: fetchBaseQuery({
         baseUrl: HOST_API,
         prepareHeaders: (headers, { getState }) => {
@@ -82,12 +83,14 @@ export const api = createApi({
                 body
             })
         }),
-        /* List transactions */
+        /* List Categories */
         listCategories: builder.query<ApiType.Category.Response[], void>({
+            providesTags: () => [{ id: 'LIST', type: 'Category' }],
             query: () => '/categories'
         }),
-        /* Add transaction */
+        /* Add Category */
         addCategory: builder.mutation<void, ApiType.Category.Request>({
+            invalidatesTags: [{ id: 'LIST', type: 'Category' }],
             query: (body) => ({
                 url: 'categories',
                 method: 'POST',
