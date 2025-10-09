@@ -60,7 +60,7 @@ class TransactionController extends ApplicationBaseController
                 'user_id'     => $this->authLibrary->user->id,
                 'account_id'  => $input['account_id'],
                 'category_id' => $input['category_id'] ?? null,
-                'payee_id'    => $input['payee_id'] ?? null,
+                'payee_id'    => !empty($input['payee_id']) ? $input['payee_id'] : null,
                 'amount'      => $input['amount'],
                 'type'        => $input['type'],
                 'date'        => $input['date'],
