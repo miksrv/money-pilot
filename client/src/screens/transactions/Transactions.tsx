@@ -134,33 +134,10 @@ export const Transactions: React.FC = () => {
                     <br />
 
                     <MoneyInput
-                        {...register('amount', {
-                            required: t('transactions.amount', 'Сумма') + ' ' + t('common.required', 'обязательно'),
-                            min: {
-                                value: 0,
-                                message: t('transactions.amount.min', 'Сумма не может быть отрицательной')
-                            }
-                        })}
+                        value={getValues('amount')}
+                        onChange={(amount) => reset({ ...getValues(), amount: amount })}
                     />
 
-                    <div>
-                        <label htmlFor='amount'>{t('transactions.amount', 'Сумма')}</label>
-                        <Input
-                            id='amount'
-                            type='number'
-                            size='medium'
-                            step='0.01'
-                            placeholder={t('transactions.amount', 'Сумма')}
-                            {...register('amount', {
-                                required: t('transactions.amount', 'Сумма') + ' ' + t('common.required', 'обязательно'),
-                                min: {
-                                    value: 0,
-                                    message: t('transactions.amount.min', 'Сумма не может быть отрицательной')
-                                }
-                            })}
-                        />
-                        {errors.amount && <p className='error'>{errors.amount.message}</p>}
-                    </div>
                     <div>
                         <label htmlFor='type'>{t('transactions.type', 'Тип')}</label>
                         <select

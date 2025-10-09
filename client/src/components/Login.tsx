@@ -30,12 +30,7 @@ export const LoginForm: React.FC = () => {
     const [registerMutation, { isLoading, error: apiError, data: apiData }] = useLoginMutation()
 
     const onSubmit = async (data: LoginFormData) => {
-        try {
-            await registerMutation({ email: data.email, password: data.password })
-            await navigate('/')
-        } catch (err) {
-            console.error('Login failed:', err)
-        }
+        await registerMutation({ email: data.email, password: data.password })
     }
 
     useEffect(() => {
@@ -58,8 +53,9 @@ export const LoginForm: React.FC = () => {
     }, [apiError, setError, t])
 
     useEffect(() => {
-        if (apiData?.token) {
+        if (!!apiData?.token?.length) {
             dispatch(login(apiData.token))
+            void navigate('/')
         }
     }, [apiData])
 

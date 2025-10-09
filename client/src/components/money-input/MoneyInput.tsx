@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { InputProps } from 'simple-react-ui-kit'
 import { Input } from 'simple-react-ui-kit'
 
 interface CurrencyConfig {
@@ -12,7 +13,7 @@ interface CurrencyConfig {
     decimalPlaces?: number
 }
 
-interface MoneyInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface MoneyInputProps extends Omit<InputProps, 'value' | 'onChange'> {
     value: number
     onChange: (value: number) => void
     currency?: CurrencyConfig
