@@ -40,6 +40,11 @@ class CreateTransactionsTable extends Migration
                 'type'       => 'DECIMAL',
                 'constraint' => '15,2',
             ],
+            'type' => [
+                'type'       => 'ENUM',
+                'constraint' => ['income', 'expense'],
+                'default'    => 'expense',
+            ],
             'date' => [
                 'type' => 'DATE',
             ],

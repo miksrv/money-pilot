@@ -9,7 +9,7 @@ class TransactionModel extends ApplicationBaseModel
 {
     protected $table         = 'transactions';
     protected $primaryKey    = 'id';
-    protected $allowedFields = ['user_id', 'account_id', 'category_id', 'payee_id', 'amount', 'type', 'date', 'description'];
+    protected $allowedFields = ['user_id', 'group_id', 'account_id', 'category_id', 'payee_id', 'amount', 'type', 'date', 'description'];
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
