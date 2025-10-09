@@ -13,6 +13,10 @@ class CreateTransactionsTable extends Migration
                 'type'           => 'VARCHAR',
                 'constraint'     => 15
             ],
+            'user_id' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 15
+            ],
             'account_id' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 15
@@ -70,6 +74,7 @@ class CreateTransactionsTable extends Migration
         ]);
 
         $this->forge->addPrimaryKey('id');
+        $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('account_id', 'accounts', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('group_id', 'groups', 'id', 'SET NULL', 'SET NULL', 'transactions_group_id_foreign');
         $this->forge->addForeignKey('category_id', 'categories', 'id', 'SET NULL', 'SET NULL');

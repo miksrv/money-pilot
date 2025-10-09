@@ -32,9 +32,9 @@ class TransactionModel extends ApplicationBaseModel
     protected $validationRules = [
         'user_id'     => 'permit_empty',
         'group_id'    => 'permit_empty',
-        'account_id'  => 'required|valid_id[accounts,id]',
-        'category_id' => 'permit_empty|valid_id[categories,id]',
-        'payee_id'    => 'permit_empty|valid_id[payees,id]',
+        'account_id'  => 'required',
+        'category_id' => 'permit_empty',
+        'payee_id'    => 'permit_empty',
         'amount'      => 'required|decimal',
         'type'        => 'required|in_list[income,expense]',
         'date'        => 'required|valid_date',
