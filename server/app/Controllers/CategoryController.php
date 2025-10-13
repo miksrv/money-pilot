@@ -41,7 +41,20 @@ class CategoryController extends ApplicationBaseController
     public function index(): ResponseInterface
     {
         $categories = $this->model->findByUserIdWithSums($this->authLibrary->user->id);
-        return $this->respond($categories);
+        $response   = array_map(function ($category) {
+            return [
+                'id'        => $category->id,
+                'name'      => $category->name,
+                'type'      => $category->type,
+                'parent_id' => $category->parent_id,
+                'icon'      => $category->icon,
+                'color'     => $category->color,
+                'budget'    => $category->budget,
+                'expenses'  => $category->expenses,
+            ];
+        }, $categories);
+
+        return $this->respond($response);
     }
 
     /**

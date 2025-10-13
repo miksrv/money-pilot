@@ -80,7 +80,7 @@ class CategoryModel extends ApplicationBaseModel
      */
     public function findByUserIdWithSums(string $userId): array
     {
-        $reportDay = 1; // Константа - день отчетного периода (1-е число месяца)
+        $reportDay   = 1; // Константа - день отчетного периода (1-е число месяца)
         $currentDate = new \DateTime();
         $reportStartDate = (clone $currentDate)->setDate($currentDate->format('Y'), $currentDate->format('m'), $reportDay)->format('Y-m-d');
 
@@ -101,8 +101,8 @@ class CategoryModel extends ApplicationBaseModel
                 ->getRow()
                 ->amount ?? 0;
 
-            $category->transaction_sum = (float) $sum;
-            $category->budget = (float) $category->budget ?? 0; // Assuming 'budget' field exists in categories
+            $category->expenses = (float) $sum;
+            $category->budget   = (float) $category->budget ?? 0; // Assuming 'budget' field exists in categories
         }
 
         return $categories;
