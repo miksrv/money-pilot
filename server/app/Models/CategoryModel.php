@@ -74,6 +74,41 @@ class CategoryModel extends ApplicationBaseModel
     }
 
     /**
+     * Find categories by user ID with transaction sums
+     * @param string $userId
+     * @return array
+     */
+    public function findByUserIdWithSums(string $userId): array
+    {
+        $reportDay = 1; // Константа - день отчетного периода (1-е число месяца)
+        $currentDate = new \DateTime();
+        $reportStartDate = (clone $currentDate)->setDate($currentDate->format('Y'), $currentDate->format('m'), $reportDay)->format('Y-m-d');
+
+        if ($currentDate->format('d') < $reportDay) {
+            $reportStartDate = (clone $currentDate)->modify('-1 month')->setDate($currentDate->format('Y'), $currentDate->format('m'), $reportDay)->format('Y-m-d');
+        }
+
+        $categories = $this->where('user_id', $userId)->findAll();
+
+        foreach ($categories as &$category) {
+            $sum = $this->db->table('transactions')
+                ->selectSum('amount')
+                ->where('category_id', $category->id)
+                ->where('type', 'expense')
+                ->where('date >=', $reportStartDate)
+                ->where('date <=', $currentDate->format('Y-m-d'))
+                ->get()
+                ->getRow()
+                ->amount ?? 0;
+
+            $category->transaction_sum = (float) $sum;
+            $category->budget = (float) $category->budget ?? 0; // Assuming 'budget' field exists in categories
+        }
+
+        return $categories;
+    }
+
+    /**
      * Find categories by type (income/expense)
      */
     public function findByType(string $userId, string $type): array

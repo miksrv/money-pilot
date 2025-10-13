@@ -40,7 +40,7 @@ class CategoryController extends ApplicationBaseController
      */
     public function index(): ResponseInterface
     {
-        $categories = $this->model->findByUserId($this->authLibrary->user->id);
+        $categories = $this->model->findByUserIdWithSums($this->authLibrary->user->id);
         return $this->respond($categories);
     }
 
