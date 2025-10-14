@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Button, Dialog, DialogProps, Input } from 'simple-react-ui-kit'
 
-import { ApiModel, useAddTransactionMutation, useListCategoriesQuery, useListTransactionsQuery } from '@/api'
+import { ApiModel, useAddTransactionMutation } from '@/api'
 import { AccountSelectField, CategorySelectField } from '@/components'
 
 import { MoneyInput } from '../../components'
@@ -37,9 +37,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
     })
 
     const [addTransaction, { isLoading, error: apiError }] = useAddTransactionMutation()
-
-    const { data: transactions } = useListTransactionsQuery()
-    const { data: categories } = useListCategoriesQuery()
 
     const onSubmit = async (data: TransactionFormData) => {
         try {

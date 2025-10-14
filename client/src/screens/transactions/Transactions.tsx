@@ -12,7 +12,8 @@ import { TransactionForm } from './TransactionForm'
 
 export const Transactions: React.FC = () => {
     const { t } = useTranslation()
-    const [openTransactionDialog, setOpenTransactionDialog] = useState(false)
+
+    const [openForm, setOpenForm] = useState(false)
 
     const { data: transactions } = useListTransactionsQuery()
     const { data: categories } = useListCategoriesQuery()
@@ -23,7 +24,7 @@ export const Transactions: React.FC = () => {
                 <Button
                     mode='secondary'
                     icon='PlusCircle'
-                    onClick={() => setOpenTransactionDialog(true)}
+                    onClick={() => setOpenForm(true)}
                     label={t('transactions.add', 'Добавить транзакцию')}
                 />
             }
@@ -69,8 +70,8 @@ export const Transactions: React.FC = () => {
             />
 
             <TransactionForm
-                open={openTransactionDialog}
-                onCloseDialog={() => setOpenTransactionDialog(false)}
+                open={openForm}
+                onCloseDialog={() => setOpenForm(false)}
             />
         </AppLayout>
     )
