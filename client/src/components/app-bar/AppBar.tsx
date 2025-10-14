@@ -36,7 +36,7 @@ export const AppBar: React.FC<AppBarProps> = ({ actions }) => {
         <header className={styles.appBar}>
             <div className={styles.wrapper}>
                 <div>{actions}</div>
-                <Button onClick={handleLogout}>{'Logout'}</Button>
+                <Button onClick={handleLogout}>{t('components.app-bar.logout', 'Logout')}</Button>
             </div>
         </header>
     )
