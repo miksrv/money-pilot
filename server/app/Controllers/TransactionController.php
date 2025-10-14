@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\Auth;
+use App\Models\AccountModel;
 use App\Models\TransactionModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -68,6 +69,20 @@ class TransactionController extends ApplicationBaseController
         }
 
         try {
+            $accountModel = new AccountModel();
+
+            $account = $accountModel->getById($input['account_id'], $this->authLibrary->user->id);
+            if (!$account) {
+                return $this->failNotFound(['error' => '1002', 'messages' => ['account' => 'Account not found']]);
+            }
+
+            $amount = (float)$input['amount'];
+            $newBalance = $input['type'] === 'income' ? $account[0]->balance + $amount : $account[0]->balance - $amount;
+
+            if ($newBalance < 0 && !$accountModel->where('id', $input['account_id'])->where('type', 'credit')->first()) {
+                return $this->fail(['error' => '1004', 'messages' => ['balance' => 'Insufficient funds for non-credit account']]);
+            }
+
             $this->model->insert([
                 'user_id'     => $this->authLibrary->user->id,
                 'account_id'  => $input['account_id'],
@@ -78,6 +93,8 @@ class TransactionController extends ApplicationBaseController
                 'date'        => $input['date'],
                 'description' => $input['description'] ?? null,
             ]);
+
+            $accountModel->updateById($input['account_id'], $this->authLibrary->user->id, ['balance' => $newBalance]);
 
             return $this->respondCreated();
         } catch (\Exception $e) {
