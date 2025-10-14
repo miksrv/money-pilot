@@ -26,7 +26,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
             parent_id: undefined,
             budget: undefined,
             color: undefined,
-            icon: undefined
+            icon: '💵'
         }
     })
 
