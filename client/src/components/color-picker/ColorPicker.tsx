@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Button, Input } from 'simple-react-ui-kit'
+import React, { useRef, useState } from 'react'
+import { Button, Popout, PopoutHandleProps } from 'simple-react-ui-kit'
+
+import styles from './styles.module.sass'
 
 export const colors = {
     brown: ['#795548', '#8d6e63'], // Brown
@@ -35,78 +36,38 @@ interface ColorPickerProps {
 }
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({ onSelect, value }) => {
-    const { t } = useTranslation()
-    const [isOpen, setIsOpen] = useState(false)
-    const [selectedColor, setSelectedColor] = useState<ColorName | string>(value || '')
-    const [search, setSearch] = useState('')
-    const pickerRef = useRef<HTMLDivElement>(null)
+    const [selectedColor, setSelectedColor] = useState<ColorName | string>(value || 'grey')
 
-    const filteredColors = Object.keys(colors).filter((color) =>
-        color.toLowerCase().includes(search.toLowerCase())
-    ) as ColorName[]
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
-                setIsOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
+    const popoutRef = useRef<PopoutHandleProps>(null)
 
     const handleColorSelect = (color: ColorName) => {
         setSelectedColor(color)
         onSelect(color)
-        setIsOpen(false)
+        popoutRef.current?.close()
     }
 
     return (
-        <div
-            className='relative'
-            ref={pickerRef}
-        >
-            <Input
-                type='text'
-                size='medium'
-                value={selectedColor ? t(selectedColor) : search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('colorPicker.placeholder')}
-                onFocus={() => setIsOpen(true)}
-                readOnly={!!selectedColor}
-                className='w-full'
-                style={selectedColor ? { backgroundColor: getColorHex(selectedColor as ColorName), color: '#fff' } : {}}
-            />
-            {isOpen && (
-                <div className='absolute z-10 mt-2 w-64 max-h-48 overflow-y-auto bg-[var(--surface)] border border-[var(--border)] rounded-md shadow-lg'>
-                    <div className='grid grid-cols-4 gap-2 p-2'>
-                        {filteredColors.map((color) => (
-                            <button
-                                key={color}
-                                type='button'
-                                className='w-12 h-12 rounded hover:opacity-80'
-                                style={{ backgroundColor: colors[color][0] }}
-                                onClick={() => handleColorSelect(color)}
-                                title={t(`colors.${color}`)}
-                            />
-                        ))}
-                    </div>
-                    {filteredColors.length === 0 && (
-                        <p className='p-2 text-[var(--text-secondary)]'>{t('colorPicker.noResults')}</p>
-                    )}
-                </div>
-            )}
-            {selectedColor && (
+        <Popout
+            ref={popoutRef}
+            position={'left'}
+            trigger={
                 <Button
-                    mode='secondary'
-                    onClick={() => {
-                        setSelectedColor('')
-                        onSelect('' as ColorName)
-                        setSearch('')
-                    }}
-                    style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)' }}
+                    mode={'secondary'}
+                    className={styles.triggerButton}
+                    style={{ backgroundColor: colors[selectedColor as ColorName][0] }}
                 />
-            )}
-        </div>
+            }
+        >
+            <div className={styles.colorList}>
+                {(Object.keys(colors) as ColorName[]).map((color) => (
+                    <Button
+                        key={color}
+                        mode={'outline'}
+                        style={{ backgroundColor: colors[color][0] }}
+                        onClick={() => handleColorSelect(color)}
+                    />
+                ))}
+            </div>
+        </Popout>
     )
 }

@@ -50,7 +50,14 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, value }) => 
         <Popout
             ref={popoutRef}
             position={'left'}
-            trigger={<Button mode='secondary'>{selectedEmoji}</Button>}
+            trigger={
+                <Button
+                    className={styles.emojiTrigger}
+                    mode={'secondary'}
+                >
+                    {selectedEmoji}
+                </Button>
+            }
         >
             <div className={styles.emojiList}>
                 {emojis.map((emoji, index) => (

@@ -6,6 +6,8 @@ import { Button, Dialog, DialogProps, Input } from 'simple-react-ui-kit'
 import { ApiModel, useAddCategoryMutation } from '@/api'
 import { ColorPicker, EmojiPicker } from '@/components'
 
+import styles from './styles.module.sass'
+
 type CategoryFormData = ApiModel.Category
 
 export interface CategoryFormProps extends Partial<DialogProps> {}
@@ -25,7 +27,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
             type: 'expense',
             parent_id: undefined,
             budget: undefined,
-            color: undefined,
+            color: 'grey',
             icon: '💵'
         }
     })
@@ -51,27 +53,27 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
             }}
         >
             <form onSubmit={handleSubmit(onSubmit)}>
-                <EmojiPicker
-                    value={getValues('icon')}
-                    onSelect={(icon) => {
-                        reset({ ...getValues(), icon })
-                    }}
-                />
+                <div className={styles.pickers}>
+                    <EmojiPicker
+                        value={getValues('icon')}
+                        onSelect={(icon) => {
+                            reset({ ...getValues(), icon })
+                        }}
+                    />
 
-                <ColorPicker
-                    value={getValues('color')}
-                    onSelect={(color) => {
-                        reset({ ...getValues(), color })
-                    }}
-                />
+                    <ColorPicker
+                        value={getValues('color')}
+                        onSelect={(color) => {
+                            reset({ ...getValues(), color })
+                        }}
+                    />
 
-                <div>
-                    <label htmlFor='name'>{t('categories.name')}</label>
                     <Input
-                        id='name'
-                        type='text'
-                        size='medium'
-                        placeholder={t('categories.name')}
+                        id={'name'}
+                        type={'text'}
+                        size={'medium'}
+                        className={styles.nameInput}
+                        placeholder={t('screens.categories.form.name_placeholder', 'Category Name')}
                         {...register('name', {
                             required: t('categories.name') + ' ' + t('common.required'),
                             maxLength: {
@@ -80,8 +82,13 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                             }
                         })}
                     />
-                    {errors.name && <p className='error'>{errors.name.message}</p>}
                 </div>
+
+                {/*<div>*/}
+                {/*    <label htmlFor='name'>{t('categories.name')}</label>*/}
+                {/*    */}
+                {/*    {errors.name && <p className='error'>{errors.name.message}</p>}*/}
+                {/*</div>*/}
                 <div>
                     <label htmlFor='type'>{t('categories.type')}</label>
                     <select
@@ -106,22 +113,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                         {...register('parent_id')}
                     />
                     {errors.parent_id && <p className='error'>{errors.parent_id.message}</p>}
-                </div>
-                <div>
-                    <label htmlFor='icon'>{t('categories.icon')}</label>
-                    <Input
-                        id='icon'
-                        type='text'
-                        size='medium'
-                        placeholder={t('categories.icon')}
-                        {...register('icon', {
-                            maxLength: {
-                                value: 50,
-                                message: t('categories.icon.maxLength')
-                            }
-                        })}
-                    />
-                    {errors.icon && <p className='error'>{errors.icon.message}</p>}
                 </div>
                 {apiError && <p className='error'>{apiError?.data?.messages?.error || t('categories.error')}</p>}
                 <Button
