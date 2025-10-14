@@ -26,7 +26,7 @@ export const colors = {
 export type ColorName = keyof typeof colors
 
 export const getColorHex = (colorName: ColorName): string => {
-    return colors[colorName]?.[0] || '#000000' // Return primary color or fallback to black
+    return colors[colorName]?.[1] || '#000000' // Return primary color or fallback to black
 }
 
 interface ColorPickerProps {

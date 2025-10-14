@@ -80,7 +80,7 @@ class TransactionModel extends ApplicationBaseModel
      */
     public function findByUserId(string $userId): array
     {
-        return $this->where('user_id', $userId)->findAll();
+        return $this->where('user_id', $userId)->orderBy('date', 'DESC')->findAll();
     }
 
     /**

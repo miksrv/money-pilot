@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, Input } from 'simple-react-ui-kit'
+import { Badge, Button, Dialog, Input, Table } from 'simple-react-ui-kit'
 
-import { ApiModel, useAddTransactionMutation, useListTransactionsQuery } from '@/api'
+import { ApiModel, useAddTransactionMutation, useListCategoriesQuery, useListTransactionsQuery } from '@/api'
 import { AccountSelectField, AppLayout, CategorySelectField } from '@/components'
 
-import { MoneyInput } from '../../components'
+import type { ColorName } from '../../components'
+import { getColorHex, MoneyInput } from '../../components'
 
 type TransactionFormData = Pick<
     ApiModel.Transaction,
@@ -35,6 +36,7 @@ export const Transactions: React.FC = () => {
     })
     const [addTransaction, { isLoading, error: apiError }] = useAddTransactionMutation()
     const { data: transactions } = useListTransactionsQuery()
+    const { data: categories } = useListCategoriesQuery()
 
     const onSubmit = async (data: TransactionFormData) => {
         try {
@@ -59,42 +61,45 @@ export const Transactions: React.FC = () => {
         >
             <h2>{t('transactions.title', 'Транзакции')}</h2>
 
-            {transactions?.map((transaction) => (
-                <div
-                    key={transaction.id}
-                    style={{
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        padding: '1rem',
-                        marginBottom: '1rem',
-                        backgroundColor: 'var(--surface)'
-                    }}
-                >
-                    <h3>{transaction.description || t('transactions.noDescription', 'Без описания')}</h3>
-                    <p>
-                        {t('transactions.account', 'Счет')}: {transaction.account_id}
-                    </p>
-                    <p>
-                        {t('transactions.amount', 'Сумма')}: {transaction.amount.toFixed(2)}
-                    </p>
-                    <p>
-                        {t('transactions.type', 'Тип')}: {t(`transactions.types.${transaction.type}`, transaction.type)}
-                    </p>
-                    <p>
-                        {t('transactions.date', 'Дата')}: {new Date(transaction.date).toLocaleDateString()}
-                    </p>
-                    {transaction.category_id && (
-                        <p>
-                            {t('transactions.category', 'Категория')}: {transaction.category_id}
-                        </p>
-                    )}
-                    {transaction.payee_id && (
-                        <p>
-                            {t('transactions.payee', 'Получатель')}: {transaction.payee_id}
-                        </p>
-                    )}
-                </div>
-            ))}
+            <Table<ApiModel.Transaction>
+                data={transactions}
+                columns={[
+                    {
+                        header: t('transactions.payee', 'Получатель'),
+                        accessor: 'payee_id'
+                    },
+                    {
+                        header: t('transactions.category', 'Категория'),
+                        accessor: 'category_id',
+                        formatter: (value) => {
+                            const category = categories?.find((cat) => cat.id === value)
+
+                            if (!category) {
+                                return t('transactions.noCategory', 'Без категории')
+                            }
+
+                            return (
+                                <Badge
+                                    size={'small'}
+                                    icon={<>{category.icon}</>}
+                                    key={category.id}
+                                    label={category.name}
+                                    style={{ backgroundColor: getColorHex(category?.color as ColorName) }}
+                                />
+                            )
+                        }
+                    },
+                    {
+                        header: t('transactions.date', 'Дата'),
+                        accessor: 'date',
+                        formatter: (value) => new Date(value.date).toLocaleDateString()
+                    },
+                    {
+                        header: t('transactions.amount', 'Сумма'),
+                        accessor: 'amount'
+                    }
+                ]}
+            />
 
             <Dialog
                 open={openTransactionDialog}

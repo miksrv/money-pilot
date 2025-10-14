@@ -40,7 +40,19 @@ class TransactionController extends ApplicationBaseController
     public function index(): ResponseInterface
     {
         $transactions = $this->model->findByUserId($this->authLibrary->user->id);
-        return $this->respond($transactions);
+        $response     = array_map(function ($transactions) {
+            return [
+                'id'          => $transactions->id,
+                'account_id'  => $transactions->account_id,
+                'category_id' => $transactions->category_id,
+                'payee_id'    => $transactions->type,
+                'parent_id'   => $transactions->parent_id,
+                'amount'      => $transactions->amount,
+                'type'        => $transactions->color,
+                'date'        => $transactions->date
+            ];
+        }, $transactions);
+        return $this->respond($response);
     }
 
     /**
