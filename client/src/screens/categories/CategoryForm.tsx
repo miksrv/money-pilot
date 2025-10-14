@@ -1,7 +1,7 @@
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogProps, Input } from 'simple-react-ui-kit'
+import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddCategoryMutation } from '@/api'
 import { ColorPicker, EmojiPicker } from '@/components'
@@ -46,6 +46,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
 
     return (
         <Dialog
+            title={t('screens.categories.form.title', 'Add Category')}
             open={props?.open}
             onCloseDialog={() => {
                 props?.onCloseDialog?.()
@@ -53,6 +54,19 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
             }}
         >
             <form onSubmit={handleSubmit(onSubmit)}>
+                <Dropdown<string>
+                    value={getValues('type')}
+                    mode={'secondary'}
+                    placeholder={t('screens.categories.form.type', 'Select type')}
+                    options={[
+                        { key: 'expense', value: t('categories.types.expense', 'Expense') },
+                        { key: 'income', value: t('categories.types.income', 'Income') }
+                    ]}
+                    onSelect={(value) => {
+                        reset({ ...getValues(), type: value?.value as 'income' | 'expense' })
+                    }}
+                />
+
                 <div className={styles.pickers}>
                     <EmojiPicker
                         value={getValues('icon')}
