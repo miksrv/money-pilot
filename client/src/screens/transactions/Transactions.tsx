@@ -6,8 +6,8 @@ import { Badge, Button, Dialog, Input, Table } from 'simple-react-ui-kit'
 import { ApiModel, useAddTransactionMutation, useListCategoriesQuery, useListTransactionsQuery } from '@/api'
 import { AccountSelectField, AppLayout, CategorySelectField } from '@/components'
 
-import type { ColorName } from '../../components'
-import { getColorHex, MoneyInput } from '../../components'
+import { ColorName, getColorHex, MoneyInput } from '../../components'
+import { formatUTCDate } from '../../utils/dates'
 
 type TransactionFormData = Pick<
     ApiModel.Transaction,
@@ -92,7 +92,7 @@ export const Transactions: React.FC = () => {
                     {
                         header: t('transactions.date', 'Дата'),
                         accessor: 'date',
-                        formatter: (value) => new Date(value.date).toLocaleDateString()
+                        formatter: (value) => formatUTCDate(value as string, 'DD.MM.YYYY')
                     },
                     {
                         header: t('transactions.amount', 'Сумма'),

@@ -50,7 +50,7 @@ class TransactionController extends ApplicationBaseController
                 'parent_id'   => $transactions->parent_id,
                 'amount'      => $transactions->amount,
                 'type'        => $transactions->color,
-                'date'        => $transactions->date
+                'date'        => $transactions->date->format('Y-m-d, H:i:s'),
             ];
         }, $transactions);
         return $this->respond($response);
@@ -83,6 +83,11 @@ class TransactionController extends ApplicationBaseController
                 return $this->fail(['error' => '1004', 'messages' => ['balance' => 'Insufficient funds for non-credit account']]);
             }
 
+            // Combine input date with current UTC time
+            $dateTime = new \DateTime($input['date'], new \DateTimeZone('UTC'));
+            $dateTime->setTime((int)gmdate('H'), (int)gmdate('i'), (int)gmdate('s'));
+            $formattedDateTime = $dateTime->format('Y-m-d H:i:s');
+
             $this->model->insert([
                 'user_id'     => $this->authLibrary->user->id,
                 'account_id'  => $input['account_id'],
@@ -90,7 +95,7 @@ class TransactionController extends ApplicationBaseController
                 'payee_id'    => !empty($input['payee_id']) ? $input['payee_id'] : null,
                 'amount'      => $input['amount'],
                 'type'        => $input['type'],
-                'date'        => $input['date'],
+                'date'        => $formattedDateTime,
                 'description' => $input['description'] ?? null,
             ]);
 
