@@ -7,6 +7,7 @@ import { AppLayout } from '@/components'
 
 import { ColorName, getColorHex } from '../../components'
 import { formatUTCDate } from '../../utils/dates'
+import { Currency, formatMoney } from '../../utils/money'
 
 import { TransactionForm } from './TransactionForm'
 
@@ -15,8 +16,8 @@ export const Transactions: React.FC = () => {
 
     const [openForm, setOpenForm] = useState(false)
 
-    const { data: transactions } = useListTransactionsQuery()
-    const { data: categories } = useListCategoriesQuery()
+    const { data: transactions } = useListTransactionsQuery(undefined, { refetchOnReconnect: true })
+    const { data: categories } = useListCategoriesQuery(undefined, { refetchOnReconnect: true })
 
     return (
         <AppLayout
@@ -64,7 +65,8 @@ export const Transactions: React.FC = () => {
                     },
                     {
                         header: t('transactions.amount', 'Сумма'),
-                        accessor: 'amount'
+                        accessor: 'amount',
+                        formatter: (value) => formatMoney(value, Currency.USD)
                     }
                 ]}
             />
