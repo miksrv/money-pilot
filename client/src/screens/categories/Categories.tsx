@@ -5,6 +5,7 @@ import { Button, Table } from 'simple-react-ui-kit'
 import { ApiModel, useListCategoriesQuery } from '@/api'
 import { AppLayout } from '@/components'
 
+import { Progress } from '../../components/progress'
 import { Currency, formatMoney } from '../../utils/money'
 
 import { CategoryForm } from './CategoryForm'
@@ -48,6 +49,13 @@ export const Categories: React.FC = () => {
                         header: t('categories.expenses', 'Expenses'),
                         accessor: 'expenses',
                         formatter: (value) => formatMoney(value, Currency.USD)
+                    },
+                    {
+                        header: '',
+                        accessor: 'expenses',
+                        formatter: (_value, row, index) => (
+                            <Progress value={Math.min(100, (row[index].expenses / row[index].budget) * 100)} />
+                        )
                     },
                     {
                         header: t('categories.budget', 'Budget'),
