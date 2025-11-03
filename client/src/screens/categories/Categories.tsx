@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from 'simple-react-ui-kit'
+import { Button, Table } from 'simple-react-ui-kit'
 
-import { useListCategoriesQuery } from '@/api'
+import { ApiModel, useListCategoriesQuery } from '@/api'
 import { AppLayout } from '@/components'
 
 import { CategoryForm } from './CategoryForm'
@@ -21,39 +21,29 @@ export const Categories: React.FC = () => {
                     mode='secondary'
                     icon='PlusCircle'
                     onClick={() => setOpenForm(true)}
-                    label={t('categories.add')}
+                    label={t('categories.add', 'Add Category')}
                 />
             }
         >
-            <h2>{t('categories.title')}</h2>
-
-            {categories?.map((category) => (
-                <div
-                    key={category.id}
-                    style={{
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        padding: '1rem',
-                        marginBottom: '1rem',
-                        backgroundColor: 'var(--surface)'
-                    }}
-                >
-                    <h3>{category.name}</h3>
-                    <p>
-                        {t('categories.type')}: {t(`categories.types.${category.type}`)}
-                    </p>
-                    {category.icon && (
-                        <p>
-                            {t('categories.icon')}: {category.icon}
-                        </p>
-                    )}
-                    {category.parent_id && (
-                        <p>
-                            {t('categories.parent')}: {category.parent_id}
-                        </p>
-                    )}
-                </div>
-            ))}
+            <Table<ApiModel.Category>
+                data={categories}
+                columns={[
+                    {
+                        header: t('categories.name', 'Name'),
+                        accessor: 'name',
+                        formatter: (value, row, index) => (
+                            <>
+                                {row[index].icon} {value}
+                            </>
+                        )
+                    },
+                    {
+                        header: t('categories.type', 'Type'),
+                        accessor: 'type',
+                        formatter: (value) => value
+                    }
+                ]}
+            />
 
             <CategoryForm
                 open={openForm}
