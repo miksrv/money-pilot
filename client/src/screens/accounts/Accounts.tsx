@@ -1,4 +1,3 @@
-// src/pages/Accounts.tsx
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +5,7 @@ import { Button, Dialog, Input } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddAccountMutation, useListAccountQuery } from '@/api'
 import { AppLayout } from '@/components'
+import { Currency, formatMoney } from '@/utils/money'
 
 type AccountFormData = Pick<ApiModel.Account, 'name' | 'type' | 'balance' | 'institution'>
 
@@ -65,10 +65,10 @@ export const Accounts: React.FC = () => {
                 >
                     <h3>{account.name}</h3>
                     <p>
-                        {t('accounts.type', 'Тип')}: {t(`accounts.types.${account.type}`, account.type)}
+                        {t('accounts.type', 'Тип')}: {account.type}
                     </p>
                     <p>
-                        {t('accounts.balance', 'Баланс')}: {account.balance.toFixed(2)}
+                        {t('accounts.balance', 'Баланс')}: {formatMoney(account.balance, Currency.USD)}
                     </p>
                     {account.institution && (
                         <p>

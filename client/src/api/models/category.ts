@@ -4,6 +4,7 @@ export interface Category {
     type: 'income' | 'expense'
     parent_id?: string
     budget: number
+    expenses: number
     icon?: string
     color?: string
 }

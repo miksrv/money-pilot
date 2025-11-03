@@ -5,6 +5,8 @@ import { Button, Table } from 'simple-react-ui-kit'
 import { ApiModel, useListCategoriesQuery } from '@/api'
 import { AppLayout } from '@/components'
 
+import { Currency, formatMoney } from '../../utils/money'
+
 import { CategoryForm } from './CategoryForm'
 
 export const Categories: React.FC = () => {
@@ -41,6 +43,16 @@ export const Categories: React.FC = () => {
                         header: t('categories.type', 'Type'),
                         accessor: 'type',
                         formatter: (value) => value
+                    },
+                    {
+                        header: t('categories.expenses', 'Expenses'),
+                        accessor: 'expenses',
+                        formatter: (value) => formatMoney(value, Currency.USD)
+                    },
+                    {
+                        header: t('categories.budget', 'Budget'),
+                        accessor: 'budget',
+                        formatter: (value) => formatMoney(value, Currency.USD)
                     }
                 ]}
             />
