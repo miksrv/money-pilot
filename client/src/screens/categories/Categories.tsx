@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Table } from 'simple-react-ui-kit'
+import { Button, Progress, Table } from 'simple-react-ui-kit'
 
 import { ApiModel, useListCategoriesQuery } from '@/api'
 import { AppLayout } from '@/components'
 
-import { Progress } from '../../components/progress'
 import { Currency, formatMoney } from '../../utils/money'
 
 import { CategoryForm } from './CategoryForm'
