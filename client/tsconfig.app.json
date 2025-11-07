@@ -21,6 +21,7 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "erasableSyntaxOnly": false,
+        "importsNotUsedAsValues": false,
         "noFallthroughCasesInSwitch": true,
         "noUncheckedSideEffectImports": true,
 

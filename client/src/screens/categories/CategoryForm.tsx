@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddCategoryMutation } from '@/api'
-import { ColorPicker, EmojiPicker } from '@/components'
+import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
 
 import styles from './styles.module.sass'
 
 export const CategoryForm: React.FC<Partial<DialogProps>> = (props) => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
 
     const {
         register,
@@ -97,12 +97,14 @@ export const CategoryForm: React.FC<Partial<DialogProps>> = (props) => {
                     }}
                 />
 
-                <Input
+                <CurrencyInput
                     id={'budget'}
-                    type={'text'}
-                    size={'medium'}
+                    locale={i18n.language}
+                    currency={Currency.USD}
                     placeholder={t('screens.categories.form.budget_placeholder', 'Budget')}
-                    {...register('budget')}
+                    onValueChange={(value) => {
+                        reset({ ...getValues(), budget: value || undefined })
+                    }}
                 />
 
                 {/*<div>*/}
