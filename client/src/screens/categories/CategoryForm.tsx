@@ -45,10 +45,10 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
     }
 
     useEffect(() => {
-        if (props.editCategoryData) {
+        if (props?.editCategoryData) {
             reset(props.editCategoryData)
         }
-    }, [props.editCategoryData, reset])
+    }, [props?.editCategoryData, reset])
 
     return (
         <Dialog
@@ -111,6 +111,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                     id={'budget'}
                     locale={i18n.language}
                     currency={Currency.USD}
+                    value={getValues('budget')}
                     placeholder={t('screens.categories.form.budget_placeholder', 'Budget')}
                     onValueChange={(value) => {
                         reset({ ...getValues(), budget: value || undefined })

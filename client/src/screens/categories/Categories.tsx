@@ -37,7 +37,6 @@ export const Categories: React.FC = () => {
                         accessor: 'name',
                         formatter: (value, row, index) => (
                             <Badge
-                                key={row[index].id}
                                 label={value}
                                 size={'small'}
                                 icon={<>{row[index].icon}</>}

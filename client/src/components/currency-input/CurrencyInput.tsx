@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { Input } from 'simple-react-ui-kit'
 
 import { Currency } from './types'
@@ -26,8 +26,16 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
         useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
 
+        // Sync inputValue with external value prop
+        useEffect(() => {
+            if (value !== undefined && value != null && value !== '') {
+                setInputValue(getCurrencyFormat(Number(value), currency, locale))
+            } else {
+                setInputValue('')
+            }
+        }, [value, currency, locale])
+
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            // Remove all characters except digits, dot, comma, and space
             const sanitized = e.target.value.replace(/[^0-9.,\s]/g, '')
             setInputValue(sanitized)
             const raw = sanitized.replace(/[^\d.,-]/g, '').replace(',', '.')
@@ -47,7 +55,6 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         }
 
         const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-            // Allow: digits, comma, dot, space, navigation, backspace, delete
             if (
                 !(
                     (e.key >= '0' && e.key <= '9') ||
