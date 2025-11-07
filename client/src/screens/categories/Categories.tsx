@@ -1,18 +1,20 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Progress, Table } from 'simple-react-ui-kit'
+import { Badge, Button, Progress, Table } from 'simple-react-ui-kit'
 
 import { ApiModel, useListCategoriesQuery } from '@/api'
-import { AppLayout } from '@/components'
-
-import { Currency, formatMoney } from '../../utils/money'
+import { AppLayout, ColorName, getColorHex } from '@/components'
+import { Currency, formatMoney } from '@/utils/money'
 
 import { CategoryForm } from './CategoryForm'
+
+import styles from './styles.module.sass'
 
 export const Categories: React.FC = () => {
     const { t } = useTranslation()
 
     const [openForm, setOpenForm] = useState(false)
+    const [editCategoryId, setEditCategoryId] = useState<string | undefined>(undefined)
 
     const { data: categories } = useListCategoriesQuery()
 
@@ -34,9 +36,18 @@ export const Categories: React.FC = () => {
                         header: t('categories.name', 'Name'),
                         accessor: 'name',
                         formatter: (value, row, index) => (
-                            <>
-                                {row[index].icon} {value}
-                            </>
+                            <Badge
+                                key={row[index].id}
+                                label={value}
+                                size={'small'}
+                                icon={<>{row[index].icon}</>}
+                                style={{ backgroundColor: getColorHex(row[index]?.color as ColorName) }}
+                                className={styles.categoryBadge}
+                                onClick={() => {
+                                    setEditCategoryId(row[index].id)
+                                    setOpenForm(true)
+                                }}
+                            />
                         )
                     },
                     {
@@ -66,7 +77,11 @@ export const Categories: React.FC = () => {
 
             <CategoryForm
                 open={openForm}
-                onCloseDialog={() => setOpenForm(false)}
+                editCategoryData={categories?.find(({ id }) => id === editCategoryId)}
+                onCloseDialog={() => {
+                    setEditCategoryId(undefined)
+                    setOpenForm(false)
+                }}
             />
         </AppLayout>
     )

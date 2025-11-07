@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-kit'
@@ -8,7 +8,11 @@ import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
 
 import styles from './styles.module.sass'
 
-export const CategoryForm: React.FC<Partial<DialogProps>> = (props) => {
+interface CategoryFormProps extends Partial<DialogProps> {
+    editCategoryData?: ApiModel.Category
+}
+
+export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
     const { t, i18n } = useTranslation()
 
     const {
@@ -39,6 +43,12 @@ export const CategoryForm: React.FC<Partial<DialogProps>> = (props) => {
             console.error('Failed to add category:', err)
         }
     }
+
+    useEffect(() => {
+        if (props.editCategoryData) {
+            reset(props.editCategoryData)
+        }
+    }, [props.editCategoryData, reset])
 
     return (
         <Dialog
