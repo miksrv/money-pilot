@@ -4,19 +4,15 @@ import { useTranslation } from 'react-i18next'
 import { Button, Dialog, DialogProps, Input } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddTransactionMutation } from '@/api'
-import { AccountSelectField, CategorySelectField } from '@/components'
-
-import { MoneyInput } from '../../components'
+import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
 
 type TransactionFormData = Pick<
     ApiModel.Transaction,
     'account_id' | 'amount' | 'type' | 'date' | 'description' | 'category_id' | 'payee_id'
 >
 
-export interface TransactionFormProps extends Partial<DialogProps> {}
-
-export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
-    const { t } = useTranslation()
+export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
+    const { t, i18n } = useTranslation()
 
     const {
         register,
@@ -73,9 +69,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
 
                 <br />
 
-                <MoneyInput
+                <CurrencyInput
                     value={getValues('amount')}
-                    onChange={(amount) => reset({ ...getValues(), amount: amount })}
+                    currency={Currency.USD}
+                    locale={i18n.language}
+                    onValueChange={(amount) => reset({ ...getValues(), amount: amount || 0 })}
                 />
 
                 <div>
