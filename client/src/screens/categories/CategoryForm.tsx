@@ -8,11 +8,7 @@ import { ColorPicker, EmojiPicker } from '@/components'
 
 import styles from './styles.module.sass'
 
-type CategoryFormData = ApiModel.Category
-
-export interface CategoryFormProps extends Partial<DialogProps> {}
-
-export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
+export const CategoryForm: React.FC<Partial<DialogProps>> = (props) => {
     const { t } = useTranslation()
 
     const {
@@ -21,7 +17,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
         formState: { errors },
         reset,
         getValues
-    } = useForm<CategoryFormData>({
+    } = useForm<ApiModel.Category>({
         defaultValues: {
             name: '',
             type: 'expense',
@@ -34,7 +30,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
 
     const [addCategory, { isLoading, error: apiError }] = useAddCategoryMutation()
 
-    const onSubmit = async (data: CategoryFormData) => {
+    const onSubmit = async (data: ApiModel.Category) => {
         try {
             await addCategory(data).unwrap()
             props?.onCloseDialog?.()
@@ -53,20 +49,10 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                 reset()
             }}
         >
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <Dropdown<string>
-                    value={getValues('type')}
-                    mode={'secondary'}
-                    placeholder={t('screens.categories.form.type', 'Select type')}
-                    options={[
-                        { key: 'expense', value: t('categories.types.expense', 'Expense') },
-                        { key: 'income', value: t('categories.types.income', 'Income') }
-                    ]}
-                    onSelect={(value) => {
-                        reset({ ...getValues(), type: value?.value as 'income' | 'expense' })
-                    }}
-                />
-
+            <form
+                className={styles.form}
+                onSubmit={handleSubmit(onSubmit)}
+            >
                 <div className={styles.pickers}>
                     <EmojiPicker
                         value={getValues('icon')}
@@ -98,42 +84,46 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                     />
                 </div>
 
+                <Dropdown<string>
+                    value={getValues('type')}
+                    mode={'secondary'}
+                    placeholder={t('screens.categories.form.type', 'Select type')}
+                    options={[
+                        { key: 'expense', value: t('categories.types.expense', 'Expense') },
+                        { key: 'income', value: t('categories.types.income', 'Income') }
+                    ]}
+                    onSelect={(value) => {
+                        reset({ ...getValues(), type: value?.value as 'income' | 'expense' })
+                    }}
+                />
+
+                <Input
+                    id={'budget'}
+                    type={'text'}
+                    size={'medium'}
+                    placeholder={t('screens.categories.form.budget_placeholder', 'Budget')}
+                    {...register('budget')}
+                />
+
                 {/*<div>*/}
-                {/*    <label htmlFor='name'>{t('categories.name')}</label>*/}
-                {/*    */}
-                {/*    {errors.name && <p className='error'>{errors.name.message}</p>}*/}
+                {/*    <label htmlFor='parent_id'>{t('categories.parent')}</label>*/}
+                {/*    <Input*/}
+                {/*        id='parent_id'*/}
+                {/*        type='text'*/}
+                {/*        size='medium'*/}
+                {/*        placeholder={t('categories.parent')}*/}
+                {/*        {...register('parent_id')}*/}
+                {/*    />*/}
+                {/*    {errors.parent_id && <p className='error'>{errors.parent_id.message}</p>}*/}
                 {/*</div>*/}
-                <div>
-                    <label htmlFor='type'>{t('categories.type')}</label>
-                    <select
-                        id='type'
-                        {...register('type', {
-                            required: t('categories.type') + ' ' + t('common.required')
-                        })}
-                        className='w-full rounded-md border border-[var(--border)] px-3 py-2 focus:border-[var(--primary)] focus:outline-none'
-                    >
-                        <option value='income'>{t('categories.types.income')}</option>
-                        <option value='expense'>{t('categories.types.expense')}</option>
-                    </select>
-                    {errors.type && <p className='error'>{errors.type.message}</p>}
-                </div>
-                <div>
-                    <label htmlFor='parent_id'>{t('categories.parent')}</label>
-                    <Input
-                        id='parent_id'
-                        type='text'
-                        size='medium'
-                        placeholder={t('categories.parent')}
-                        {...register('parent_id')}
-                    />
-                    {errors.parent_id && <p className='error'>{errors.parent_id.message}</p>}
-                </div>
+
                 {apiError && <p className='error'>{apiError?.data?.messages?.error || t('categories.error')}</p>}
+
                 <Button
-                    style={{ width: '100%' }}
                     type='submit'
                     mode='primary'
-                    label={isLoading ? '...' : t('categories.create')}
+                    stretched={true}
+                    label={isLoading ? '...' : t('categories.save_button', 'Save Category')}
                     disabled={isLoading}
                 />
             </form>
