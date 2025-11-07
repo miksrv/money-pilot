@@ -34,17 +34,17 @@ export const Transactions: React.FC = () => {
                 data={transactions}
                 columns={[
                     {
-                        header: t('transactions.payee', 'Получатель'),
+                        header: t('transactions.payee', 'Payee'),
                         accessor: 'payee_id'
                     },
                     {
-                        header: t('transactions.category', 'Категория'),
+                        header: t('transactions.category', 'Category'),
                         accessor: 'category_id',
                         formatter: (value) => {
                             const category = categories?.find((cat) => cat.id === value)
 
                             if (!category) {
-                                return t('transactions.noCategory', 'Без категории')
+                                return t('transactions.noCategory', 'No category')
                             }
 
                             return (
@@ -59,12 +59,12 @@ export const Transactions: React.FC = () => {
                         }
                     },
                     {
-                        header: t('transactions.date', 'Дата'),
+                        header: t('transactions.date', 'Date'),
                         accessor: 'date',
                         formatter: (value) => formatUTCDate(value as string, 'DD.MM.YYYY')
                     },
                     {
-                        header: t('transactions.amount', 'Сумма'),
+                        header: t('transactions.amount', 'Amount'),
                         accessor: 'amount',
                         formatter: (value) => formatMoney(value, Currency.USD)
                     }

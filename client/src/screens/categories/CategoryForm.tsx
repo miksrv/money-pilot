@@ -6,6 +6,8 @@ import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-ki
 import { ApiModel, useAddCategoryMutation } from '@/api'
 import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
 
+import { useUpdateCategoryMutation } from '../../api'
+
 import styles from './styles.module.sass'
 
 interface CategoryFormProps extends Partial<DialogProps> {
@@ -33,10 +35,16 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
     })
 
     const [addCategory, { isLoading, error: apiError }] = useAddCategoryMutation()
+    const [updateCategory, { isLoading: isUpdateLoading, error: updateApiError }] = useUpdateCategoryMutation()
 
     const onSubmit = async (data: ApiModel.Category) => {
         try {
-            await addCategory(data).unwrap()
+            if (props?.editCategoryData?.id) {
+                await updateCategory(data).unwrap()
+            } else {
+                await addCategory(data).unwrap()
+            }
+
             props?.onCloseDialog?.()
             reset()
         } catch (err) {
@@ -131,13 +139,16 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                 {/*</div>*/}
 
                 {apiError && <p className='error'>{apiError?.data?.messages?.error || t('categories.error')}</p>}
+                {updateApiError && (
+                    <p className='error'>{updateApiError?.data?.messages?.error || t('categories.error')}</p>
+                )}
 
                 <Button
                     type='submit'
                     mode='primary'
                     stretched={true}
-                    label={isLoading ? '...' : t('categories.save_button', 'Save Category')}
-                    disabled={isLoading}
+                    label={isLoading || isUpdateLoading ? '...' : t('categories.save_button', 'Save Category')}
+                    disabled={isLoading || isUpdateLoading}
                 />
             </form>
         </Dialog>

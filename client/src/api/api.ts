@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 import type { RootState } from '@/store'
 
-import { ApiType } from './index'
+import { ApiModel, ApiType } from './index'
 
 export const HOST_API = 'http://localhost:8080/'
 
@@ -96,6 +96,15 @@ export const api = createApi({
                 method: 'POST',
                 body
             })
+        }),
+        /* Update Category */
+        updateCategory: builder.mutation<void, Partial<ApiModel.Category>>({
+            invalidatesTags: [{ id: 'LIST', type: 'Category' }],
+            query: ({ id, ...formData }) => ({
+                url: `categories/${id}`,
+                method: 'PUT',
+                body: formData
+            })
         })
     })
 })
@@ -110,5 +119,6 @@ export const {
     useAddAccountMutation,
     useListAccountQuery,
     useAddCategoryMutation,
-    useListCategoriesQuery
+    useListCategoriesQuery,
+    useUpdateCategoryMutation
 } = api

@@ -24,7 +24,10 @@ export const Categories: React.FC = () => {
                 <Button
                     mode='secondary'
                     icon='PlusCircle'
-                    onClick={() => setOpenForm(true)}
+                    onClick={() => {
+                        setEditCategoryId(undefined)
+                        setOpenForm(true)
+                    }}
                     label={t('categories.add', 'Add Category')}
                 />
             }

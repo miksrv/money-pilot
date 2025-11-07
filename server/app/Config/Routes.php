@@ -57,7 +57,8 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->get('(:segment)', 'CategoryController::show/$1');
         $routes->put('(:segment)', 'CategoryController::update/$1');
         $routes->delete('(:segment)', 'CategoryController::delete/$1');
-        $routes->options('', static function () {});
+        $routes->options('/', static function () {});
+        $routes->options('/(:segment)', static function () {});
     });
 
     // PayeeController Routes
