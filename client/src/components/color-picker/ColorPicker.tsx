@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button, Popout, PopoutHandleProps } from 'simple-react-ui-kit'
 
 import styles from './styles.module.sass'
@@ -45,6 +45,12 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ onSelect, value }) => 
         onSelect(color)
         popoutRef.current?.close()
     }
+
+    useEffect(() => {
+        if (value && value !== selectedColor) {
+            setSelectedColor(value)
+        }
+    }, [value])
 
     return (
         <Popout

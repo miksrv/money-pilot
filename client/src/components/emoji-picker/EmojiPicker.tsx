@@ -46,6 +46,12 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, value }) => 
         popoutRef.current?.close()
     }
 
+    useEffect(() => {
+        if (value && value !== selectedEmoji) {
+            setSelectedEmoji(value)
+        }
+    }, [value])
+
     return (
         <Popout
             ref={popoutRef}
