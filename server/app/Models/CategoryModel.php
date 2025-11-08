@@ -131,4 +131,17 @@ class CategoryModel extends ApplicationBaseModel
     {
         return $this->where('user_id', $userId)->delete($id);
     }
+
+    /**
+     * Update category by ID and user ID
+     *
+     * @param string $id
+     * @param string $userId
+     * @param array $data
+     * @return bool
+     */
+    public function updateById(string $id, string $userId, array $data): bool
+    {
+        return $this->where(['id' => $id, 'user_id' => $userId])->set($data)->update();
+    }
 }

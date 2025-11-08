@@ -30,7 +30,7 @@ export const api = createApi({
     endpoints: (builder) => ({
         /* Registration */
         registration: builder.mutation<ApiType.Registration.Response, ApiType.Registration.Request>({
-            transformErrorResponse: (response) => response.data as ApiError,
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
             query: (body) => ({
                 body,
                 method: 'POST',
@@ -39,7 +39,7 @@ export const api = createApi({
         }),
         /* Login */
         login: builder.mutation<ApiType.Registration.Response, ApiType.Registration.Request>({
-            transformErrorResponse: (response) => response.data as ApiError,
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
             query: (body) => ({
                 body,
                 method: 'POST',
@@ -48,7 +48,7 @@ export const api = createApi({
         }),
         /* Logout */
         logout: builder.mutation<void, void>({
-            transformErrorResponse: (response) => response.data as ApiError,
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
             query: () => ({
                 method: 'GET',
                 url: 'auth/logout'
@@ -56,7 +56,7 @@ export const api = createApi({
         }),
         /* Get me */
         me: builder.query<ApiType.Registration.Response, void>({
-            transformErrorResponse: (response) => response.data as ApiError,
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
             query: () => 'auth/me'
         }),
         /* Add account */
@@ -99,7 +99,8 @@ export const api = createApi({
         }),
         /* Update Category */
         updateCategory: builder.mutation<void, Partial<ApiModel.Category>>({
-            invalidatesTags: (result) => (result ? [{ id: 'LIST', type: 'Category' }] : []),
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
+            invalidatesTags: (_result, error) => (!error ? [{ id: 'LIST', type: 'Category' }] : []),
             query: ({ id, ...formData }) => ({
                 url: `categories/${id}`,
                 method: 'PUT',
