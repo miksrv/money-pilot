@@ -3,10 +3,8 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-kit'
 
-import { ApiModel, useAddCategoryMutation } from '@/api'
+import { ApiModel, useAddCategoryMutation, useUpdateCategoryMutation } from '@/api'
 import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
-
-import { useUpdateCategoryMutation } from '../../api'
 
 import styles from './styles.module.sass'
 
@@ -62,7 +60,11 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
 
     return (
         <Dialog
-            title={t('screens.categories.form.title', 'Add Category')}
+            title={
+                props?.categoryData?.id
+                    ? t('screens.categories.form.edit_title', 'Edit Category')
+                    : t('screens.categories.form.create_title', 'Add Category')
+            }
             open={props?.open}
             onCloseDialog={() => {
                 props?.onCloseDialog?.()

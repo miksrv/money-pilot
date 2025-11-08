@@ -1,10 +1,10 @@
 export interface Category {
-    id: string
-    name: string
-    type: 'income' | 'expense'
+    id?: string
+    name?: string
+    type?: 'income' | 'expense'
     parent_id?: string
     budget?: number
-    expenses: number
+    expenses?: number
     icon?: string
     color?: string
 }
