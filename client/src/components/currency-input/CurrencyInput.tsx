@@ -22,18 +22,15 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         const [inputValue, setInputValue] = useState<string>(
             value !== undefined && value != null ? getCurrencyFormat(Number(value), currency, locale) : ''
         )
+
         const inputRef = useRef<HTMLInputElement>(null)
 
         useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
 
         // Sync inputValue with external value prop
-        useEffect(() => {
-            if (value !== undefined && value != null && value !== '') {
-                setInputValue(getCurrencyFormat(Number(value), currency, locale))
-            } else {
-                setInputValue('')
-            }
-        }, [value, currency, locale])
+        // useEffect(() => {
+        //
+        // }, [value])
 
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             const sanitized = e.target.value.replace(/[^0-9.,\s]/g, '')

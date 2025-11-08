@@ -11,7 +11,16 @@ import { useUpdateCategoryMutation } from '../../api'
 import styles from './styles.module.sass'
 
 interface CategoryFormProps extends Partial<DialogProps> {
-    editCategoryData?: ApiModel.Category
+    categoryData?: ApiModel.Category
+}
+
+const DEFAULT_VALUES: ApiModel.Category = {
+    name: '',
+    type: 'expense',
+    parent_id: undefined,
+    budget: undefined,
+    color: 'grey',
+    icon: '💵'
 }
 
 export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
@@ -24,14 +33,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
         reset,
         getValues
     } = useForm<ApiModel.Category>({
-        defaultValues: {
-            name: '',
-            type: 'expense',
-            parent_id: undefined,
-            budget: undefined,
-            color: 'grey',
-            icon: '💵'
-        }
+        defaultValues: DEFAULT_VALUES
     })
 
     const [addCategory, { isLoading, error: apiError }] = useAddCategoryMutation()
@@ -39,24 +41,24 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
 
     const onSubmit = async (data: ApiModel.Category) => {
         try {
-            if (props?.editCategoryData?.id) {
+            if (props?.categoryData?.id) {
                 await updateCategory(data).unwrap()
             } else {
                 await addCategory(data).unwrap()
             }
 
             props?.onCloseDialog?.()
-            reset()
+            reset(DEFAULT_VALUES)
         } catch (err) {
             console.error('Failed to add category:', err)
         }
     }
 
     useEffect(() => {
-        if (props?.editCategoryData) {
-            reset(props.editCategoryData)
+        if (props?.categoryData) {
+            reset(props.categoryData)
         }
-    }, [props?.editCategoryData, reset])
+    }, [props?.categoryData])
 
     return (
         <Dialog
@@ -64,7 +66,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
             open={props?.open}
             onCloseDialog={() => {
                 props?.onCloseDialog?.()
-                reset()
+                reset(DEFAULT_VALUES)
             }}
         >
             <form

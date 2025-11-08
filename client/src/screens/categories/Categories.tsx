@@ -14,7 +14,7 @@ export const Categories: React.FC = () => {
     const { t } = useTranslation()
 
     const [openForm, setOpenForm] = useState(false)
-    const [editCategoryId, setEditCategoryId] = useState<string | undefined>(undefined)
+    const [categoryData, setCategoryData] = useState<ApiModel.Category | undefined>(undefined)
 
     const { data: categories } = useListCategoriesQuery()
 
@@ -25,7 +25,7 @@ export const Categories: React.FC = () => {
                     mode='secondary'
                     icon='PlusCircle'
                     onClick={() => {
-                        setEditCategoryId(undefined)
+                        setCategoryData(undefined)
                         setOpenForm(true)
                     }}
                     label={t('categories.add', 'Add Category')}
@@ -46,7 +46,7 @@ export const Categories: React.FC = () => {
                                 style={{ backgroundColor: getColorHex(row[index]?.color as ColorName) }}
                                 className={styles.categoryBadge}
                                 onClick={() => {
-                                    setEditCategoryId(row[index].id)
+                                    setCategoryData(row[index])
                                     setOpenForm(true)
                                 }}
                             />
@@ -79,9 +79,9 @@ export const Categories: React.FC = () => {
 
             <CategoryForm
                 open={openForm}
-                editCategoryData={categories?.find(({ id }) => id === editCategoryId)}
+                categoryData={categoryData}
                 onCloseDialog={() => {
-                    setEditCategoryId(undefined)
+                    setCategoryData(undefined)
                     setOpenForm(false)
                 }}
             />
