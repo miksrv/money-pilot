@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-kit'
+import { Button, Dialog, DialogProps, Dropdown, Input, Message } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddCategoryMutation, useUpdateCategoryMutation } from '@/api'
 import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
@@ -11,6 +11,8 @@ import styles from './styles.module.sass'
 interface CategoryFormProps extends Partial<DialogProps> {
     categoryData?: ApiModel.Category
 }
+
+const NAME_MAX_LENGTH = 100
 
 const DEFAULT_VALUES: ApiModel.Category = {
     name: '',
@@ -82,6 +84,17 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                 className={styles.form}
                 onSubmit={handleSubmit(onSubmit)}
             >
+                {(createApiError || updateApiError) && (
+                    <Message
+                        type='error'
+                        className={styles.errorMessage}
+                    >
+                        {createApiError?.error ||
+                            updateApiError?.error ||
+                            t('common.errors.unknown', 'An unknown error occurred')}
+                    </Message>
+                )}
+
                 <div className={styles.pickers}>
                     <EmojiPicker
                         value={getValues('icon')}
@@ -101,13 +114,19 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                         id={'name'}
                         type={'text'}
                         size={'medium'}
+                        error={errors?.name?.message}
                         className={styles.nameInput}
                         placeholder={t('screens.categories.form.name_placeholder', 'Category Name')}
                         {...register('name', {
-                            required: t('categories.name') + ' ' + t('common.required'),
+                            required:
+                                t('screens.categories.form.name_placeholder', 'Category Name') +
+                                ' ' +
+                                t('common.errors.is-required', 'is required'),
                             maxLength: {
-                                value: 100,
-                                message: t('categories.name.maxLength')
+                                value: NAME_MAX_LENGTH,
+                                message: t('common.errors.max-length', 'Max length is {{length}} characters', {
+                                    length: NAME_MAX_LENGTH
+                                })
                             }
                         })}
                     />
@@ -136,13 +155,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                         reset({ ...getValues(), budget: value || undefined })
                     }}
                 />
-
-                {createApiError && (
-                    <p className='error'>{createApiError?.data?.messages?.error || t('categories.error')}</p>
-                )}
-                {updateApiError && (
-                    <p className='error'>{updateApiError?.data?.messages?.error || t('categories.error')}</p>
-                )}
 
                 <Button
                     type='submit'
