@@ -34,8 +34,10 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
         defaultValues: DEFAULT_VALUES
     })
 
-    const [addCategory, { isLoading, error: apiError }] = useAddCategoryMutation()
-    const [updateCategory, { isLoading: isUpdateLoading, error: updateApiError }] = useUpdateCategoryMutation()
+    const [addCategory, { isLoading: isCreateLoading, error: createApiError, reset: createReset }] =
+        useAddCategoryMutation()
+    const [updateCategory, { isLoading: isUpdateLoading, error: updateApiError, reset: updateReset }] =
+        useUpdateCategoryMutation()
 
     const onSubmit = async (data: ApiModel.Category) => {
         try {
@@ -57,6 +59,11 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
             reset(props.categoryData)
         }
     }, [props?.categoryData])
+
+    useEffect(() => {
+        updateReset()
+        createReset()
+    }, [props.open])
 
     return (
         <Dialog
@@ -130,19 +137,9 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                     }}
                 />
 
-                {/*<div>*/}
-                {/*    <label htmlFor='parent_id'>{t('categories.parent')}</label>*/}
-                {/*    <Input*/}
-                {/*        id='parent_id'*/}
-                {/*        type='text'*/}
-                {/*        size='medium'*/}
-                {/*        placeholder={t('categories.parent')}*/}
-                {/*        {...register('parent_id')}*/}
-                {/*    />*/}
-                {/*    {errors.parent_id && <p className='error'>{errors.parent_id.message}</p>}*/}
-                {/*</div>*/}
-
-                {apiError && <p className='error'>{apiError?.data?.messages?.error || t('categories.error')}</p>}
+                {createApiError && (
+                    <p className='error'>{createApiError?.data?.messages?.error || t('categories.error')}</p>
+                )}
                 {updateApiError && (
                     <p className='error'>{updateApiError?.data?.messages?.error || t('categories.error')}</p>
                 )}
@@ -151,8 +148,12 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                     type='submit'
                     mode='primary'
                     stretched={true}
-                    label={isLoading || isUpdateLoading ? '...' : t('categories.save_button', 'Save Category')}
-                    disabled={isLoading || isUpdateLoading}
+                    label={
+                        isCreateLoading || isUpdateLoading
+                            ? t('categories.save_button_loading', 'Loading...')
+                            : t('categories.save_button', 'Save Category')
+                    }
+                    disabled={isCreateLoading || isUpdateLoading}
                 />
             </form>
         </Dialog>

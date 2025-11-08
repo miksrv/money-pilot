@@ -90,7 +90,7 @@ export const api = createApi({
         }),
         /* Add Category */
         addCategory: builder.mutation<void, ApiType.Category.Request>({
-            invalidatesTags: [{ id: 'LIST', type: 'Category' }],
+            invalidatesTags: (result) => (result ? [{ id: 'LIST', type: 'Category' }] : []),
             query: (body) => ({
                 url: 'categories',
                 method: 'POST',
@@ -99,7 +99,7 @@ export const api = createApi({
         }),
         /* Update Category */
         updateCategory: builder.mutation<void, Partial<ApiModel.Category>>({
-            invalidatesTags: [{ id: 'LIST', type: 'Category' }],
+            invalidatesTags: (result) => (result ? [{ id: 'LIST', type: 'Category' }] : []),
             query: ({ id, ...formData }) => ({
                 url: `categories/${id}`,
                 method: 'PUT',
