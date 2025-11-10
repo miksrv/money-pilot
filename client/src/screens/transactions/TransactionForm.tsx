@@ -111,25 +111,7 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
                     />
                     {errors.date && <p className='error'>{errors.date.message}</p>}
                 </div>
-                <div>
-                    <label htmlFor='description'>{t('transactions.description', 'Описание')}</label>
-                    <Input
-                        id='description'
-                        type='text'
-                        size='medium'
-                        placeholder={t('transactions.description', 'Описание')}
-                        {...register('description', {
-                            maxLength: {
-                                value: 255,
-                                message: t(
-                                    'transactions.description.maxLength',
-                                    'Описание не может превышать 255 символов'
-                                )
-                            }
-                        })}
-                    />
-                    {errors.description && <p className='error'>{errors.description.message}</p>}
-                </div>
+
                 <div>
                     <label htmlFor='payee_id'>{t('transactions.payee', 'Получатель')}</label>
                     <Input

@@ -16,8 +16,8 @@ export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAu
     const options: Array<DropdownOption<string>> = useMemo(
         () =>
             data?.map((account) => ({
-                key: account?.id,
-                value: account?.name
+                key: account?.id || '',
+                value: account?.name || ''
             })) || [],
         [data]
     )
