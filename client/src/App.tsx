@@ -7,7 +7,7 @@ import { useAppSelector } from '@/store/hooks'
 
 import { login, logout } from './store/authSlice'
 import { useAppDispatch } from './store/hooks'
-import { useMeQuery } from './api'
+import { ApiError, useMeQuery } from './api'
 import { Accounts, Categories, Dashboard, Login, Recurring, Register, Settings, Transactions } from './screens'
 
 const App: React.FC = () => (
@@ -100,7 +100,7 @@ const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
     const authMeQuery = useMeQuery({}, { skip: !authSlice.token || authSlice.isAuth })
 
     useEffect(() => {
-        if (authMeQuery?.error && authMeQuery?.error?.status === 401 && authSlice.token) {
+        if (authMeQuery?.error && (authMeQuery?.error as ApiError)?.status === 401 && authSlice.token) {
             dispatch(logout())
 
             return

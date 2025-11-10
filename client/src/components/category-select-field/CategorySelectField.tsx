@@ -4,6 +4,7 @@ import type { DropdownOption, DropdownProps } from 'simple-react-ui-kit'
 import { Dropdown } from 'simple-react-ui-kit'
 
 import { useListCategoriesQuery } from '@/api'
+import { useAppSelector } from '@/store/hooks'
 
 interface CategorySelectFieldProps extends DropdownProps<string> {
     enableAutoSelect?: boolean
@@ -11,7 +12,10 @@ interface CategorySelectFieldProps extends DropdownProps<string> {
 
 export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enableAutoSelect, ...props }) => {
     const { t } = useTranslation()
-    const { data, isLoading } = useListCategoriesQuery()
+
+    const isAuth = useAppSelector((state) => state.auth)
+
+    const { data, isLoading } = useListCategoriesQuery({}, { refetchOnReconnect: true, skip: !isAuth })
 
     const options: Array<DropdownOption<string>> = useMemo(
         () =>

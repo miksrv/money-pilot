@@ -4,9 +4,22 @@ import type { RootState } from '@/store'
 
 import { ApiModel, ApiType } from './index'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const encodeQueryData = (data: any): string => {
+    const ret = []
+    for (const d in data) {
+        if (d && data[d]) {
+            ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]))
+        }
+    }
+
+    return ret.length ? '?' + ret.join('&') : ''
+}
+
 export const HOST_API = 'http://localhost:8080/'
 
 export interface ApiError {
+    status: number
     messages: {
         error?: string
     }
@@ -56,7 +69,7 @@ export const api = createApi({
         }),
         /* Get me */
         me: builder.query<ApiType.Registration.Response, void>({
-            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
+            transformErrorResponse: (response) => response.data,
             query: () => 'auth/me'
         }),
         /* Add account */
@@ -96,9 +109,9 @@ export const api = createApi({
             })
         }),
         /* List Categories */
-        listCategories: builder.query<ApiType.Category.Response[], void>({
+        listCategories: builder.query<ApiType.Category.Response[], { withSums?: boolean } | void>({
             providesTags: () => [{ id: 'LIST', type: 'Category' }],
-            query: () => '/categories'
+            query: (param) => `/categories${encodeQueryData(param)}`
         }),
         /* Add Category */
         addCategory: builder.mutation<void, ApiType.Category.Request>({

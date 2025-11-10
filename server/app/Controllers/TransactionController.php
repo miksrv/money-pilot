@@ -18,20 +18,6 @@ class TransactionController extends ApplicationBaseController
     {
         $this->model = new TransactionModel();
         $this->authLibrary = new Auth();
-        $this->ensureAuthenticated();
-    }
-
-    /**
-     * Ensure the user is authenticated
-     * @return ResponseInterface|null
-     */
-    protected function ensureAuthenticated(): ?ResponseInterface
-    {
-        if (!$this->authLibrary->isAuth) {
-            return $this->failUnauthorized();
-        }
-
-        return null;
     }
 
     /**
@@ -40,6 +26,10 @@ class TransactionController extends ApplicationBaseController
      */
     public function index(): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $transactions = $this->model->findByUserId($this->authLibrary->user->id);
         $response     = array_map(function ($transactions) {
             return [
@@ -62,6 +52,10 @@ class TransactionController extends ApplicationBaseController
      */
     public function create(): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $input = $this->request->getJSON(true);
 
         if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
@@ -115,6 +109,10 @@ class TransactionController extends ApplicationBaseController
      */
     public function show($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $transaction = $this->model->getById($id, $this->authLibrary->user->id);
 
         if (!$transaction) {
@@ -131,6 +129,10 @@ class TransactionController extends ApplicationBaseController
      */
     public function update($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $input = $this->request->getJSON(true);
 
         if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
@@ -158,6 +160,10 @@ class TransactionController extends ApplicationBaseController
      */
     public function delete($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $transaction = $this->model->getById($id, $this->authLibrary->user->id);
 
         if (!$transaction) {

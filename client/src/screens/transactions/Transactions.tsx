@@ -4,6 +4,7 @@ import { Badge, Button, Table } from 'simple-react-ui-kit'
 
 import { ApiModel, useListCategoriesQuery, useListTransactionsQuery } from '@/api'
 import { AppLayout } from '@/components'
+import { useAppSelector } from '@/store/hooks'
 
 import { ColorName, getColorHex } from '../../components'
 import { formatUTCDate } from '../../utils/dates'
@@ -14,10 +15,12 @@ import { TransactionForm } from './TransactionForm'
 export const Transactions: React.FC = () => {
     const { t } = useTranslation()
 
+    const isAuth = useAppSelector((state) => state.auth)
+
     const [openForm, setOpenForm] = useState(false)
 
-    const { data: transactions } = useListTransactionsQuery(undefined, { refetchOnReconnect: true })
-    const { data: categories } = useListCategoriesQuery(undefined, { refetchOnReconnect: true })
+    const { data: transactions } = useListTransactionsQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
+    const { data: categories } = useListCategoriesQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
 
     return (
         <AppLayout

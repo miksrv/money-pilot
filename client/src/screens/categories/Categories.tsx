@@ -4,6 +4,7 @@ import { Badge, Button, Progress, Table } from 'simple-react-ui-kit'
 
 import { ApiModel, useListCategoriesQuery } from '@/api'
 import { AppLayout, ColorName, getColorHex } from '@/components'
+import { useAppSelector } from '@/store/hooks'
 import { Currency, formatMoney } from '@/utils/money'
 
 import { CategoryForm } from './CategoryForm'
@@ -13,10 +14,12 @@ import styles from './styles.module.sass'
 export const Categories: React.FC = () => {
     const { t } = useTranslation()
 
+    const isAuth = useAppSelector((state) => state.auth)
+
     const [openForm, setOpenForm] = useState(false)
     const [categoryData, setCategoryData] = useState<ApiModel.Category | undefined>(undefined)
 
-    const { data: categories } = useListCategoriesQuery()
+    const { data: categories } = useListCategoriesQuery({ withSums: true }, { refetchOnReconnect: true, skip: !isAuth })
 
     return (
         <AppLayout

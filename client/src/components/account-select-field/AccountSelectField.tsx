@@ -4,6 +4,7 @@ import type { DropdownOption, DropdownProps } from 'simple-react-ui-kit'
 import { Dropdown } from 'simple-react-ui-kit'
 
 import { useListAccountQuery } from '@/api'
+import { useAppSelector } from '@/store/hooks'
 
 interface AccountSelectFieldProps extends DropdownProps<string> {
     enableAutoSelect?: boolean
@@ -11,7 +12,10 @@ interface AccountSelectFieldProps extends DropdownProps<string> {
 
 export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAutoSelect, ...props }) => {
     const { t } = useTranslation()
-    const { data, isLoading } = useListAccountQuery()
+
+    const isAuth = useAppSelector((state) => state.auth)
+
+    const { data, isLoading } = useListAccountQuery({}, { refetchOnReconnect: true, skip: !isAuth })
 
     const options: Array<DropdownOption<string>> = useMemo(
         () =>

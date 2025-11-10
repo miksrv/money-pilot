@@ -18,20 +18,6 @@ class CategoryController extends ApplicationBaseController
     {
         $this->model = new CategoryModel();
         $this->authLibrary = new Auth();
-        $this->ensureAuthenticated();
-    }
-
-    /**
-     * Ensure the user is authenticated
-     * @return ResponseInterface|null
-     */
-    protected function ensureAuthenticated(): ?ResponseInterface
-    {
-        if (!$this->authLibrary->isAuth) {
-            return $this->failUnauthorized();
-        }
-
-        return null;
     }
 
     /**
@@ -40,19 +26,36 @@ class CategoryController extends ApplicationBaseController
      */
     public function index(): ResponseInterface
     {
-        $categories = $this->model->findByUserIdWithSums($this->authLibrary->user->id);
-        $response   = array_map(function ($category) {
-            return [
-                'id'        => $category->id,
-                'name'      => $category->name,
-                'type'      => $category->type,
-                'parent_id' => $category->parent_id,
-                'icon'      => $category->icon,
-                'color'     => $category->color,
-                'budget'    => $category->budget,
-                'expenses'  => $category->expenses,
-            ];
-        }, $categories);
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
+        if ($this->request->getGet('withSums')) {
+            $categories = $this->model->findByUserIdWithSums($this->authLibrary->user->id);
+            $response   = array_map(function ($category) {
+                return [
+                    'id'        => $category->id,
+                    'name'      => $category->name,
+                    'type'      => $category->type,
+                    'parent_id' => $category->parent_id,
+                    'icon'      => $category->icon,
+                    'color'     => $category->color,
+                    'budget'    => $category->budget,
+                    'expenses'  => $category->expenses,
+                ];
+            }, $categories);
+        } else {
+            $categories = $this->model->findByUserId($this->authLibrary->user->id);
+            $response   = array_map(function ($category) {
+                return [
+                    'id'    => $category->id,
+                    'name'  => $category->name,
+                    'type'  => $category->type,
+                    'icon'  => $category->icon,
+                    'color' => $category->color,
+                ];
+            }, $categories);
+        }
 
         return $this->respond($response);
     }
@@ -63,6 +66,10 @@ class CategoryController extends ApplicationBaseController
      */
     public function create(): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $input = $this->request->getJSON(true);
 
         if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
@@ -98,6 +105,10 @@ class CategoryController extends ApplicationBaseController
      */
     public function show($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $category = $this->model->getById($id);
 
         if (!$category) {
@@ -114,6 +125,10 @@ class CategoryController extends ApplicationBaseController
      */
     public function update($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $input = $this->request->getJSON(true);
 
         if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
@@ -143,6 +158,10 @@ class CategoryController extends ApplicationBaseController
      */
     public function delete($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $category = $this->model->getById($id);
 
         if (!$category) {

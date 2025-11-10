@@ -10,26 +10,18 @@ class CreatePayeesTable extends Migration
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'VARCHAR',
-                'constraint'     => 15
+                'type'       => 'VARCHAR',
+                'constraint' => 15
             ],
             'name' => [
                 'type'       => 'VARCHAR',
                 'constraint' => '100',
                 'unique'     => true,
             ],
-            'description' => [
-                'type' => 'TEXT',
-                'null' => true,
-            ],
             'created_by_user_id' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 15,
                 'null'       => true,
-            ],
-            'is_approved' => [
-                'type'    => 'BOOLEAN',
-                'default' => true,
             ],
             'usage_count' => [
                 'type'    => 'INT',
