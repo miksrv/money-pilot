@@ -16,8 +16,8 @@ export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enable
     const options: Array<DropdownOption<string>> = useMemo(
         () =>
             data?.map((category) => ({
-                key: category?.id,
-                value: category?.name
+                key: category?.id || '',
+                value: category?.name || ''
                 // icon: category?.icon
             })) || [],
         [data]
