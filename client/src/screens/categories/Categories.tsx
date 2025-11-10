@@ -55,7 +55,8 @@ export const Categories: React.FC = () => {
                     {
                         header: t('categories.type', 'Type'),
                         accessor: 'type',
-                        formatter: (value) => value
+                        formatter: (value) =>
+                            value === 'income' ? t('categories.income', 'Income') : t('categories.expense', 'Expense')
                     },
                     {
                         header: t('categories.expenses', 'Expenses'),
@@ -66,7 +67,9 @@ export const Categories: React.FC = () => {
                         header: '',
                         accessor: 'expenses',
                         formatter: (_value, row, index) => (
-                            <Progress value={Math.min(100, (row[index].expenses / row[index].budget) * 100)} />
+                            <Progress
+                                value={Math.min(100, ((row[index]?.expenses ?? 0) / (row[index]?.budget || 1)) * 100)}
+                            />
                         )
                     },
                     {
