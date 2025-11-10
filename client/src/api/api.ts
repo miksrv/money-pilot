@@ -14,7 +14,7 @@ export interface ApiError {
 
 export const api = createApi({
     reducerPath: 'api',
-    tagTypes: ['Category'],
+    tagTypes: ['Category', 'Transaction'],
     baseQuery: fetchBaseQuery({
         baseUrl: HOST_API,
         prepareHeaders: (headers, { getState }) => {
@@ -75,12 +75,24 @@ export const api = createApi({
         listTransactions: builder.query<ApiType.Transaction.Response[], void>({
             query: () => '/transactions'
         }),
-        /* Add transaction */
+        /* Add Transaction */
         addTransaction: builder.mutation<void, ApiType.Transaction.Request>({
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
+            invalidatesTags: (_result, error) => (!error ? [{ id: 'LIST', type: 'Transaction' }] : []),
             query: (body) => ({
                 url: 'transactions',
                 method: 'POST',
                 body
+            })
+        }),
+        /* Update Transaction */
+        updateTransaction: builder.mutation<void, Partial<ApiModel.Transaction>>({
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
+            invalidatesTags: (_result, error) => (!error ? [{ id: 'LIST', type: 'Transaction' }] : []),
+            query: ({ id, ...formData }) => ({
+                url: `transactions/${id}`,
+                method: 'PUT',
+                body: formData
             })
         }),
         /* List Categories */
@@ -90,7 +102,8 @@ export const api = createApi({
         }),
         /* Add Category */
         addCategory: builder.mutation<void, ApiType.Category.Request>({
-            invalidatesTags: (result) => (result ? [{ id: 'LIST', type: 'Category' }] : []),
+            transformErrorResponse: (response) => (response.data as ApiError)?.messages?.error,
+            invalidatesTags: (_result, error) => (!error ? [{ id: 'LIST', type: 'Category' }] : []),
             query: (body) => ({
                 url: 'categories',
                 method: 'POST',
@@ -121,5 +134,6 @@ export const {
     useListAccountQuery,
     useAddCategoryMutation,
     useListCategoriesQuery,
-    useUpdateCategoryMutation
+    useUpdateCategoryMutation,
+    useUpdateTransactionMutation
 } = api

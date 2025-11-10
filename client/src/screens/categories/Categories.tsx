@@ -53,19 +53,13 @@ export const Categories: React.FC = () => {
                         )
                     },
                     {
-                        header: t('categories.type', 'Type'),
-                        accessor: 'type',
-                        formatter: (value) =>
-                            value === 'income' ? t('categories.income', 'Income') : t('categories.expense', 'Expense')
-                    },
-                    {
                         header: t('categories.expenses', 'Expenses'),
                         accessor: 'expenses',
                         formatter: (value) => formatMoney(value, Currency.USD)
                     },
                     {
                         header: '',
-                        accessor: 'expenses',
+                        accessor: 'id',
                         formatter: (_value, row, index) => {
                             const percentage = ((row[index]?.expenses ?? 0) / (row[index]?.budget || 1)) * 100
 

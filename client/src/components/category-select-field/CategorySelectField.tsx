@@ -17,8 +17,8 @@ export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enable
         () =>
             data?.map((category) => ({
                 key: category?.id || '',
-                value: category?.name || ''
-                // icon: category?.icon
+                value: category?.name || '',
+                emoji: category?.icon
             })) || [],
         [data]
     )

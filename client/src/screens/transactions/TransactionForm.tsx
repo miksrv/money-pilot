@@ -1,12 +1,16 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-kit'
+import { Button, Dialog, DialogProps, Dropdown, Input, Message } from 'simple-react-ui-kit'
 
-import { ApiModel, useAddTransactionMutation } from '@/api'
+import { ApiModel, useAddTransactionMutation, useUpdateTransactionMutation } from '@/api'
 import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
 
 import styles from './styles.module.sass'
+
+interface TransactionFormProps extends Partial<DialogProps> {
+    transactionData?: ApiModel.Category
+}
 
 type TransactionFormData = Pick<
     ApiModel.Transaction,
@@ -23,7 +27,7 @@ const DEFAULT_VALUES: TransactionFormData = {
     payee_id: ''
 }
 
-export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
+export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
     const { t, i18n } = useTranslation()
 
     const {
@@ -36,11 +40,19 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
         defaultValues: DEFAULT_VALUES
     })
 
-    const [addTransaction, { isLoading, error: apiError }] = useAddTransactionMutation()
+    const [createTransaction, { isLoading: isCreateLoading, error: createApiError, reset: createReset }] =
+        useAddTransactionMutation()
+    const [updateCategory, { isLoading: isUpdateLoading, error: updateApiError, reset: updateReset }] =
+        useUpdateTransactionMutation()
 
     const onSubmit = async (data: TransactionFormData) => {
         try {
-            await addTransaction(data).unwrap()
+            if (props?.transactionData?.id) {
+                await updateCategory(data).unwrap()
+            } else {
+                await createTransaction(data).unwrap()
+            }
+
             props?.onCloseDialog?.()
             reset(DEFAULT_VALUES)
         } catch (err) {
@@ -48,8 +60,24 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
         }
     }
 
+    useEffect(() => {
+        if (props?.transactionData) {
+            reset(props.transactionData)
+        }
+    }, [props?.transactionData])
+
+    useEffect(() => {
+        updateReset()
+        createReset()
+    }, [props.open])
+
     return (
         <Dialog
+            title={
+                props?.transactionData?.id
+                    ? t('screens.transactions.form.edit_title', 'Edit Transaction')
+                    : t('screens.transactions.form.create_title', 'Add Transaction')
+            }
             open={props?.open}
             onCloseDialog={() => {
                 props?.onCloseDialog?.()
@@ -60,6 +88,24 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
                 className={styles.form}
                 onSubmit={handleSubmit(onSubmit)}
             >
+                {(createApiError || updateApiError) && (
+                    <Message
+                        type='error'
+                        className={styles.errorMessage}
+                    >
+                        {createApiError || updateApiError || t('common.errors.unknown', 'An unknown error occurred')}
+                    </Message>
+                )}
+
+                <Input
+                    id='payee_id'
+                    type='text'
+                    size='medium'
+                    error={errors?.payee_id?.message}
+                    placeholder={t('screens.transactions.payee', 'Получатель')}
+                    {...register('payee_id')}
+                />
+
                 <div className={styles.transactionFormRow}>
                     <CategorySelectField
                         enableAutoSelect={true}
@@ -85,8 +131,8 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
                     />
 
                     <Dropdown<string>
+                        mode={'outline'}
                         value={getValues('type')}
-                        mode={'secondary'}
                         placeholder={t('screens.transactions.form.type', 'Select type')}
                         options={[
                             { key: 'expense', value: t('transactions.types.expense', 'Expense') },
@@ -112,26 +158,16 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
                     {errors.date && <p className='error'>{errors.date.message}</p>}
                 </div>
 
-                <div>
-                    <label htmlFor='payee_id'>{t('transactions.payee', 'Получатель')}</label>
-                    <Input
-                        id='payee_id'
-                        type='text'
-                        size='medium'
-                        placeholder={t('transactions.payee', 'Получатель')}
-                        {...register('payee_id')}
-                    />
-                    {errors.payee_id && <p className='error'>{errors.payee_id.message}</p>}
-                </div>
-                {apiError && (
-                    <p className='error'>{apiError?.data?.messages?.error || t('transactions.error', 'Ошибка')}</p>
-                )}
                 <Button
                     style={{ width: '100%' }}
                     type='submit'
                     mode='primary'
-                    label={isLoading ? '...' : t('transactions.create', 'Создать')}
-                    disabled={isLoading}
+                    label={
+                        isCreateLoading || isUpdateLoading
+                            ? t('transactions.save_button_loading', 'Loading...')
+                            : t('transactions.save_button', 'Save Transaction')
+                    }
+                    disabled={isCreateLoading || isUpdateLoading}
                 />
             </form>
         </Dialog>
