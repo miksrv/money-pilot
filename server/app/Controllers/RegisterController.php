@@ -43,7 +43,7 @@ class RegisterController extends ApplicationBaseController
 
             return $this->respondCreated(['token' => $token]);
         } catch (\Exception $e) {
-            log_message('error', $e->getMessage());
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }

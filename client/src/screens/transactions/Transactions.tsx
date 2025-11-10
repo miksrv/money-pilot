@@ -2,13 +2,11 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge, Button, Table } from 'simple-react-ui-kit'
 
-import { ApiModel, useListCategoriesQuery, useListTransactionsQuery } from '@/api'
-import { AppLayout } from '@/components'
+import { ApiModel, useListAccountQuery, useListCategoriesQuery, useListTransactionsQuery } from '@/api'
+import { AppLayout, ColorName, getColorHex } from '@/components'
 import { useAppSelector } from '@/store/hooks'
-
-import { ColorName, getColorHex } from '../../components'
-import { formatUTCDate } from '../../utils/dates'
-import { Currency, formatMoney } from '../../utils/money'
+import { formatUTCDate } from '@/utils/dates'
+import { Currency, formatMoney } from '@/utils/money'
 
 import { TransactionForm } from './TransactionForm'
 
@@ -19,6 +17,7 @@ export const Transactions: React.FC = () => {
 
     const [openForm, setOpenForm] = useState(false)
 
+    const { data: accounts } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
     const { data: transactions } = useListTransactionsQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
     const { data: categories } = useListCategoriesQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
 
@@ -39,6 +38,11 @@ export const Transactions: React.FC = () => {
                     {
                         header: t('transactions.payee', 'Payee'),
                         accessor: 'payee'
+                    },
+                    {
+                        header: t('transactions.account', 'Account'),
+                        accessor: 'account_id',
+                        formatter: (value) => accounts?.find((acc) => acc.id === value)?.name || ''
                     },
                     {
                         header: t('transactions.category', 'Category'),

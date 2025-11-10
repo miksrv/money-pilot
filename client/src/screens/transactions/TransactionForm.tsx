@@ -106,22 +106,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                 />
 
                 <div className={styles.transactionFormRow}>
-                    <CategorySelectField
-                        enableAutoSelect={true}
-                        value={getValues('category_id')}
-                        error={errors?.category_id?.message}
-                        onSelect={(option) => reset({ ...getValues(), category_id: option?.key })}
-                    />
-
-                    <AccountSelectField
-                        enableAutoSelect={true}
-                        value={getValues('account_id')}
-                        error={errors?.account_id?.message}
-                        onSelect={(option) => reset({ ...getValues(), account_id: option?.key })}
-                    />
-                </div>
-
-                <div className={styles.transactionFormRow}>
                     <CurrencyInput
                         value={getValues('amount')}
                         currency={Currency.USD}
@@ -148,6 +132,22 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                         onSelect={(value) => {
                             reset({ ...getValues(), type: value?.value as 'income' | 'expense' })
                         }}
+                    />
+                </div>
+
+                <div className={styles.transactionFormRow}>
+                    <CategorySelectField
+                        enableAutoSelect={true}
+                        value={getValues('category_id')}
+                        error={errors?.category_id?.message}
+                        onSelect={(option) => reset({ ...getValues(), category_id: option?.key })}
+                    />
+
+                    <AccountSelectField
+                        enableAutoSelect={true}
+                        value={getValues('account_id')}
+                        error={errors?.account_id?.message}
+                        onSelect={(option) => reset({ ...getValues(), account_id: option?.key })}
                     />
                 </div>
 

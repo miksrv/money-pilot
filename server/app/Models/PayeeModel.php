@@ -67,9 +67,13 @@ class PayeeModel extends ApplicationBaseModel
      */
     public function getOrCreateByName(string $name, string $createdByUserId = null): string
     {
-        $payee = $this->where('name', $name)->first();
+        $payee = $this->select('id')->where('name', $name)->first();
 
         if ($payee) {
+            $this->set('usage_count', 'usage_count + 1', false)
+                ->where('id', $payee->id)
+                ->update();
+
             return $payee->id;
         }
 

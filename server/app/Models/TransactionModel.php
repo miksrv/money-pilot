@@ -76,7 +76,11 @@ class TransactionModel extends ApplicationBaseModel
      */
     public function findByUserId(string $userId): array
     {
-        return $this->where('user_id', $userId)->orderBy('date', 'DESC')->findAll();
+        return $this->select('transactions.*, payees.name as payee')
+            ->join('payees', 'payees.id = transactions.payee_id', 'left')
+            ->where('user_id', $userId)
+            ->orderBy('date', 'DESC')
+            ->findAll();
     }
 
     /**

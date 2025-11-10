@@ -37,8 +37,7 @@ class CategoryModel extends ApplicationBaseModel
         'parent_id'   => 'permit_empty|valid_id[categories,id]',
         'icon'        => 'permit_empty|string|max_length[50]',
         'color'       => 'permit_empty|string|max_length[50]',
-        'budget'      => 'permit_empty|decimal',
-        'usage_count' => 'permit_empty|integer',
+        'budget'      => 'permit_empty|decimal'
     ];
 
     protected $validationMessages = [
@@ -64,10 +63,7 @@ class CategoryModel extends ApplicationBaseModel
         ],
         'budget' => [
             'decimal' => 'Balance must be a valid decimal number.',
-        ],
-        'usage_count' => [
-            'integer' => 'Usage count must be an integer.',
-        ],
+        ]
     ];
 
     /**
@@ -75,7 +71,7 @@ class CategoryModel extends ApplicationBaseModel
      */
     public function findByUserId(string $userId): array
     {
-        return $this->where('user_id', $userId)->findAll();
+        return $this->where('user_id', $userId)->orderBy('usage_count', 'DESC')->findAll();
     }
 
     /**

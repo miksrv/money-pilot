@@ -38,10 +38,8 @@ class TransactionController extends ApplicationBaseController
                 'id'          => $transactions->id,
                 'account_id'  => $transactions->account_id,
                 'category_id' => $transactions->category_id,
-                'payee_id'    => $transactions->payee_id,
-                'parent_id'   => $transactions->parent_id,
+                'payee'       => $transactions->payee,
                 'amount'      => $transactions->amount,
-                'type'        => $transactions->color,
                 'date'        => $transactions->date->format('Y-m-d, H:i:s'),
             ];
         }, $transactions);
@@ -113,7 +111,7 @@ class TransactionController extends ApplicationBaseController
 
             return $this->respondCreated();
         } catch (\Exception $e) {
-            log_message('error', $e->getMessage());
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
@@ -164,7 +162,7 @@ class TransactionController extends ApplicationBaseController
 
             return $this->respondUpdated();
         } catch (\Exception $e) {
-            log_message('error', $e->getMessage());
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
@@ -193,7 +191,7 @@ class TransactionController extends ApplicationBaseController
 
             return $this->respondDeleted();
         } catch (\Exception $e) {
-            log_message('error', $e->getMessage());
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }

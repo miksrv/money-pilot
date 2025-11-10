@@ -93,7 +93,7 @@ class CategoryController extends ApplicationBaseController
 
             return $this->respondCreated();
         } catch (\Exception $e) {
-            log_message('error', $e->getMessage());
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
@@ -146,7 +146,7 @@ class CategoryController extends ApplicationBaseController
 
             return $this->respondUpdated();
         } catch (\Exception $e) {
-            log_message('error', $e->getMessage());
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
@@ -175,7 +175,7 @@ class CategoryController extends ApplicationBaseController
 
             return $this->respondDeleted();
         } catch (\Exception $e) {
-            log_message('error', $e->getMessage());
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
