@@ -52,6 +52,11 @@ class CreateCategoriesTable extends Migration
                 'constraint' => '15,2',
                 'null'       => true,
             ],
+            'usage_count' => [
+                'type'    => 'INT',
+                'unsigned' => true,
+                'default' => 0,
+            ],
             'created_at' => [
                 'type' => 'TIMESTAMP',
                 'null' => true,
@@ -67,6 +72,7 @@ class CreateCategoriesTable extends Migration
         $this->forge->addForeignKey('group_id', 'groups', 'id', 'SET NULL', 'SET NULL');
         $this->forge->addForeignKey('parent_id', 'categories', 'id', 'CASCADE', 'SET NULL');
         $this->forge->addUniqueKey(['user_id', 'name']); // Уникальность имени в рамках user_id или глобально
+        $this->forge->addKey('usage_count'); // Индекс для сортировки по популярности
         $this->forge->createTable('categories', true);
     }
 

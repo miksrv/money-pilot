@@ -86,6 +86,7 @@ export const api = createApi({
         }),
         /* List transactions */
         listTransactions: builder.query<ApiType.Transaction.Response[], void>({
+            providesTags: () => [{ id: 'LIST', type: 'Transaction' }],
             query: () => '/transactions'
         }),
         /* Add Transaction */

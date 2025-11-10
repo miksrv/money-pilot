@@ -3,11 +3,10 @@ export interface Transaction {
     user_id: string
     account_id: string
     category_id?: string
-    payee_id: string | null
+    payee: string | null
     amount: number
     type: 'income' | 'expense'
     date: string
-    description: string | null
     created_at: string
     updated_at: string
 }

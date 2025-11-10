@@ -14,7 +14,7 @@ interface TransactionFormProps extends Partial<DialogProps> {
 
 type TransactionFormData = Pick<
     ApiModel.Transaction,
-    'account_id' | 'amount' | 'type' | 'date' | 'description' | 'category_id' | 'payee_id'
+    'account_id' | 'amount' | 'type' | 'date' | 'category_id' | 'payee'
 >
 
 const DEFAULT_VALUES: TransactionFormData = {
@@ -22,9 +22,8 @@ const DEFAULT_VALUES: TransactionFormData = {
     amount: 0,
     type: 'expense',
     date: new Date().toISOString().split('T')[0], // Default to today
-    description: '',
     category_id: '',
-    payee_id: ''
+    payee: ''
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
@@ -98,12 +97,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                 )}
 
                 <Input
-                    id='payee_id'
+                    id='payee'
                     type='text'
                     size='medium'
-                    error={errors?.payee_id?.message}
+                    error={errors?.payee?.message}
                     placeholder={t('screens.transactions.payee', 'Получатель')}
-                    {...register('payee_id')}
+                    {...register('payee')}
                 />
 
                 <div className={styles.transactionFormRow}>
@@ -127,7 +126,15 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                         value={getValues('amount')}
                         currency={Currency.USD}
                         locale={i18n.language}
+                        error={errors?.amount?.message}
                         onValueChange={(amount) => reset({ ...getValues(), amount: amount || 0 })}
+                        {...register('amount', {
+                            required: t('screens.transactions.form.amount_required', 'Amount is required'),
+                            min: {
+                                value: 0.01,
+                                message: t('screens.transactions.form.amount_min', 'Amount must be at least 0.01')
+                            }
+                        })}
                     />
 
                     <Dropdown<string>

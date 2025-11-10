@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Entities\Category;
+use ReflectionException;
 
 class CategoryModel extends ApplicationBaseModel
 {
     protected $table          = 'categories';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'parent_id', 'icon', 'color', 'budget'];
+    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'parent_id', 'icon', 'color', 'budget', 'usage_count'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
@@ -29,14 +30,15 @@ class CategoryModel extends ApplicationBaseModel
     protected $afterDelete    = [];
 
     protected $validationRules = [
-        'user_id'   => 'permit_empty',
-        'group_id'  => 'permit_empty',
-        'name'      => 'required|string|max_length[100]',
-        'type'      => 'required|in_list[income,expense]',
-        'parent_id' => 'permit_empty|valid_id[categories,id]',
-        'icon'      => 'permit_empty|string|max_length[50]',
-        'color'     => 'permit_empty|string|max_length[50]',
-        'budget'    => 'permit_empty|decimal',
+        'user_id'     => 'permit_empty',
+        'group_id'    => 'permit_empty',
+        'name'        => 'required|string|max_length[100]',
+        'type'        => 'required|in_list[income,expense]',
+        'parent_id'   => 'permit_empty|valid_id[categories,id]',
+        'icon'        => 'permit_empty|string|max_length[50]',
+        'color'       => 'permit_empty|string|max_length[50]',
+        'budget'      => 'permit_empty|decimal',
+        'usage_count' => 'permit_empty|integer',
     ];
 
     protected $validationMessages = [
@@ -62,6 +64,9 @@ class CategoryModel extends ApplicationBaseModel
         ],
         'budget' => [
             'decimal' => 'Balance must be a valid decimal number.',
+        ],
+        'usage_count' => [
+            'integer' => 'Usage count must be an integer.',
         ],
     ];
 
@@ -143,5 +148,19 @@ class CategoryModel extends ApplicationBaseModel
     public function updateById(string $id, string $userId, array $data): bool
     {
         return $this->where(['id' => $id, 'user_id' => $userId])->set($data)->update();
+    }
+
+    /**
+     * Increment usage count for a category
+     *
+     * @param string $categoryId
+     * @return bool
+     * @throws ReflectionException
+     */
+    public function incrementUsageCount(string $categoryId): bool
+    {
+        return $this->set('usage_count', 'usage_count + 1', false)
+            ->where('id', $categoryId)
+            ->update();
     }
 }

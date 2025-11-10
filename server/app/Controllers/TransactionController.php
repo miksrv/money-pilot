@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Libraries\Auth;
 use App\Models\AccountModel;
+use App\Models\CategoryModel;
+use App\Models\PayeeModel;
 use App\Models\TransactionModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -36,7 +38,7 @@ class TransactionController extends ApplicationBaseController
                 'id'          => $transactions->id,
                 'account_id'  => $transactions->account_id,
                 'category_id' => $transactions->category_id,
-                'payee_id'    => $transactions->type,
+                'payee_id'    => $transactions->payee_id,
                 'parent_id'   => $transactions->parent_id,
                 'amount'      => $transactions->amount,
                 'type'        => $transactions->color,
@@ -64,8 +66,16 @@ class TransactionController extends ApplicationBaseController
 
         try {
             $accountModel = new AccountModel();
+            $payeeModel   = new PayeeModel();
+
+            // Increment usage_count for the selected category
+            if (!empty($input['category_id'])) {
+                $categoryModel = new CategoryModel();
+                $categoryModel->incrementUsageCount($input['category_id']);
+            }
 
             $account = $accountModel->getById($input['account_id'], $this->authLibrary->user->id);
+
             if (!$account) {
                 return $this->failNotFound(['error' => '1002', 'messages' => ['account' => 'Account not found']]);
             }
@@ -82,15 +92,21 @@ class TransactionController extends ApplicationBaseController
             $dateTime->setTime((int)gmdate('H'), (int)gmdate('i'), (int)gmdate('s'));
             $formattedDateTime = $dateTime->format('Y-m-d H:i:s');
 
+            if ($input['payee']) {
+                // Ensure payee exists or create a new one
+                $payeeId = $payeeModel->getOrCreateByName($input['payee'], $this->authLibrary->user->id);
+            } else {
+                $payeeId = null;
+            }
+
             $this->model->insert([
                 'user_id'     => $this->authLibrary->user->id,
                 'account_id'  => $input['account_id'],
                 'category_id' => $input['category_id'] ?? null,
-                'payee_id'    => !empty($input['payee_id']) ? $input['payee_id'] : null,
+                'payee_id'    => $payeeId,
                 'amount'      => $input['amount'],
                 'type'        => $input['type'],
                 'date'        => $formattedDateTime,
-                'description' => $input['description'] ?? null,
             ]);
 
             $accountModel->updateById($input['account_id'], $this->authLibrary->user->id, ['balance' => $newBalance]);

@@ -1,10 +1,9 @@
 import React, { forwardRef, useEffect, useState } from 'react'
-import { Input } from 'simple-react-ui-kit'
+import { Input, InputProps } from 'simple-react-ui-kit'
 
 import { Currency } from './types'
 
-export interface CurrencyInputProps
-    extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'size'> {
+export interface CurrencyInputProps extends Omit<InputProps, 'onChange' | 'value' | 'size'> {
     value?: number | string
     onValueChange?: (value: number | null) => void
     currency: Currency

@@ -38,7 +38,7 @@ export const Transactions: React.FC = () => {
                 columns={[
                     {
                         header: t('transactions.payee', 'Payee'),
-                        accessor: 'payee_id'
+                        accessor: 'payee'
                     },
                     {
                         header: t('transactions.category', 'Category'),

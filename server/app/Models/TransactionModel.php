@@ -9,7 +9,7 @@ class TransactionModel extends ApplicationBaseModel
 {
     protected $table         = 'transactions';
     protected $primaryKey    = 'id';
-    protected $allowedFields = ['user_id', 'group_id', 'account_id', 'category_id', 'payee_id', 'amount', 'type', 'date', 'description'];
+    protected $allowedFields = ['user_id', 'group_id', 'account_id', 'category_id', 'payee_id', 'amount', 'type', 'date'];
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
@@ -37,8 +37,7 @@ class TransactionModel extends ApplicationBaseModel
         'payee_id'    => 'permit_empty',
         'amount'      => 'required|decimal',
         'type'        => 'required|in_list[income,expense]',
-        'date'        => 'required|valid_date',
-        'description' => 'permit_empty|string|max_length[255]',
+        'date'        => 'required|valid_date'
     ];
 
     protected $validationMessages = [
@@ -67,10 +66,7 @@ class TransactionModel extends ApplicationBaseModel
         'date' => [
             'required' => 'Transaction date is required.',
             'valid_date' => 'Invalid date format.',
-        ],
-        'description' => [
-            'max_length' => 'Description cannot exceed 255 characters.',
-        ],
+        ]
     ];
 
     /**
