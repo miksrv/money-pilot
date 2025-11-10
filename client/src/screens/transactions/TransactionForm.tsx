@@ -1,15 +1,27 @@
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogProps, Input } from 'simple-react-ui-kit'
+import { Button, Dialog, DialogProps, Dropdown, Input } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddTransactionMutation } from '@/api'
 import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
+
+import styles from './styles.module.sass'
 
 type TransactionFormData = Pick<
     ApiModel.Transaction,
     'account_id' | 'amount' | 'type' | 'date' | 'description' | 'category_id' | 'payee_id'
 >
+
+const DEFAULT_VALUES: TransactionFormData = {
+    account_id: '',
+    amount: 0,
+    type: 'expense',
+    date: new Date().toISOString().split('T')[0], // Default to today
+    description: '',
+    category_id: '',
+    payee_id: ''
+}
 
 export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
     const { t, i18n } = useTranslation()
@@ -21,15 +33,7 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
         reset,
         getValues
     } = useForm<TransactionFormData>({
-        defaultValues: {
-            account_id: '',
-            amount: 0,
-            type: 'expense',
-            date: new Date().toISOString().split('T')[0], // Default to today
-            description: '',
-            category_id: '',
-            payee_id: ''
-        }
+        defaultValues: DEFAULT_VALUES
     })
 
     const [addTransaction, { isLoading, error: apiError }] = useAddTransactionMutation()
@@ -38,7 +42,7 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
         try {
             await addTransaction(data).unwrap()
             props?.onCloseDialog?.()
-            reset()
+            reset(DEFAULT_VALUES)
         } catch (err) {
             console.error('Failed to add transaction:', err)
         }
@@ -49,47 +53,51 @@ export const TransactionForm: React.FC<Partial<DialogProps>> = (props) => {
             open={props?.open}
             onCloseDialog={() => {
                 props?.onCloseDialog?.()
-                reset()
+                reset(DEFAULT_VALUES)
             }}
         >
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <CategorySelectField
-                    value={getValues('category_id')}
-                    error={errors?.category_id?.message}
-                    onSelect={(option) => reset({ ...getValues(), category_id: option?.key })}
-                />
+            <form
+                className={styles.form}
+                onSubmit={handleSubmit(onSubmit)}
+            >
+                <div className={styles.transactionFormRow}>
+                    <CategorySelectField
+                        enableAutoSelect={true}
+                        value={getValues('category_id')}
+                        error={errors?.category_id?.message}
+                        onSelect={(option) => reset({ ...getValues(), category_id: option?.key })}
+                    />
 
-                <br />
-
-                <AccountSelectField
-                    value={getValues('account_id')}
-                    error={errors?.account_id?.message}
-                    onSelect={(option) => reset({ ...getValues(), account_id: option?.key })}
-                />
-
-                <br />
-
-                <CurrencyInput
-                    value={getValues('amount')}
-                    currency={Currency.USD}
-                    locale={i18n.language}
-                    onValueChange={(amount) => reset({ ...getValues(), amount: amount || 0 })}
-                />
-
-                <div>
-                    <label htmlFor='type'>{t('transactions.type', 'Тип')}</label>
-                    <select
-                        id='type'
-                        {...register('type', {
-                            required: t('transactions.type', 'Тип') + ' ' + t('common.required', 'обязательно')
-                        })}
-                        className='w-full rounded-md border border-[var(--border)] px-3 py-2 focus:border-[var(--primary)] focus:outline-none'
-                    >
-                        <option value='income'>{t('transactions.types.income', 'Доход')}</option>
-                        <option value='expense'>{t('transactions.types.expense', 'Расход')}</option>
-                    </select>
-                    {errors.type && <p className='error'>{errors.type.message}</p>}
+                    <AccountSelectField
+                        enableAutoSelect={true}
+                        value={getValues('account_id')}
+                        error={errors?.account_id?.message}
+                        onSelect={(option) => reset({ ...getValues(), account_id: option?.key })}
+                    />
                 </div>
+
+                <div className={styles.transactionFormRow}>
+                    <CurrencyInput
+                        value={getValues('amount')}
+                        currency={Currency.USD}
+                        locale={i18n.language}
+                        onValueChange={(amount) => reset({ ...getValues(), amount: amount || 0 })}
+                    />
+
+                    <Dropdown<string>
+                        value={getValues('type')}
+                        mode={'secondary'}
+                        placeholder={t('screens.transactions.form.type', 'Select type')}
+                        options={[
+                            { key: 'expense', value: t('transactions.types.expense', 'Expense') },
+                            { key: 'income', value: t('transactions.types.income', 'Income') }
+                        ]}
+                        onSelect={(value) => {
+                            reset({ ...getValues(), type: value?.value as 'income' | 'expense' })
+                        }}
+                    />
+                </div>
+
                 <div>
                     <label htmlFor='date'>{t('transactions.date', 'Дата')}</label>
                     <Input

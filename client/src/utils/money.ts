@@ -1,3 +1,5 @@
+import i18n from '@/tools/i18n'
+
 export enum Currency {
     RUB = 'RUB',
     USD = 'USD',
@@ -5,7 +7,7 @@ export enum Currency {
 }
 
 export const formatMoney = (amount?: number | string | null, currency?: Currency): string =>
-    new Intl.NumberFormat('ru-RU', {
+    new Intl.NumberFormat(i18n.language, {
         style: 'currency',
         currency: currency || Currency.USD,
         minimumFractionDigits: 2,
