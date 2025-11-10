@@ -121,7 +121,9 @@ class CategoryController extends ApplicationBaseController
         }
 
         try {
-            unset($input['id'], $input['user_id']);
+            unset($input['id']);
+
+            $input['budget'] = $input['budget'] ?? null;
 
             if (!$this->model->updateById($id, $this->authLibrary->user->id, $input)) {
                 return $this->failValidationErrors($this->model->errors());

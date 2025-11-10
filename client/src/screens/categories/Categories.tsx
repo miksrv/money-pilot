@@ -66,16 +66,21 @@ export const Categories: React.FC = () => {
                     {
                         header: '',
                         accessor: 'expenses',
-                        formatter: (_value, row, index) => (
-                            <Progress
-                                value={Math.min(100, ((row[index]?.expenses ?? 0) / (row[index]?.budget || 1)) * 100)}
-                            />
-                        )
+                        formatter: (_value, row, index) => {
+                            const percentage = ((row[index]?.expenses ?? 0) / (row[index]?.budget || 1)) * 100
+
+                            return row[index]?.budget ? (
+                                <Progress
+                                    value={percentage}
+                                    color={percentage < 80 ? 'green' : percentage >= 95 ? 'red' : 'orange'}
+                                />
+                            ) : null
+                        }
                     },
                     {
                         header: t('categories.budget', 'Budget'),
                         accessor: 'budget',
-                        formatter: (value) => formatMoney(value, Currency.USD)
+                        formatter: (value) => (value !== 0 ? formatMoney(value, Currency.USD) : null)
                     }
                 ]}
             />

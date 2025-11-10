@@ -49,6 +49,10 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         }
 
         const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+                return
+            }
+
             if (
                 !(
                     (e.key >= '0' && e.key <= '9') ||
