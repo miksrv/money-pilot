@@ -80,6 +80,7 @@ class TransactionModel extends ApplicationBaseModel
             ->join('payees', 'payees.id = transactions.payee_id', 'left')
             ->where('user_id', $userId)
             ->orderBy('date', 'DESC')
+            ->orderBy('updated_at', 'DESC')
             ->findAll();
     }
 

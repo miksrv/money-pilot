@@ -28,7 +28,7 @@ export const Transactions: React.FC = () => {
                     mode='secondary'
                     icon='PlusCircle'
                     onClick={() => setOpenForm(true)}
-                    label={t('transactions.add', 'Добавить транзакцию')}
+                    label={t('transactions.add', 'Add Transaction')}
                 />
             }
         >

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogProps, Dropdown, Input, Message } from 'simple-react-ui-kit'
+import { Button, DatePicker, Dialog, DialogProps, Dropdown, Input, Message } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddTransactionMutation, useUpdateTransactionMutation } from '@/api'
 import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
@@ -96,6 +96,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                     </Message>
                 )}
 
+                <DatePicker
+                    datePeriod={[getValues('date'), getValues('date')]}
+                    locale={i18n.language === 'en' ? 'en' : 'ru'}
+                    buttonMode={'secondary'}
+                    selectDateCaption={t('select-date', 'Select date')}
+                    onDateSelect={(date) => reset({ ...getValues(), date })}
+                />
+
                 <Input
                     id='payee'
                     type='text'
@@ -149,20 +157,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                         error={errors?.account_id?.message}
                         onSelect={(option) => reset({ ...getValues(), account_id: option?.key })}
                     />
-                </div>
-
-                <div>
-                    <label htmlFor='date'>{t('transactions.date', 'Дата')}</label>
-                    <Input
-                        id='date'
-                        type='date'
-                        size='medium'
-                        placeholder={t('transactions.date', 'Дата')}
-                        {...register('date', {
-                            required: t('transactions.date', 'Дата') + ' ' + t('common.required', 'обязательно')
-                        })}
-                    />
-                    {errors.date && <p className='error'>{errors.date.message}</p>}
                 </div>
 
                 <Button
