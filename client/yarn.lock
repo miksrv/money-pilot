@@ -3128,7 +3128,7 @@ __metadata:
     react-redux: "npm:^9.2.0"
     react-router-dom: "npm:^7.9.5"
     sass: "npm:^1.94.0"
-    simple-react-ui-kit: "npm:^1.6.2"
+    simple-react-ui-kit: "npm:^1.7.6"
     typescript: "npm:~5.9.3"
     typescript-eslint: "npm:^8.46.4"
     vite: "npm:^7.2.2"
@@ -6685,15 +6685,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"simple-react-ui-kit@npm:^1.6.2":
-  version: 1.6.2
-  resolution: "simple-react-ui-kit@npm:1.6.2"
+"simple-react-ui-kit@npm:^1.7.6":
+  version: 1.7.6
+  resolution: "simple-react-ui-kit@npm:1.7.6"
   dependencies:
     dayjs: "npm:^1.11.19"
     lodash-es: "npm:^4.17.21"
     react: "npm:^19.2.0"
     react-dom: "npm:^19.2.0"
-  checksum: 10c0/0d9c39cd379a3af61f69298281847036b5ee4ba48f66f5fc2091a84a3bbc6d2facf3e0318be37fb419fa8b6899b48092d95ab0bfc2afcae2019f61dbf26b857d
+  checksum: 10c0/451945567ae9ade78ef626a50e9482c8878692df9ddbe813ed2bcf7880c92b90ef891866e95ab4c7c454f7717081086b4b5a08948e06a6361d37c933c61aba78
   languageName: node
   linkType: hard
 
