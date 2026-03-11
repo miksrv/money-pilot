@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, DatePicker, Dialog, DialogProps, Dropdown, Input, Message } from 'simple-react-ui-kit'
+import { Button, DatePicker, Dialog, DialogProps, Input, Message, Select } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddTransactionMutation, useUpdateTransactionMutation } from '@/api'
 import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
@@ -100,7 +100,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                     datePeriod={[getValues('date'), getValues('date')]}
                     locale={i18n.language === 'en' ? 'en' : 'ru'}
                     buttonMode={'secondary'}
-                    selectDateCaption={t('select-date', 'Select date')}
+                    placeholder={t('select-date', 'Select date')}
                     onDateSelect={(date) => reset({ ...getValues(), date })}
                 />
 
@@ -129,8 +129,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                         })}
                     />
 
-                    <Dropdown<string>
-                        mode={'outline'}
+                    <Select<string>
                         value={getValues('type')}
                         placeholder={t('screens.transactions.form.type', 'Select type')}
                         options={[
@@ -138,7 +137,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                             { key: 'income', value: t('transactions.types.income', 'Income') }
                         ]}
                         onSelect={(value) => {
-                            reset({ ...getValues(), type: value?.value as 'income' | 'expense' })
+                            reset({ ...getValues(), type: value?.[0]?.key as 'income' | 'expense' })
                         }}
                     />
                 </div>
@@ -148,14 +147,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                         enableAutoSelect={true}
                         value={getValues('category_id')}
                         error={errors?.category_id?.message}
-                        onSelect={(option) => reset({ ...getValues(), category_id: option?.key })}
+                        onSelect={(option) => reset({ ...getValues(), category_id: option?.[0]?.key })}
                     />
 
                     <AccountSelectField
                         enableAutoSelect={true}
                         value={getValues('account_id')}
                         error={errors?.account_id?.message}
-                        onSelect={(option) => reset({ ...getValues(), account_id: option?.key })}
+                        onSelect={(option) => reset({ ...getValues(), account_id: option?.[0]?.key })}
                     />
                 </div>
 

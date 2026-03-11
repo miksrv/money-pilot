@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogProps, Dropdown, Input, Message } from 'simple-react-ui-kit'
+import { Button, Dialog, DialogProps, Input, Message, Select } from 'simple-react-ui-kit'
 
 import { ApiModel, useAddCategoryMutation, useUpdateCategoryMutation } from '@/api'
 import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
@@ -130,16 +130,15 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                     />
                 </div>
 
-                <Dropdown<string>
+                <Select<string>
                     value={getValues('type')}
-                    mode={'secondary'}
                     placeholder={t('screens.categories.form.type', 'Select type')}
                     options={[
                         { key: 'expense', value: t('categories.types.expense', 'Expense') },
                         { key: 'income', value: t('categories.types.income', 'Income') }
                     ]}
                     onSelect={(value) => {
-                        reset({ ...getValues(), type: value?.value as 'income' | 'expense' })
+                        reset({ ...getValues(), type: value?.[0]?.value as 'income' | 'expense' })
                     }}
                 />
 
