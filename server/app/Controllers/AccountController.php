@@ -35,12 +35,30 @@ class AccountController extends ApplicationBaseController
 
     /**
      * GET /accounts - List all accounts for the authenticated user
+     * Includes transaction_count per account.
      * @return ResponseInterface
      */
     public function index(): ResponseInterface
     {
+        $db       = db_connect();
         $accounts = $this->model->findByUserId($this->authLibrary->user->id);
-        return $this->respond($accounts);
+
+        $response = array_map(function ($account) use ($db) {
+            $count = $db->table('transactions')
+                ->where('account_id', $account->id)
+                ->countAllResults();
+
+            return [
+                'id'                => $account->id,
+                'name'              => $account->name,
+                'type'              => $account->type,
+                'balance'           => (float)$account->balance,
+                'institution'       => $account->institution,
+                'transaction_count' => $count,
+            ];
+        }, $accounts);
+
+        return $this->respond($response);
     }
 
     /**
@@ -60,7 +78,7 @@ class AccountController extends ApplicationBaseController
                 'name'        => $input['name'],
                 'type'        => $input['type'],
                 'user_id'     => $this->authLibrary->user->id,
-                'institution' => $input['name'] ?? null,
+                'institution' => $input['institution'] ?? null,
                 'balance'     => $input['balance'] ?? 0,
             ]);
 
@@ -88,7 +106,7 @@ class AccountController extends ApplicationBaseController
     }
 
     /**
-     * PUT /accounts/{id} - Update an account
+     * PUT /accounts/{id} - Update an account and return the updated object
      * @param $id
      * @return ResponseInterface
      */
@@ -107,20 +125,42 @@ class AccountController extends ApplicationBaseController
                 return $this->failValidationErrors($this->model->errors());
             }
 
-            return $this->respondUpdated();
+            $updated = $this->model->getById($id, $this->authLibrary->user->id);
+
+            return $this->respond($updated[0] ?? []);
         } catch (\Exception $e) {
             log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
     }
 
-    // DELETE /accounts/{id} - Delete an account
-    public function delete($id = null)
+    /**
+     * DELETE /accounts/{id} - Delete an account (blocked if it has transactions)
+     * @param $id
+     * @return ResponseInterface
+     */
+    public function delete($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $account = $this->model->getById($id, $this->authLibrary->user->id);
 
-        if (!$account) {
+        if (empty($account)) {
             return $this->failNotFound();
+        }
+
+        // Block deletion if account has transactions
+        $transactionCount = db_connect()->table('transactions')
+            ->where('account_id', $id)
+            ->countAllResults();
+
+        if ($transactionCount > 0) {
+            return $this->fail(
+                ['error' => 'account_has_transactions'],
+                422
+            );
         }
 
         try {

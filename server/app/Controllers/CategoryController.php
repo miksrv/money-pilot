@@ -22,6 +22,7 @@ class CategoryController extends ApplicationBaseController
 
     /**
      * GET /categories - List all categories for the authenticated user
+     * Supports query params: include_archived (bool), withSums (bool)
      * @return ResponseInterface
      */
     public function index(): ResponseInterface
@@ -30,32 +31,44 @@ class CategoryController extends ApplicationBaseController
             return $this->failUnauthorized();
         }
 
-        if ($this->request->getGet('withSums')) {
+        $includeArchived = (bool)$this->request->getGet('include_archived');
+        $withSums        = (bool)$this->request->getGet('withSums');
+        $db              = db_connect();
+
+        if ($withSums) {
             $categories = $this->model->findByUserIdWithSums($this->authLibrary->user->id);
-            $response   = array_map(function ($category) {
-                return [
-                    'id'        => $category->id,
-                    'name'      => $category->name,
-                    'type'      => $category->type,
-                    'parent_id' => $category->parent_id,
-                    'icon'      => $category->icon,
-                    'color'     => $category->color,
-                    'budget'    => $category->budget,
-                    'expenses'  => $category->expenses,
-                ];
-            }, $categories);
         } else {
             $categories = $this->model->findByUserId($this->authLibrary->user->id);
-            $response   = array_map(function ($category) {
-                return [
-                    'id'    => $category->id,
-                    'name'  => $category->name,
-                    'type'  => $category->type,
-                    'icon'  => $category->icon,
-                    'color' => $category->color,
-                ];
-            }, $categories);
         }
+
+        // Filter out archived unless requested
+        if (!$includeArchived) {
+            $categories = array_filter($categories, fn($c) => !(bool)($c->archived ?? false));
+            $categories = array_values($categories);
+        }
+
+        $response = array_map(function ($category) use ($db, $withSums) {
+            $count = $db->table('transactions')
+                ->where('category_id', $category->id)
+                ->countAllResults();
+
+            $item = [
+                'id'                => $category->id,
+                'name'              => $category->name,
+                'type'              => $category->type,
+                'icon'              => $category->icon,
+                'color'             => $category->color,
+                'budget'            => (float)($category->budget ?? 0),
+                'archived'          => (bool)($category->archived ?? false),
+                'transaction_count' => $count,
+            ];
+
+            if ($withSums) {
+                $item['expenses'] = (float)($category->expenses ?? 0);
+            }
+
+            return $item;
+        }, $categories);
 
         return $this->respond($response);
     }
@@ -152,7 +165,7 @@ class CategoryController extends ApplicationBaseController
     }
 
     /**
-     * DELETE /categories/{id} - Delete a specific category by ID
+     * DELETE /categories/{id} - Delete a specific category by ID (blocked if it has transactions)
      * @param $id
      * @return ResponseInterface
      */
@@ -168,12 +181,64 @@ class CategoryController extends ApplicationBaseController
             return $this->failNotFound();
         }
 
+        // Block if category is used by any transaction
+        $transactionCount = db_connect()->table('transactions')
+            ->where('category_id', $id)
+            ->countAllResults();
+
+        if ($transactionCount > 0) {
+            return $this->fail(
+                ['error' => 'category_has_transactions'],
+                422
+            );
+        }
+
         try {
             if (!$this->model->deleteById($id, $this->authLibrary->user->id)) {
                 return $this->fail(['error' => '1003', 'messages' => 'Failed to delete category']);
             }
 
             return $this->respondDeleted();
+        } catch (\Exception $e) {
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
+            return $this->fail($e->getMessage());
+        }
+    }
+
+    /**
+     * PATCH /categories/{id}/archive - Archive or unarchive a category
+     * @param $id
+     * @return ResponseInterface
+     */
+    public function archive($id = null): ResponseInterface
+    {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
+        $category = $this->model->getById($id);
+
+        if (!$category) {
+            return $this->failNotFound();
+        }
+
+        $input    = $this->request->getJSON(true);
+        $archived = isset($input['archived']) ? (bool)$input['archived'] : true;
+
+        try {
+            $this->model->updateById($id, $this->authLibrary->user->id, ['archived' => $archived ? 1 : 0]);
+
+            $updated = $this->model->getById($id);
+
+            return $this->respond([
+                'id'       => $updated->id,
+                'name'     => $updated->name,
+                'type'     => $updated->type,
+                'icon'     => $updated->icon,
+                'color'    => $updated->color,
+                'budget'   => (float)($updated->budget ?? 0),
+                'archived' => (bool)$updated->archived,
+            ]);
         } catch (\Exception $e) {
             log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());

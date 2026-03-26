@@ -57,8 +57,10 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->get('(:segment)', 'CategoryController::show/$1');
         $routes->put('(:segment)', 'CategoryController::update/$1');
         $routes->delete('(:segment)', 'CategoryController::delete/$1');
+        $routes->patch('(:segment)/archive', 'CategoryController::archive/$1');
         $routes->options('/', static function () {});
         $routes->options('(:segment)', static function () {});
+        $routes->options('(:segment)/archive', static function () {});
     });
 
     // PayeeController Routes
@@ -68,7 +70,10 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->get('(:segment)', 'PayeeController::show/$1');
         $routes->put('(:segment)', 'PayeeController::update/$1');
         $routes->delete('(:segment)', 'PayeeController::delete/$1');
+        $routes->post('(:segment)/merge', 'PayeeController::merge/$1');
         $routes->options('', static function () {});
+        $routes->options('(:segment)', static function () {});
+        $routes->options('(:segment)/merge', static function () {});
     });
 
     // GroupController Routes
@@ -81,5 +86,50 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->post('(:segment)/invite', 'GroupController::invite/$1');
         $routes->post('(:segment)/members', 'GroupController::addMember/$1');
         $routes->options('', static function () {});
+    });
+
+    // UserController Routes
+    $routes->group('users', static function ($routes) {
+        $routes->get('profile', 'UserController::profile');
+        $routes->put('profile', 'UserController::updateProfile');
+        $routes->put('password', 'UserController::changePassword');
+        $routes->delete('me', 'UserController::deleteMe');
+        $routes->options('profile', static function () {});
+        $routes->options('password', static function () {});
+        $routes->options('me', static function () {});
+    });
+
+    // DashboardController Routes
+    $routes->group('dashboard', static function ($routes) {
+        $routes->get('summary', 'DashboardController::summary');
+        $routes->options('summary', static function () {});
+    });
+
+    // RecurringController Routes
+    $routes->group('recurring', static function ($routes) {
+        $routes->get('', 'RecurringController::index');
+        $routes->post('', 'RecurringController::create');
+        $routes->put('(:segment)', 'RecurringController::update/$1');
+        $routes->delete('(:segment)', 'RecurringController::delete/$1');
+        $routes->post('(:segment)/generate', 'RecurringController::generate/$1');
+        $routes->patch('(:segment)/toggle', 'RecurringController::toggle/$1');
+        $routes->options('', static function () {});
+        $routes->options('(:segment)', static function () {});
+        $routes->options('(:segment)/generate', static function () {});
+        $routes->options('(:segment)/toggle', static function () {});
+    });
+
+    // ReportsController Routes
+    $routes->group('reports', static function ($routes) {
+        $routes->get('spending-by-category', 'ReportsController::spendingByCategory');
+        $routes->get('income-expense', 'ReportsController::incomeExpense');
+        $routes->get('spending-trend', 'ReportsController::spendingTrend');
+        $routes->get('net-worth', 'ReportsController::netWorth');
+        $routes->get('top-payees', 'ReportsController::topPayees');
+        $routes->options('spending-by-category', static function () {});
+        $routes->options('income-expense', static function () {});
+        $routes->options('spending-trend', static function () {});
+        $routes->options('net-worth', static function () {});
+        $routes->options('top-payees', static function () {});
     });
 });
