@@ -32,7 +32,7 @@ export interface ApiError {
 
 export const api = createApi({
     reducerPath: 'api',
-    tagTypes: ['Category', 'Transaction', 'Account', 'Dashboard', 'User', 'Recurring', 'Payee', 'Report'],
+    tagTypes: ['Category', 'Transaction', 'Account', 'Dashboard', 'User', 'Recurring', 'Payee', 'Report', 'Group'],
     baseQuery: fetchBaseQuery({
         baseUrl: HOST_API,
         prepareHeaders: (headers, { getState }) => {
@@ -87,9 +87,9 @@ export const api = createApi({
             })
         }),
         /* List accounts */
-        listAccount: builder.query<ApiModel.Account[], void>({
+        listAccount: builder.query<ApiModel.Account[], { group_id?: string } | void>({
             providesTags: [{ id: 'LIST', type: 'Account' }],
-            query: () => 'accounts'
+            query: (params) => `accounts${encodeQueryData(params ?? {})}`
         }),
         /* Update account */
         updateAccount: builder.mutation<ApiModel.Account, { id: string } & Partial<ApiModel.Account>>({
@@ -137,6 +137,14 @@ export const api = createApi({
             ],
             query: (id) => ({ url: `transactions/${id}`, method: 'DELETE' })
         }),
+        /* Bulk delete transactions */
+        bulkDeleteTransactions: builder.mutation<{ deleted: number }, { ids: string[] }>({
+            invalidatesTags: [
+                { id: 'LIST', type: 'Transaction' },
+                { id: 'SUMMARY', type: 'Dashboard' }
+            ],
+            query: (body) => ({ url: 'transactions/bulk-delete', method: 'POST', body })
+        }),
         /* List Categories */
         listCategories: builder.query<
             ApiType.Category.Response[],
@@ -180,9 +188,14 @@ export const api = createApi({
             })
         }),
         /* Get dashboard summary */
-        getDashboardSummary: builder.query<ApiModel.DashboardSummary, { month?: string } | void>({
+        getDashboardSummary: builder.query<ApiModel.DashboardSummary, { month?: string; group_id?: string } | void>({
             providesTags: [{ id: 'SUMMARY', type: 'Dashboard' }],
             query: (param) => `/dashboard/summary${encodeQueryData(param)}`
+        }),
+        /* Get monthly spending */
+        getMonthlySpending: builder.query<ApiModel.MonthlySpendingResponse, { group_id?: string } | void>({
+            providesTags: [{ id: 'MONTHLY_SPENDING', type: 'Dashboard' }],
+            query: (param) => `/dashboard/monthly-spending${encodeQueryData(param ?? {})}`
         }),
         /* Get user profile */
         getProfile: builder.query<ApiModel.UserProfile, void>({
@@ -256,7 +269,10 @@ export const api = createApi({
         }),
         /* Merge payees */
         mergePayees: builder.mutation<void, { sourceId: string; targetId: string }>({
-            invalidatesTags: [{ id: 'LIST', type: 'Payee' }, { id: 'LIST', type: 'Transaction' }],
+            invalidatesTags: [
+                { id: 'LIST', type: 'Payee' },
+                { id: 'LIST', type: 'Transaction' }
+            ],
             query: ({ sourceId, targetId }) => ({
                 url: `/payees/${sourceId}/merge`,
                 method: 'POST',
@@ -287,6 +303,62 @@ export const api = createApi({
         getTopPayees: builder.query<ApiModel.PayeeSpend[], ApiModel.ReportParams>({
             providesTags: [{ id: 'TOP_PAYEES', type: 'Report' }],
             query: (params) => `/reports/top-payees${encodeQueryData(params)}`
+        }),
+        /* List groups */
+        listGroups: builder.query<ApiModel.Group[], void>({
+            providesTags: ['Group'],
+            query: () => '/groups'
+        }),
+        /* Create group */
+        createGroup: builder.mutation<ApiModel.Group, { name: string; description?: string }>({
+            invalidatesTags: ['Group'],
+            query: (body) => ({ url: '/groups', method: 'POST', body })
+        }),
+        /* Delete group */
+        deleteGroup: builder.mutation<void, string>({
+            invalidatesTags: ['Group'],
+            query: (id) => ({ url: `/groups/${id}`, method: 'DELETE' })
+        }),
+        /* Get group members */
+        getGroupMembers: builder.query<ApiModel.GroupMember[], string>({
+            providesTags: ['Group'],
+            query: (groupId) => `/groups/${groupId}/members`
+        }),
+        /* Remove member */
+        removeMember: builder.mutation<void, { groupId: string; memberId: string }>({
+            invalidatesTags: ['Group'],
+            query: ({ groupId, memberId }) => ({ url: `/groups/${groupId}/members/${memberId}`, method: 'DELETE' })
+        }),
+        /* Get group invitations */
+        getGroupInvitations: builder.query<ApiModel.GroupInvitation[], string>({
+            providesTags: ['Group'],
+            query: (groupId) => `/groups/${groupId}/invitations`
+        }),
+        /* Invite member */
+        inviteMember: builder.mutation<
+            { token: string; expires_at: string },
+            { groupId: string; body: ApiModel.InviteMemberBody }
+        >({
+            invalidatesTags: ['Group'],
+            query: ({ groupId, body }) => ({ url: `/groups/${groupId}/invite`, method: 'POST', body })
+        }),
+        /* Revoke invitation */
+        revokeInvitation: builder.mutation<void, { groupId: string; invitationId: string }>({
+            invalidatesTags: ['Group'],
+            query: ({ groupId, invitationId }) => ({
+                url: `/groups/${groupId}/invitations/${invitationId}`,
+                method: 'DELETE'
+            })
+        }),
+        /* Get pending invitations for current user */
+        getPendingInvitations: builder.query<ApiModel.PendingInvitation[], void>({
+            providesTags: ['Group'],
+            query: () => '/groups/pending-invitations'
+        }),
+        /* Join group via token */
+        joinGroup: builder.mutation<ApiModel.Group & { owner_name: string }, { token: string }>({
+            invalidatesTags: ['Group'],
+            query: (body) => ({ url: '/groups/join', method: 'POST', body })
         })
     })
 })
@@ -299,6 +371,7 @@ export const {
     useAddTransactionMutation,
     useListTransactionsQuery,
     useDeleteTransactionMutation,
+    useBulkDeleteTransactionsMutation,
     useAddAccountMutation,
     useListAccountQuery,
     useUpdateAccountMutation,
@@ -310,6 +383,7 @@ export const {
     useArchiveCategoryMutation,
     useUpdateTransactionMutation,
     useGetDashboardSummaryQuery,
+    useGetMonthlySpendingQuery,
     useGetProfileQuery,
     useUpdateProfileMutation,
     useChangePasswordMutation,
@@ -328,5 +402,15 @@ export const {
     useGetIncomeExpenseQuery,
     useGetSpendingTrendQuery,
     useGetNetWorthQuery,
-    useGetTopPayeesQuery
+    useGetTopPayeesQuery,
+    useListGroupsQuery,
+    useCreateGroupMutation,
+    useDeleteGroupMutation,
+    useGetGroupMembersQuery,
+    useRemoveMemberMutation,
+    useGetGroupInvitationsQuery,
+    useInviteMemberMutation,
+    useRevokeInvitationMutation,
+    useGetPendingInvitationsQuery,
+    useJoinGroupMutation
 } = api

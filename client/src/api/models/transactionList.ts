@@ -22,4 +22,5 @@ export interface TransactionListParams {
     type?: 'income' | 'expense'
     account_id?: string
     category_id?: string
+    group_id?: string
 }
