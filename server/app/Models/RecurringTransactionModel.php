@@ -36,6 +36,56 @@ class RecurringTransactionModel extends ApplicationBaseModel
 
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateId'];
+    protected $afterFind      = ['castTypes'];
+
+    /**
+     * Cast numeric fields to proper types after fetching from database.
+     */
+    protected function castTypes(array $data): array
+    {
+        if (!isset($data['data'])) {
+            return $data;
+        }
+
+        // Single result (first/find) - data is an associative array with 'id' key
+        if (isset($data['singleton']) && $data['singleton'] === true) {
+            $data['data'] = $this->castRow($data['data']);
+        }
+        // Multiple results (findAll) - data is an array of rows
+        elseif (is_array($data['data']) && !empty($data['data']) && !isset($data['data']['id'])) {
+            foreach ($data['data'] as &$row) {
+                $row = $this->castRow($row);
+            }
+        }
+        // Direct row with 'id' key
+        elseif (is_array($data['data']) && isset($data['data']['id'])) {
+            $data['data'] = $this->castRow($data['data']);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Cast a single row's fields to proper types.
+     */
+    private function castRow(?array $row): ?array
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        if (isset($row['amount'])) {
+            $row['amount'] = (float) $row['amount'];
+        }
+        if (isset($row['is_active'])) {
+            $row['is_active'] = (int) $row['is_active'];
+        }
+        if (isset($row['auto_create'])) {
+            $row['auto_create'] = (int) $row['auto_create'];
+        }
+
+        return $row;
+    }
 
     /**
      * Compute the next due date after $from for the given frequency.

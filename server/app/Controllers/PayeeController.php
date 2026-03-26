@@ -36,10 +36,10 @@ class PayeeController extends ApplicationBaseController
         $db = db_connect();
 
         $builder = $db->table('payees p')
-            ->select('p.id, p.name, p.usage_count, MAX(t.date) AS last_used')
+            ->select('p.id, p.name, COUNT(t.id) AS usage_count, MAX(t.date) AS last_used')
             ->join('transactions t', 't.payee_id = p.id', 'left')
             ->groupBy('p.id')
-            ->orderBy('p.usage_count', 'DESC')
+            ->orderBy('usage_count', 'DESC')
             ->limit($limit);
 
         if ($search) {
