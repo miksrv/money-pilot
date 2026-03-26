@@ -1,15 +1,16 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, DatePicker, Dialog, DialogProps, Input, Message, Select } from 'simple-react-ui-kit'
+import { Button, DatePicker, Dialog, DialogProps, Message, Select } from 'simple-react-ui-kit'
 
-import { ApiModel, useAddTransactionMutation, useUpdateTransactionMutation } from '@/api'
+import { ApiModel, useAddTransactionMutation, useListPayeesQuery, useUpdateTransactionMutation } from '@/api'
 import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
+import { useAppSelector } from '@/store/hooks'
 
 import styles from './styles.module.sass'
 
 interface TransactionFormProps extends Partial<DialogProps> {
-    transactionData?: ApiModel.Category
+    transactionData?: ApiModel.Transaction
 }
 
 type TransactionFormData = Pick<
@@ -28,6 +29,20 @@ const DEFAULT_VALUES: TransactionFormData = {
 
 export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
     const { t, i18n } = useTranslation()
+    const isAuth = useAppSelector((state) => state.auth)
+
+    const [payeeSearch, setPayeeSearch] = useState('')
+    const [debouncedPayeeSearch, setDebouncedPayeeSearch] = useState('')
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedPayeeSearch(payeeSearch), 300)
+        return () => clearTimeout(timer)
+    }, [payeeSearch])
+
+    const { data: payeeOptions } = useListPayeesQuery(
+        debouncedPayeeSearch ? { search: debouncedPayeeSearch } : undefined,
+        { skip: !isAuth }
+    )
 
     const {
         register,
@@ -47,7 +62,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
     const onSubmit = async (data: TransactionFormData) => {
         try {
             if (props?.transactionData?.id) {
-                await updateCategory(data).unwrap()
+                await updateCategory({ id: props.transactionData.id, ...data }).unwrap()
             } else {
                 await createTransaction(data).unwrap()
             }
@@ -92,7 +107,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                         type='error'
                         className={styles.errorMessage}
                     >
-                        {createApiError || updateApiError || t('common.errors.unknown', 'An unknown error occurred')}
+                        {t('common.errors.unknown', 'An unknown error occurred')}
                     </Message>
                 )}
 
@@ -104,13 +119,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                     onDateSelect={(date) => reset({ ...getValues(), date })}
                 />
 
-                <Input
-                    id='payee'
-                    type='text'
-                    size='medium'
-                    error={errors?.payee?.message}
-                    placeholder={t('screens.transactions.payee', 'Получатель')}
-                    {...register('payee')}
+                <Select<string>
+                    searchable
+                    clearable
+                    value={getValues('payee') ?? undefined}
+                    placeholder={t('screens.transactions.payee', 'Payee')}
+                    options={(payeeOptions ?? []).map((p) => ({ key: p.name, value: p.name }))}
+                    onSearch={(q) => setPayeeSearch(q ?? '')}
+                    onSelect={(items) => reset({ ...getValues(), payee: items?.[0]?.value ?? '' })}
                 />
 
                 <div className={styles.transactionFormRow}>

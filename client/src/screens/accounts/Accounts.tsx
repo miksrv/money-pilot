@@ -1,43 +1,119 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, Input } from 'simple-react-ui-kit'
+import { Badge, Button, Container, Dialog, Input, Message, Popout, Select } from 'simple-react-ui-kit'
 
-import { ApiModel, useAddAccountMutation, useListAccountQuery } from '@/api'
-import { AppLayout } from '@/components'
-import { Currency, formatMoney } from '@/utils/money'
+import {
+    ApiModel,
+    useAddAccountMutation,
+    useDeleteAccountMutation,
+    useListAccountQuery,
+    useUpdateAccountMutation
+} from '@/api'
+import { AppLayout, Currency, CurrencyInput } from '@/components'
+import { useAppSelector } from '@/store/hooks'
+import { formatMoney } from '@/utils/money'
+
+import styles from './styles.module.sass'
 
 type AccountFormData = Pick<ApiModel.Account, 'name' | 'type' | 'balance' | 'institution'>
 
+const DEFAULT_FORM: AccountFormData = {
+    name: '',
+    type: 'checking',
+    balance: 0,
+    institution: ''
+}
+
 export const Accounts: React.FC = () => {
-    const { t } = useTranslation()
-    const [openTransactionDialog, setOpenTransactionDialog] = useState(false)
+    const { t, i18n } = useTranslation()
+
+    const isAuth = useAppSelector((state) => state.auth)
+
+    const [openForm, setOpenForm] = useState(false)
+    const [editAccount, setEditAccount] = useState<ApiModel.Account | undefined>()
+    const [deleteTarget, setDeleteTarget] = useState<ApiModel.Account | undefined>()
+    const [blockedAccount, setBlockedAccount] = useState<ApiModel.Account | undefined>()
+
+    const { data: accounts, isLoading } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
+
+    const [addAccount, { isLoading: isAdding }] = useAddAccountMutation()
+    const [updateAccount, { isLoading: isUpdating }] = useUpdateAccountMutation()
+    const [deleteAccount, { isLoading: isDeleting }] = useDeleteAccountMutation()
+
     const {
         register,
         handleSubmit,
         formState: { errors },
-        reset
-    } = useForm<AccountFormData>({
-        defaultValues: {
-            name: '',
-            type: 'checking',
-            balance: 0,
-            institution: ''
-        }
-    })
-    const [addAccount, { isLoading, error: apiError }] = useAddAccountMutation()
+        reset,
+        setValue,
+        watch
+    } = useForm<AccountFormData>({ defaultValues: DEFAULT_FORM })
 
-    const { data } = useListAccountQuery()
+    const formBalance = watch('balance')
+    const formType = watch('type')
+
+    useEffect(() => {
+        if (editAccount) {
+            reset({
+                name: editAccount.name ?? '',
+                type: editAccount.type ?? 'checking',
+                balance: editAccount.balance ?? 0,
+                institution: editAccount.institution ?? ''
+            })
+        } else {
+            reset(DEFAULT_FORM)
+        }
+    }, [editAccount, openForm])
+
+    const openEdit = (account: ApiModel.Account) => {
+        setEditAccount(account)
+        setOpenForm(true)
+    }
+
+    const handleDeleteClick = (account: ApiModel.Account) => {
+        if ((account.transaction_count ?? 0) > 0) {
+            setBlockedAccount(account)
+        } else {
+            setDeleteTarget(account)
+        }
+    }
 
     const onSubmit = async (data: AccountFormData) => {
         try {
-            await addAccount(data).unwrap()
-            setOpenTransactionDialog(false)
-            reset()
+            if (editAccount?.id) {
+                await updateAccount({ id: editAccount.id, ...data }).unwrap()
+            } else {
+                await addAccount(data).unwrap()
+            }
+            setOpenForm(false)
+            setEditAccount(undefined)
+            reset(DEFAULT_FORM)
         } catch (err) {
-            console.error('Failed to add account:', err)
+            console.error('Failed to save account:', err)
         }
     }
+
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget?.id) {
+            return
+        }
+        try {
+            await deleteAccount(deleteTarget.id).unwrap()
+            setDeleteTarget(undefined)
+        } catch (err) {
+            console.error('Failed to delete account:', err)
+        }
+    }
+
+    const typeOptions = [
+        { key: 'checking', value: t('accounts.type.checking', 'Checking') },
+        { key: 'savings', value: t('accounts.type.savings', 'Savings') },
+        { key: 'credit', value: t('accounts.type.credit', 'Credit') },
+        { key: 'investment', value: t('accounts.type.investment', 'Investment') }
+    ]
+
+    const isSaving = isAdding || isUpdating
 
     return (
         <AppLayout
@@ -45,141 +121,177 @@ export const Accounts: React.FC = () => {
                 <Button
                     mode='secondary'
                     icon='PlusCircle'
-                    onClick={() => setOpenTransactionDialog(true)}
-                    label={t('accounts.add', 'Добавить аккаунт')}
+                    onClick={() => {
+                        setEditAccount(undefined)
+                        setOpenForm(true)
+                    }}
+                    label={t('accounts.add', 'Add Account')}
                 />
             }
         >
-            <h2>{t('accounts.title', 'Аккаунты')}</h2>
-
-            {data?.map((account) => (
-                <div
-                    key={account.id}
-                    style={{
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        padding: '1rem',
-                        marginBottom: '1rem',
-                        backgroundColor: 'var(--surface)'
-                    }}
-                >
-                    <h3>{account.name}</h3>
-                    <p>
-                        {t('accounts.type', 'Тип')}: {account.type}
-                    </p>
-                    <p>
-                        {t('accounts.balance', 'Баланс')}: {formatMoney(account.balance, Currency.USD)}
-                    </p>
-                    {account.institution && (
-                        <p>
-                            {t('accounts.institution', 'Банк/Организация')}: {account.institution}
-                        </p>
-                    )}
+            {!isLoading && (!accounts || accounts.length === 0) && (
+                <div className={styles.emptyState}>
+                    <p>{t('accounts.noAccounts', 'No accounts yet')}</p>
+                    <p>{t('accounts.addFirst', 'Add your first account to get started.')}</p>
                 </div>
-            ))}
+            )}
 
+            <div className={styles.accountsGrid}>
+                {accounts?.map((account) => (
+                    <Container
+                        key={account.id}
+                        title={account.name ?? ''}
+                        action={
+                            <Popout
+                                trigger={
+                                    <Button
+                                        mode='link'
+                                        icon='VerticalDots'
+                                    />
+                                }
+                                closeOnChildrenClick
+                            >
+                                <Button
+                                    mode='link'
+                                    icon='Pencil'
+                                    label={t('accounts.editAccount', 'Edit')}
+                                    onClick={() => openEdit(account)}
+                                />
+                                <Button
+                                    mode='link'
+                                    icon='Close'
+                                    variant='negative'
+                                    label={t('accounts.deleteAccount', 'Delete')}
+                                    onClick={() => handleDeleteClick(account)}
+                                />
+                            </Popout>
+                        }
+                    >
+                        <div
+                            className={styles.accountBalance}
+                            style={{ color: (account.balance ?? 0) >= 0 ? 'var(--color-green)' : 'var(--color-red)' }}
+                        >
+                            {formatMoney(account.balance ?? 0, Currency.USD)}
+                        </div>
+                        <Badge
+                            label={t('accounts.type.' + (account.type ?? ''), account.type ?? '')}
+                            size='small'
+                        />
+                        {account.institution && <div className={styles.accountInstitution}>{account.institution}</div>}
+                    </Container>
+                ))}
+            </div>
+
+            {/* Add / Edit Dialog */}
             <Dialog
-                open={openTransactionDialog}
+                open={openForm}
+                title={editAccount ? t('accounts.editAccount', 'Edit Account') : t('accounts.add', 'Add Account')}
                 onCloseDialog={() => {
-                    setOpenTransactionDialog(false)
-                    reset()
-                }}
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    flexDirection: 'column',
-                    padding: '1.5rem',
-                    backgroundColor: 'var(--surface)'
+                    setOpenForm(false)
+                    setEditAccount(undefined)
+                    reset(DEFAULT_FORM)
                 }}
             >
-                <h3>{t('accounts.add', 'Добавить аккаунт')}</h3>
-                <form
-                    onSubmit={handleSubmit(onSubmit)}
-                    className='form-wrapper'
-                >
-                    <div>
-                        <label htmlFor='name'>{t('accounts.name', 'Название')}</label>
-                        <Input
-                            id='name'
-                            type='text'
-                            size='medium'
-                            placeholder={t('accounts.name', 'Название')}
-                            {...register('name', {
-                                required: t('accounts.name', 'Название') + ' ' + t('common.required', 'обязательно'),
-                                maxLength: {
-                                    value: 100,
-                                    message: t('accounts.name.maxLength', 'Название не может превышать 100 символов')
-                                }
-                            })}
-                        />
-                        {errors.name && <p className='error'>{errors.name.message}</p>}
-                    </div>
-                    <div>
-                        <label htmlFor='type'>{t('accounts.type', 'Тип')}</label>
-                        <select
-                            id='type'
-                            {...register('type', {
-                                required: t('accounts.type', 'Тип') + ' ' + t('common.required', 'обязательно')
-                            })}
-                            className='w-full rounded-md border border-[var(--border)] px-3 py-2 focus:border-[var(--primary)] focus:outline-none'
-                        >
-                            <option value='checking'>{t('accounts.types.checking', 'Текущий')}</option>
-                            <option value='savings'>{t('accounts.types.savings', 'Сберегательный')}</option>
-                            <option value='credit'>{t('accounts.types.credit', 'Кредитный')}</option>
-                            <option value='investment'>{t('accounts.types.investment', 'Инвестиционный')}</option>
-                        </select>
-                        {errors.type && <p className='error'>{errors.type.message}</p>}
-                    </div>
-                    <div>
-                        <label htmlFor='balance'>{t('accounts.balance', 'Баланс')}</label>
-                        <Input
-                            id='balance'
-                            type='number'
-                            size='medium'
-                            step='0.01'
-                            placeholder={t('accounts.balance', 'Баланс')}
-                            {...register('balance', {
-                                required: t('accounts.balance', 'Баланс') + ' ' + t('common.required', 'обязательно'),
-                                min: {
-                                    value: 0,
-                                    message: t('accounts.balance.min', 'Баланс не может быть отрицательным')
-                                }
-                            })}
-                        />
-                        {errors.balance && <p className='error'>{errors.balance.message}</p>}
-                    </div>
-                    <div>
-                        <label htmlFor='institution'>{t('accounts.institution', 'Банк/Организация')}</label>
-                        <Input
-                            id='institution'
-                            type='text'
-                            size='medium'
-                            placeholder={t('accounts.institution', 'Банк/Организация')}
-                            {...register('institution', {
-                                maxLength: {
-                                    value: 100,
-                                    message: t(
-                                        'accounts.institution.maxLength',
-                                        'Название организации не может превышать 100 символов'
-                                    )
-                                }
-                            })}
-                        />
-                        {errors.institution && <p className='error'>{errors.institution.message}</p>}
-                    </div>
-                    {apiError && (
-                        <p className='error'>{apiError?.data?.messages?.error || t('accounts.error', 'Ошибка')}</p>
-                    )}
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <Input
+                        id='name'
+                        type='text'
+                        size='medium'
+                        label={t('accounts.name', 'Name')}
+                        placeholder={t('accounts.name', 'Name')}
+                        error={errors.name?.message}
+                        {...register('name', {
+                            required: t('common.required', 'Required')
+                        })}
+                    />
+
+                    <Select<string>
+                        label={t('accounts.type.checking', 'Type')}
+                        options={typeOptions}
+                        value={formType}
+                        onSelect={(items) =>
+                            setValue('type', (items?.[0]?.key ?? 'checking') as ApiModel.Account['type'])
+                        }
+                    />
+
+                    <Input
+                        id='institution'
+                        type='text'
+                        size='medium'
+                        label={t('accounts.institution', 'Institution')}
+                        placeholder={t('accounts.institution', 'Institution')}
+                        {...register('institution')}
+                    />
+
+                    <CurrencyInput
+                        label={
+                            editAccount
+                                ? t('accounts.balance', 'Current Balance')
+                                : t('accounts.initialBalance', 'Initial Balance')
+                        }
+                        value={formBalance ?? 0}
+                        currency={Currency.USD}
+                        locale={i18n.language}
+                        onValueChange={(val) => setValue('balance', val ?? 0)}
+                        {...register('balance')}
+                    />
+
                     <Button
-                        style={{ width: '100%' }}
+                        stretched
                         type='submit'
                         mode='primary'
-                        label={isLoading ? '...' : t('accounts.create', 'Создать')}
-                        disabled={isLoading}
+                        label={isSaving ? '...' : t('common.save', 'Save')}
+                        disabled={isSaving}
                     />
                 </form>
+            </Dialog>
+
+            {/* Confirm delete dialog */}
+            <Dialog
+                open={!!deleteTarget}
+                title={t('accounts.deleteConfirmTitle', 'Delete account?')}
+                onCloseDialog={() => setDeleteTarget(undefined)}
+            >
+                <Message type='warning'>
+                    {t(
+                        'accounts.deleteConfirmBody',
+                        'This account has no transactions and will be permanently deleted.'
+                    )}
+                </Message>
+                <Button
+                    mode='primary'
+                    variant='negative'
+                    label={isDeleting ? '...' : t('common.delete', 'Delete')}
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting}
+                    stretched
+                />
+                <Button
+                    mode='outline'
+                    label={t('common.cancel', 'Cancel')}
+                    onClick={() => setDeleteTarget(undefined)}
+                    stretched
+                />
+            </Dialog>
+
+            {/* Blocked delete dialog */}
+            <Dialog
+                open={!!blockedAccount}
+                title={t('accounts.deleteBlockedTitle', 'Cannot delete')}
+                onCloseDialog={() => setBlockedAccount(undefined)}
+            >
+                <Message type='error'>
+                    {t(
+                        'accounts.deleteBlockedBody',
+                        'This account cannot be deleted because it has existing transactions. Please delete or reassign the transactions first.'
+                    )}
+                </Message>
+                <Button
+                    mode='outline'
+                    label={t('common.cancel', 'Cancel')}
+                    onClick={() => setBlockedAccount(undefined)}
+                    stretched
+                />
             </Dialog>
         </AppLayout>
     )

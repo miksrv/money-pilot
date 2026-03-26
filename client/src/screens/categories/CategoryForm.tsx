@@ -89,7 +89,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = (props) => {
                         type='error'
                         className={styles.errorMessage}
                     >
-                        {createApiError || updateApiError || t('common.errors.unknown', 'An unknown error occurred')}
+                        {t('common.errors.unknown', 'An unknown error occurred')}
                     </Message>
                 )}
 
