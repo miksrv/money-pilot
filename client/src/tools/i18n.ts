@@ -12,18 +12,20 @@ void i18n
     .use(initReactI18next)
     .init({
         keySeparator: '.',
-        fallbackLng: 'en-US',
+        fallbackLng: 'en',
         debug: false,
         backend: {
             loadPath: '/locales/{{lng}}/translation.json'
         },
-        supportedLngs: ['en-US', 'ru-RU'],
+        supportedLngs: ['en', 'ru'],
+        load: 'languageOnly',
         interpolation: {
             escapeValue: false
         },
         detection: {
             order: ['localStorage', 'navigator', 'htmlTag'],
-            caches: ['localStorage']
+            caches: ['localStorage'],
+            lookupLocalStorage: 'i18nextLng'
         }
     })
     .then(() => {

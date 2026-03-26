@@ -6,7 +6,7 @@ export enum Currency {
     EUR = 'EUR'
 }
 
-export const formatMoney = (amount?: number | string | null, currency?: Currency): string =>
+export const formatMoney = (amount?: number | string | null, currency?: string): string =>
     new Intl.NumberFormat(i18n.language, {
         style: 'currency',
         currency: currency || Currency.USD,
