@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { cn, Icon, IconTypes } from 'simple-react-ui-kit'
 
 import styles from './styles.module.sass'
@@ -13,13 +13,14 @@ export type MenuItemType = {
 
 interface MenuProps {
     onClick?: () => void
+    collapsed?: boolean
 }
 
-const Menu: React.FC<MenuProps> = ({ onClick }) => {
+const Menu: React.FC<MenuProps> = ({ onClick, collapsed }) => {
     const { t } = useTranslation()
     const location = useLocation()
 
-    const menuItems: MenuItemType[] = [
+    const mainItems: MenuItemType[] = [
         {
             icon: 'Cloud',
             link: '/',
@@ -57,24 +58,49 @@ const Menu: React.FC<MenuProps> = ({ onClick }) => {
         }
     ]
 
+    const bottomItems: MenuItemType[] = [
+        {
+            icon: 'Settings',
+            link: '/settings',
+            text: t('menu.settings', 'Settings')
+        }
+    ]
+
     return (
-        <menu className={styles.menu}>
-            {menuItems
-                .filter(({ link }) => !!link)
-                .map((item, i) => (
-                    <li key={`menu${i}`}>
-                        <a
-                            href={item.link!}
+        <div className={cn(styles.menuWrapper, collapsed && styles.collapsed)}>
+            <menu className={styles.menu}>
+                {mainItems
+                    .filter(({ link }) => !!link)
+                    .map((item, i) => (
+                        <li key={`menu${i}`}>
+                            <Link
+                                to={item.link!}
+                                title={item.text}
+                                className={cn(location.pathname === item.link && styles.active)}
+                                onClick={() => onClick?.()}
+                            >
+                                {item.icon && <Icon name={item.icon} />}
+                                <span className={styles.label}>{item.text}</span>
+                            </Link>
+                        </li>
+                    ))}
+            </menu>
+            <menu className={cn(styles.menu, styles.menuBottom)}>
+                {bottomItems.map((item, i) => (
+                    <li key={`menuBottom${i}`}>
+                        <Link
+                            to={item.link!}
                             title={item.text}
                             className={cn(location.pathname === item.link && styles.active)}
                             onClick={() => onClick?.()}
                         >
                             {item.icon && <Icon name={item.icon} />}
-                            {item.text}
-                        </a>
+                            <span className={styles.label}>{item.text}</span>
+                        </Link>
                     </li>
                 ))}
-        </menu>
+            </menu>
+        </div>
     )
 }
 
