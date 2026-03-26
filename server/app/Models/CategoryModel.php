@@ -9,7 +9,7 @@ class CategoryModel extends ApplicationBaseModel
 {
     protected $table          = 'categories';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'parent_id', 'icon', 'color', 'budget', 'usage_count'];
+    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'parent_id', 'icon', 'color', 'budget', 'usage_count', 'archived'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
