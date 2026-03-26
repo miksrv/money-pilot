@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Libraries\Auth;
 use App\Models\AccountModel;
 use App\Models\CategoryModel;
+use App\Models\GroupMemberModel;
 use App\Models\PayeeModel;
 use App\Models\TransactionModel;
 use CodeIgniter\API\ResponseTrait;
@@ -33,7 +34,29 @@ class TransactionController extends ApplicationBaseController
             return $this->failUnauthorized();
         }
 
-        $userId = $this->authLibrary->user->id;
+        $currentUserId = $this->authLibrary->user->id;
+        $groupId       = $this->request->getGet('group_id');
+        $userId        = $currentUserId;
+
+        if ($groupId) {
+            $groupMemberModel = new GroupMemberModel();
+            $membership = $groupMemberModel
+                ->where(['group_id' => $groupId, 'user_id' => $currentUserId])
+                ->first();
+
+            if (!$membership) {
+                return $this->failForbidden('You are not a member of this group');
+            }
+
+            $db    = db_connect();
+            $group = $db->table('groups')->where('id', $groupId)->get()->getRowObject();
+
+            if (!$group) {
+                return $this->failNotFound('Group not found');
+            }
+
+            $userId = $group->owner_id;
+        }
 
         $page       = max(1, (int)($this->request->getGet('page') ?? 1));
         $limit      = min(100, max(1, (int)($this->request->getGet('limit') ?? 25)));
@@ -229,7 +252,7 @@ class TransactionController extends ApplicationBaseController
     }
 
     /**
-     * PUT /transactions/{id} - Update a transaction
+     * PUT /transactions/{id} - Update a transaction (supports partial updates)
      * @param string|null $id
      * @return ResponseInterface
      */
@@ -241,18 +264,87 @@ class TransactionController extends ApplicationBaseController
 
         $input = $this->request->getJSON(true);
 
-        if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
+        // Build dynamic validation rules based on provided fields
+        $updateRules = [];
+        $allowedFields = ['account_id', 'category_id', 'amount', 'type', 'date', 'notes', 'payee'];
+        
+        foreach ($input as $key => $value) {
+            if (!in_array($key, $allowedFields) && $key !== 'id') {
+                continue;
+            }
+            
+            // Apply validation only for fields that are being updated
+            switch ($key) {
+                case 'account_id':
+                    $updateRules['account_id'] = 'required';
+                    break;
+                case 'category_id':
+                    $updateRules['category_id'] = 'permit_empty';
+                    break;
+                case 'amount':
+                    $updateRules['amount'] = 'required|decimal';
+                    break;
+                case 'type':
+                    $updateRules['type'] = 'required|in_list[income,expense]';
+                    break;
+                case 'date':
+                    $updateRules['date'] = 'required|valid_date';
+                    break;
+                case 'notes':
+                    $updateRules['notes'] = 'permit_empty';
+                    break;
+            }
+        }
+
+        if (!empty($updateRules) && !$this->validateRequest($input, $updateRules, $this->model->validationMessages)) {
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
         try {
+            // Remove fields that shouldn't be updated directly
             unset($input['id'], $input['user_id']);
 
-            if (!$this->model->updateById($id, $this->authLibrary->user->id, $input)) {
+            // Filter to only allowed fields
+            $updateData = array_intersect_key($input, array_flip($allowedFields));
+
+            if (empty($updateData)) {
+                return $this->failValidationErrors(['error' => 'No valid fields to update']);
+            }
+
+            if (!$this->model->updateById($id, $this->authLibrary->user->id, $updateData)) {
                 return $this->failValidationErrors($this->model->errors());
             }
 
             return $this->respondUpdated();
+        } catch (\Exception $e) {
+            log_message('error', __METHOD__ . ': ' . $e->getMessage());
+            return $this->fail($e->getMessage());
+        }
+    }
+
+    /**
+     * POST /transactions/bulk-delete - Delete multiple transactions by ID
+     * Only deletes transactions that belong to the authenticated user.
+     * @return ResponseInterface
+     */
+    public function bulkDelete(): ResponseInterface
+    {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
+        $input = $this->request->getJSON(true);
+        $ids   = $input['ids'] ?? null;
+
+        if (empty($ids) || !is_array($ids)) {
+            return $this->failValidationErrors(['ids' => 'ids must be a non-empty array']);
+        }
+
+        try {
+            $userId  = $this->authLibrary->user->id;
+            $deleted = $this->model->bulkDeleteByIds($ids, $userId);
+
+            return $this->respond(['deleted' => $deleted]);
         } catch (\Exception $e) {
             log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());

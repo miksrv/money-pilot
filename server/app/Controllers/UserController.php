@@ -35,6 +35,7 @@ class UserController extends ApplicationBaseController
             'name'       => $user->name,
             'email'      => $user->email,
             'phone'      => $user->phone,
+            'currency'   => $user->currency ?? 'USD',
             'created_at' => $user->created_at instanceof \CodeIgniter\I18n\Time
                 ? $user->created_at->toDateTimeString()
                 : (string)$user->created_at,
@@ -56,21 +57,34 @@ class UserController extends ApplicationBaseController
             return $this->failValidationErrors(['name' => 'Name is required']);
         }
 
+        $currency = strtoupper(trim($input['currency'] ?? ''));
+        if ($currency !== '' && (strlen($currency) !== 3 || !ctype_alpha($currency))) {
+            return $this->failValidationErrors(['currency' => 'Currency must be a 3-letter ISO 4217 code (e.g. USD)']);
+        }
+
         try {
             $userModel = new UserModel();
-            $userModel->update($this->authLibrary->user->id, [
+
+            $updateData = [
                 'name'  => trim($input['name']),
                 'phone' => $input['phone'] ?? null,
-            ]);
+            ];
+
+            if ($currency !== '') {
+                $updateData['currency'] = $currency;
+            }
+
+            $userModel->update($this->authLibrary->user->id, $updateData);
 
             // Return updated profile
             $updated = $userModel->find($this->authLibrary->user->id);
 
             return $this->respond([
-                'id'    => $updated->id,
-                'name'  => $updated->name,
-                'email' => $updated->email,
-                'phone' => $updated->phone,
+                'id'       => $updated->id,
+                'name'     => $updated->name,
+                'email'    => $updated->email,
+                'phone'    => $updated->phone,
+                'currency' => $updated->currency ?? 'USD',
             ]);
         } catch (\Exception $e) {
             log_message('error', __METHOD__ . ': ' . $e->getMessage());

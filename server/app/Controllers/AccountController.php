@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Libraries\Auth;
 use App\Models\AccountModel;
+use App\Models\GroupMemberModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 
@@ -17,31 +18,46 @@ class AccountController extends ApplicationBaseController
     {
         $this->model       = new AccountModel();
         $this->authLibrary = new Auth();
-        $this->ensureAuthenticated();
     }
 
     /**
-     * Ensure the user is authenticated
-     * @return ResponseInterface|null
-     */
-    protected function ensureAuthenticated(): ?ResponseInterface
-    {
-        if (!$this->authLibrary->isAuth) {
-            return $this->failUnauthorized();
-        }
-
-        return null;
-    }
-
-    /**
-     * GET /accounts - List all accounts for the authenticated user
+     * GET /accounts - List all accounts for the authenticated user.
+     * Accepts optional ?group_id= query param to view a shared budget owner's accounts.
      * Includes transaction_count per account.
      * @return ResponseInterface
      */
     public function index(): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
+        $currentUserId = $this->authLibrary->user->id;
+        $groupId       = $this->request->getGet('group_id');
+        $targetUserId  = $currentUserId;
+
+        if ($groupId) {
+            $groupMemberModel = new GroupMemberModel();
+            $membership = $groupMemberModel
+                ->where(['group_id' => $groupId, 'user_id' => $currentUserId])
+                ->first();
+
+            if (!$membership) {
+                return $this->failForbidden('You are not a member of this group');
+            }
+
+            $db    = db_connect();
+            $group = $db->table('groups')->where('id', $groupId)->get()->getRowObject();
+
+            if (!$group) {
+                return $this->failNotFound('Group not found');
+            }
+
+            $targetUserId = $group->owner_id;
+        }
+
         $db       = db_connect();
-        $accounts = $this->model->findByUserId($this->authLibrary->user->id);
+        $accounts = $this->model->findByUserId($targetUserId);
 
         $response = array_map(function ($account) use ($db) {
             $count = $db->table('transactions')
@@ -67,6 +83,10 @@ class AccountController extends ApplicationBaseController
      */
     public function create(): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $input = $this->request->getJSON(true);
 
         if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
@@ -96,6 +116,10 @@ class AccountController extends ApplicationBaseController
      */
     public function show($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $account = $this->model->getById($id, $this->authLibrary->user->id);
 
         if (!$account) {
@@ -112,6 +136,10 @@ class AccountController extends ApplicationBaseController
      */
     public function update($id = null): ResponseInterface
     {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized();
+        }
+
         $input = $this->request->getJSON(true);
 
         if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
