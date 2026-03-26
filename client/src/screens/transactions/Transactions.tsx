@@ -54,6 +54,12 @@ export const Transactions: React.FC = () => {
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [openAddForm, setOpenAddForm] = useState(false)
 
+    const resetList = () => {
+        setPage(1)
+        setAllTransactions([])
+        setSelectedIds([])
+    }
+
     const sentinelRef = useRef<HTMLDivElement>(null)
 
     const { data: accounts } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
@@ -143,9 +149,7 @@ export const Transactions: React.FC = () => {
         }
         try {
             await bulkDeleteTransactions({ ids: selectedIds }).unwrap()
-            setPage(1)
-            setAllTransactions([])
-            setSelectedIds([])
+            resetList()
         } catch {
             console.error('Failed to bulk delete transactions')
         }
@@ -231,6 +235,7 @@ export const Transactions: React.FC = () => {
                 isLoading={isFetching}
                 onSelectionChange={setSelectedIds}
                 isReadOnly={isViewer}
+                onTransactionDeleted={resetList}
             />
 
             <div
