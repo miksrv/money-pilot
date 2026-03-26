@@ -1,0 +1,190 @@
+.tableWrapper
+    width: 100%
+
+.dateHeader
+    font-size: 11px
+    font-weight: 600
+    letter-spacing: 0.05em
+    text-transform: uppercase
+    color: var(--input-label-color)
+    padding-top: 16px
+    padding-bottom: 6px
+    padding-left: 4px
+
+.row
+    display: flex
+    align-items: center
+    gap: 12px
+    padding: 4px 6px
+    cursor: pointer
+    transition: background-color 0.15s ease
+
+    &:hover
+        background-color: rgba(0, 0, 0, 0.04)
+
+        [data-theme='dark'] &
+            background-color: rgba(255, 255, 255, 0.06)
+
+    &:focus-visible
+        outline: .5px solid var(--color-blue, #2196F3)
+        outline-offset: 2px
+
+.rowSelected
+    background-color: rgba(0, 0, 0, 0.04)
+
+    [data-theme='dark'] &
+        background-color: rgba(255, 255, 255, 0.06)
+
+.cellPayee
+    display: flex
+    align-items: center
+    gap: 10px
+    flex: 1
+    min-width: 0
+
+.checkbox
+    flex-shrink: 0
+
+.checkboxWrapper
+    flex-shrink: 0
+    display: flex
+    align-items: center
+
+.payeeInfo
+    display: flex
+    flex-direction: row
+    align-items: center
+    gap: 8px
+    min-width: 0
+
+.payeeName
+    font-weight: 500
+    font-size: 14px
+    color: var(--text-primary, inherit)
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+
+.accountName
+    font-size: 12px
+    color: var(--input-label-color)
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+    margin-left: auto
+    flex-shrink: 0
+
+.cellCategory
+    flex-shrink: 0
+    width: 160px
+
+.categoryBadge
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    padding: 3px 10px
+    border-radius: 20px
+    font-size: 12px
+    font-weight: 500
+    border: none
+    cursor: pointer
+    white-space: nowrap
+    max-width: 160px
+    overflow: hidden
+    text-overflow: ellipsis
+    transition: opacity 0.15s ease
+
+    &:hover
+        opacity: 0.8
+
+.categoryBadgeEmpty
+    display: inline-flex
+    align-items: center
+    padding: 3px 10px
+    border-radius: 20px
+    font-size: 12px
+    border: 1px dashed var(--input-label-color)
+    color: var(--input-label-color)
+    background: transparent
+    cursor: pointer
+    white-space: nowrap
+    transition: opacity 0.15s ease
+
+    &:hover
+        opacity: 0.7
+
+.categoryIcon
+    font-size: 13px
+
+.categoryPicker
+    position: absolute
+    top: calc(100% + 4px)
+    left: 0
+    z-index: 100
+    background-color: var(--dialog-background, #fff)
+    border: 1px solid var(--input-border-color, #ddd)
+    border-radius: 8px
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12)
+    min-width: 180px
+    max-height: 240px
+    overflow-y: auto
+    padding: 6px 0
+
+.categoryPickerItem
+    display: flex
+    align-items: center
+    gap: 8px
+    width: 100%
+    padding: 8px 14px
+    border: none
+    background: transparent
+    cursor: pointer
+    font-size: 13px
+    color: var(--text-primary, inherit)
+    text-align: left
+    transition: background-color 0.12s ease
+
+    &:hover
+        background-color: rgba(0, 0, 0, 0.05)
+
+        [data-theme='dark'] &
+            background-color: rgba(255, 255, 255, 0.08)
+
+.categoryPickerItemActive
+    font-weight: 600
+
+.categoryPickerIcon
+    font-size: 14px
+
+.categoryPickerEmpty
+    display: block
+    padding: 8px 14px
+    font-size: 13px
+    color: var(--input-label-color)
+
+.cellAmount
+    flex-shrink: 0
+    text-align: right
+    min-width: 100px
+
+.amountIncome
+    color: #4CAF50
+    font-weight: 500
+    font-size: 14px
+
+.amountExpense
+    font-weight: 500
+    font-size: 14px
+    color: var(--text-primary, inherit)
+
+.skeletonRow
+    display: flex
+    align-items: center
+    gap: 12px
+    padding: 10px 4px
+
+.emptyState
+    text-align: center
+    padding: 32px 0
+    color: var(--input-label-color)
+    font-size: 14px
