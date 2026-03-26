@@ -59,7 +59,7 @@ const DEFAULT_FORM: RecurringFormData = {
     notes: ''
 }
 
-const FREQUENCY_KEYS: ApiModel.RecurringTransaction['frequency'][] = [
+const FREQUENCY_KEYS: Array<ApiModel.RecurringTransaction['frequency']> = [
     'daily',
     'weekly',
     'biweekly',
@@ -70,7 +70,12 @@ const FREQUENCY_KEYS: ApiModel.RecurringTransaction['frequency'][] = [
 
 export const Recurring: React.FC = () => {
     const { t, i18n } = useTranslation()
-    const isAuth = useAppSelector((state) => state.auth)
+
+    useEffect(() => {
+        document.title = `${t('page.recurring', 'Recurring')} — Money Pilot`
+    }, [t])
+
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const [openForm, setOpenForm] = useState(false)
     const [editTarget, setEditTarget] = useState<ApiModel.RecurringTransaction | undefined>()
@@ -254,9 +259,7 @@ export const Recurring: React.FC = () => {
                                 const item = rows[index]
                                 return (
                                     <span
-                                        className={
-                                            item.type === 'income' ? styles.amountIncome : styles.amountExpense
-                                        }
+                                        className={item.type === 'income' ? styles.amountIncome : styles.amountExpense}
                                     >
                                         {item.type === 'income' ? '+' : '-'}
                                         {formatMoney(item.amount, Currency.USD)}
@@ -292,9 +295,7 @@ export const Recurring: React.FC = () => {
                             formatter: (value) => (
                                 <Badge
                                     label={
-                                        value === 1
-                                            ? t('recurring.active', 'Active')
-                                            : t('recurring.paused', 'Paused')
+                                        value === 1 ? t('recurring.active', 'Active') : t('recurring.paused', 'Paused')
                                     }
                                     size='small'
                                 />
@@ -307,7 +308,12 @@ export const Recurring: React.FC = () => {
                                 const item = rows[index]
                                 return (
                                     <Popout
-                                        trigger={<Button mode='link' icon='VerticalDots' />}
+                                        trigger={
+                                            <Button
+                                                mode='link'
+                                                icon='VerticalDots'
+                                            />
+                                        }
                                         closeOnChildrenClick
                                     >
                                         <Button
@@ -380,9 +386,7 @@ export const Recurring: React.FC = () => {
                             label={t('screens.transactions.form.type', 'Type')}
                             value={formType}
                             options={typeOptions}
-                            onSelect={(sel) =>
-                                setValue('type', (sel?.[0]?.key ?? 'expense') as 'income' | 'expense')
-                            }
+                            onSelect={(sel) => setValue('type', (sel?.[0]?.key ?? 'expense') as 'income' | 'expense')}
                         />
 
                         <Select<string>
@@ -482,10 +486,7 @@ export const Recurring: React.FC = () => {
                 onCloseDialog={() => setDeleteTarget(undefined)}
             >
                 <Message type='warning'>
-                    {t(
-                        'recurring.deleteConfirmBody',
-                        'Are you sure you want to delete this recurring transaction?'
-                    )}
+                    {t('recurring.deleteConfirmBody', 'Are you sure you want to delete this recurring transaction?')}
                 </Message>
                 <Button
                     mode='primary'

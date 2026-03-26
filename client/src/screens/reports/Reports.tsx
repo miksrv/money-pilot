@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import ReactECharts from 'echarts-for-react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import ReactECharts from 'echarts-for-react'
 import { Badge, Button, Container, DatePicker, Message, Skeleton, Table } from 'simple-react-ui-kit'
 
 import {
@@ -63,7 +63,12 @@ const downloadCsv = (filename: string, headers: string[], rows: string[][]) => {
 
 export const Reports: React.FC = () => {
     const { t, i18n } = useTranslation()
-    const isAuth = useAppSelector((state) => state.auth)
+
+    useEffect(() => {
+        document.title = `${t('page.reports', 'Reports')} — Money Pilot`
+    }, [t])
+
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const [preset, setPreset] = useState<Preset>('thisMonth')
     const defaultRange = getPresetRange('thisMonth')
@@ -91,7 +96,7 @@ export const Reports: React.FC = () => {
         skip: skipQuery
     })
 
-    const presets: { key: Preset; label: string }[] = [
+    const presets: Array<{ key: Preset; label: string }> = [
         { key: 'thisMonth', label: t('reports.thisMonth', 'This Month') },
         { key: 'lastMonth', label: t('reports.lastMonth', 'Last Month') },
         { key: 'last3Months', label: t('reports.last3Months', 'Last 3 Months') },
@@ -108,7 +113,7 @@ export const Reports: React.FC = () => {
                 radius: ['40%', '70%'],
                 data: (categoryData ?? []).map((c) => ({
                     value: c.total,
-                    name: [(c.emoji ?? ''), (c.category_name ?? t('transactions.noCategory', 'No category'))].join(' ')
+                    name: [c.emoji ?? '', c.category_name ?? t('transactions.noCategory', 'No category')].join(' ')
                 }))
             }
         ]
@@ -391,9 +396,7 @@ export const Reports: React.FC = () => {
                                 {
                                     header: t('reports.payee', 'Payee'),
                                     accessor: 'payee_name',
-                                    formatter: (value) => (
-                                        <span>{(value as string | null) ?? '—'}</span>
-                                    )
+                                    formatter: (value) => <span>{(value as string | null) ?? '—'}</span>
                                 },
                                 {
                                     header: t('reports.transactions', 'Transactions'),

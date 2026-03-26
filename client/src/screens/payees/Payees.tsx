@@ -3,7 +3,13 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Badge, Button, Dialog, Input, Message, Popout, Table } from 'simple-react-ui-kit'
 
-import { ApiModel, useDeletePayeeMutation, useListPayeesQuery, useMergePayeesMutation, useUpdatePayeeMutation } from '@/api'
+import {
+    ApiModel,
+    useDeletePayeeMutation,
+    useListPayeesQuery,
+    useMergePayeesMutation,
+    useUpdatePayeeMutation
+} from '@/api'
 import { AppLayout } from '@/components'
 import { useAppSelector } from '@/store/hooks'
 import { formatDate } from '@/utils/dates'
@@ -14,7 +20,12 @@ type EditFormData = { name: string }
 
 export const Payees: React.FC = () => {
     const { t } = useTranslation()
-    const isAuth = useAppSelector((state) => state.auth)
+
+    useEffect(() => {
+        document.title = `${t('page.payees', 'Payees')} — Money Pilot`
+    }, [t])
+
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const [search, setSearch] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -31,10 +42,10 @@ export const Payees: React.FC = () => {
         return () => clearTimeout(timer)
     }, [search])
 
-    const { data: payees, isLoading } = useListPayeesQuery(
-        debouncedSearch ? { search: debouncedSearch } : undefined,
-        { refetchOnReconnect: true, skip: !isAuth }
-    )
+    const { data: payees, isLoading } = useListPayeesQuery(debouncedSearch ? { search: debouncedSearch } : undefined, {
+        refetchOnReconnect: true,
+        skip: !isAuth
+    })
 
     const [updatePayee, { isLoading: isUpdating }] = useUpdatePayeeMutation()
     const [deletePayee] = useDeletePayeeMutation()
@@ -145,11 +156,7 @@ export const Payees: React.FC = () => {
                             formatter: (_value, rows, index) => {
                                 const payee = rows[index]
                                 const isMergeSource = payee.id === mergeSourceId
-                                return (
-                                    <span style={{ fontWeight: isMergeSource ? 700 : undefined }}>
-                                        {payee.name}
-                                    </span>
-                                )
+                                return <span style={{ fontWeight: isMergeSource ? 700 : undefined }}>{payee.name}</span>
                             }
                         },
                         {
@@ -165,8 +172,7 @@ export const Payees: React.FC = () => {
                         {
                             header: t('payees.lastUsed', 'Last Used'),
                             accessor: 'last_used',
-                            formatter: (value) =>
-                                value ? (formatDate(value as string, 'DD.MM.YYYY') ?? '—') : '—'
+                            formatter: (value) => (value ? (formatDate(value as string, 'DD.MM.YYYY') ?? '—') : '—')
                         },
                         {
                             header: '',
@@ -188,7 +194,12 @@ export const Payees: React.FC = () => {
 
                                 return (
                                     <Popout
-                                        trigger={<Button mode='link' icon='VerticalDots' />}
+                                        trigger={
+                                            <Button
+                                                mode='link'
+                                                icon='VerticalDots'
+                                            />
+                                        }
                                         closeOnChildrenClick
                                     >
                                         <Button
@@ -313,9 +324,13 @@ export const Payees: React.FC = () => {
                 onCloseDialog={() => setBlockedPayee(undefined)}
             >
                 <Message type='error'>
-                    {t('payees.deleteBlockedBody', 'This payee cannot be deleted because it is used in {{count}} transaction(s).', {
-                        count: blockedPayee?.usage_count ?? 0
-                    })}
+                    {t(
+                        'payees.deleteBlockedBody',
+                        'This payee cannot be deleted because it is used in {{count}} transaction(s).',
+                        {
+                            count: blockedPayee?.usage_count ?? 0
+                        }
+                    )}
                 </Message>
                 <Button
                     mode='outline'
