@@ -33,10 +33,13 @@ class CategoryController extends ApplicationBaseController
 
         $includeArchived = (bool)$this->request->getGet('include_archived');
         $withSums        = (bool)$this->request->getGet('withSums');
+        $withChildren    = (bool)$this->request->getGet('withChildren');
         $db              = db_connect();
 
         if ($withSums) {
             $categories = $this->model->findByUserIdWithSums($this->authLibrary->user->id);
+        } elseif ($withChildren) {
+            $categories = $this->model->findByUserIdWithChildren($this->authLibrary->user->id);
         } else {
             $categories = $this->model->findByUserId($this->authLibrary->user->id);
         }
@@ -47,7 +50,7 @@ class CategoryController extends ApplicationBaseController
             $categories = array_values($categories);
         }
 
-        $response = array_map(function ($category) use ($db, $withSums) {
+        $buildItem = function ($category) use ($db, $withSums) {
             $count = $db->table('transactions')
                 ->where('category_id', $category->id)
                 ->countAllResults();
@@ -56,6 +59,8 @@ class CategoryController extends ApplicationBaseController
                 'id'                => $category->id,
                 'name'              => $category->name,
                 'type'              => $category->type,
+                'parent_id'         => $category->parent_id,
+                'is_parent'         => (bool)($category->is_parent ?? false),
                 'icon'              => $category->icon,
                 'color'             => $category->color,
                 'budget'            => (float)($category->budget ?? 0),
@@ -65,6 +70,16 @@ class CategoryController extends ApplicationBaseController
 
             if ($withSums) {
                 $item['expenses'] = (float)($category->expenses ?? 0);
+            }
+
+            return $item;
+        };
+
+        $response = array_map(function ($category) use ($buildItem, $withChildren) {
+            $item = $buildItem($category);
+
+            if ($withChildren && isset($category->children)) {
+                $item['children'] = array_map($buildItem, $category->children);
             }
 
             return $item;
@@ -83,9 +98,18 @@ class CategoryController extends ApplicationBaseController
             return $this->failUnauthorized();
         }
 
-        $input = $this->request->getJSON(true);
+        $input    = $this->request->getJSON(true);
+        $isParent = !empty($input['is_parent']);
 
-        if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
+        $rules    = $this->model->validationRules;
+        $messages = $this->model->validationMessages;
+
+        if ($isParent) {
+            $rules['icon']   = 'permit_empty|string|max_length[50]';
+            $rules['budget'] = 'permit_empty|decimal';
+        }
+
+        if (!$this->validateRequest($input, $rules, $messages)) {
             return $this->failValidationErrors(['error' => '1001', 'messages' => $this->validator->getErrors()]);
         }
 
@@ -94,9 +118,10 @@ class CategoryController extends ApplicationBaseController
                 'user_id'   => $this->authLibrary->user->id,
                 'name'      => $input['name'],
                 'type'      => $input['type'] ?? null,
+                'is_parent' => $isParent ? 1 : 0,
                 'icon'      => $input['icon'] ?? null,
                 'color'     => $input['color'] ?? null,
-                'budget'    => $input['budget'] ?? null,
+                'budget'    => $isParent ? null : ($input['budget'] ?? null),
                 'parent_id' => !empty($input['parent_id']) ? $input['parent_id'] : null,
             ]);
 
@@ -142,19 +167,41 @@ class CategoryController extends ApplicationBaseController
             return $this->failUnauthorized();
         }
 
-        $input = $this->request->getJSON(true);
+        $input    = $this->request->getJSON(true);
+        $isParent = !empty($input['is_parent']);
 
-        if (!$this->validateRequest($input, $this->model->validationRules, $this->model->validationMessages)) {
+        $rules    = $this->model->validationRules;
+        $messages = $this->model->validationMessages;
+
+        if ($isParent) {
+            $rules['icon']   = 'permit_empty|string|max_length[50]';
+            $rules['budget'] = 'permit_empty|decimal';
+        }
+
+        if (!$this->validateRequest($input, $rules, $messages)) {
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
         try {
+            $existing = $this->model->getById($id);
+            $oldColor = $existing ? $existing->color : null;
+
             unset($input['id']);
 
-            $input['budget'] = $input['budget'] ?? null;
+            $input['budget']    = $isParent ? null : ($input['budget'] ?? null);
+            $input['is_parent'] = $isParent ? 1 : 0;
 
             if (!$this->model->updateById($id, $this->authLibrary->user->id, $input)) {
                 return $this->failValidationErrors($this->model->errors());
+            }
+
+            $newColor = $input['color'] ?? null;
+            if ($newColor !== null && $newColor !== $oldColor) {
+                if ($isParent) {
+                    $this->model->propagateColorToChildren($id, $newColor);
+                } elseif (!empty($input['parent_id'])) {
+                    $this->model->propagateColorToParentAndSiblings($id, $newColor);
+                }
             }
 
             return $this->respondUpdated();
@@ -179,6 +226,18 @@ class CategoryController extends ApplicationBaseController
 
         if (!$category) {
             return $this->failNotFound();
+        }
+
+        // Block if parent category still has children
+        if ((bool)$category->is_parent) {
+            $childCount = $this->model->where('parent_id', $id)->countAllResults();
+
+            if ($childCount > 0) {
+                return $this->fail(
+                    ['error' => 'category_has_children'],
+                    422
+                );
+            }
         }
 
         // Block if category is used by any transaction

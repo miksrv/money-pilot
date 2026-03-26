@@ -9,7 +9,7 @@ class CategoryModel extends ApplicationBaseModel
 {
     protected $table          = 'categories';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'parent_id', 'icon', 'color', 'budget', 'usage_count', 'archived'];
+    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'parent_id', 'is_parent', 'icon', 'color', 'budget', 'usage_count', 'archived'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
@@ -144,6 +144,62 @@ class CategoryModel extends ApplicationBaseModel
     public function updateById(string $id, string $userId, array $data): bool
     {
         return $this->where(['id' => $id, 'user_id' => $userId])->set($data)->update();
+    }
+
+    /**
+     * Find categories by user ID and nest children under their parent categories
+     */
+    public function findByUserIdWithChildren(string $userId): array
+    {
+        $all     = $this->where('user_id', $userId)->orderBy('usage_count', 'DESC')->findAll();
+        $parents = [];
+        $orphans = [];
+
+        foreach ($all as $category) {
+            if ((bool)$category->is_parent) {
+                $parents[$category->id] = $category;
+                $parents[$category->id]->children = [];
+            }
+        }
+
+        foreach ($all as $category) {
+            if ((bool)$category->is_parent) {
+                continue;
+            }
+            if (!empty($category->parent_id) && isset($parents[$category->parent_id])) {
+                $parents[$category->parent_id]->children[] = $category;
+            } else {
+                $orphans[] = $category;
+            }
+        }
+
+        return array_merge(array_values($parents), $orphans);
+    }
+
+    /**
+     * Propagate a color change from a parent category to all its children
+     */
+    public function propagateColorToChildren(string $parentId, string $color): void
+    {
+        $this->where('parent_id', $parentId)->set(['color' => $color])->update();
+    }
+
+    /**
+     * Propagate a color change from a child category to its parent and all siblings
+     */
+    public function propagateColorToParentAndSiblings(string $categoryId, string $color): void
+    {
+        $category = $this->getById($categoryId);
+
+        if (!$category || empty($category->parent_id)) {
+            return;
+        }
+
+        $this->where('id', $category->parent_id)->set(['color' => $color])->update();
+        $this->where('parent_id', $category->parent_id)
+            ->where('id !=', $categoryId)
+            ->set(['color' => $color])
+            ->update();
     }
 
     /**

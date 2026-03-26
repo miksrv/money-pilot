@@ -104,21 +104,39 @@ class SeedTestData extends BaseCommand
         // ---------------------------------------------------------------
         // Step 4 — Create categories (per user)
         // Using allowed colors from ColorPicker.tsx
+        // Parent categories and their children
         // ---------------------------------------------------------------
         CLI::write('Creating categories...', 'yellow');
 
-        $categoryDefs = [
-            ['name' => 'Groceries',     'type' => 'expense', 'color' => 'green',   'icon' => '🛒',  'budget' => 600.00],
+        // Parent categories (no budget, transactions should not be assigned to them)
+        $parentCategoryDefs = [
+            ['name' => 'Home',           'type' => 'expense', 'color' => 'blue', 'is_parent' => 1],
+            ['name' => 'Transportation', 'type' => 'expense', 'color' => 'cyan', 'is_parent' => 1],
+        ];
+
+        // Child categories with their parent name
+        $childCategoryDefs = [
+            // Home children
+            ['name' => 'Rent',      'type' => 'expense', 'color' => 'blue',    'icon' => '🏠', 'budget' => 2000.00, 'parent' => 'Home'],
+            ['name' => 'Phone',     'type' => 'expense', 'color' => 'blue',    'icon' => '📱', 'budget' => 100.00,  'parent' => 'Home'],
+            ['name' => 'Utilities', 'type' => 'expense', 'color' => 'blue',    'icon' => '💡', 'budget' => 250.00,  'parent' => 'Home'],
+            ['name' => 'Internet',  'type' => 'expense', 'color' => 'blue',    'icon' => '📶', 'budget' => 100.00,  'parent' => 'Home'],
+            // Transportation children
+            ['name' => 'Car Insurance', 'type' => 'expense', 'color' => 'cyan', 'icon' => '🛡️', 'budget' => 150.00,  'parent' => 'Transportation'],
+            ['name' => 'Gas',           'type' => 'expense', 'color' => 'cyan', 'icon' => '⛽', 'budget' => 200.00,  'parent' => 'Transportation'],
+            ['name' => 'Service',       'type' => 'expense', 'color' => 'cyan', 'icon' => '🔧', 'budget' => 100.00,  'parent' => 'Transportation'],
+            ['name' => 'FastTrack',     'type' => 'expense', 'color' => 'cyan', 'icon' => '🛣️', 'budget' => 50.00,   'parent' => 'Transportation'],
+        ];
+
+        // Standalone categories (no parent)
+        $standaloneCategoryDefs = [
             ['name' => 'Restaurants',   'type' => 'expense', 'color' => 'orange',  'icon' => '🍽️',  'budget' => 300.00],
-            ['name' => 'Transport',     'type' => 'expense', 'color' => 'blue',    'icon' => '🚗',  'budget' => 200.00],
+            ['name' => 'Groceries',     'type' => 'expense', 'color' => 'green',   'icon' => '🛒',  'budget' => 600.00],
             ['name' => 'Entertainment', 'type' => 'expense', 'color' => 'purple',  'icon' => '🎬',  'budget' => 150.00],
+            ['name' => 'Gifts',         'type' => 'expense', 'color' => 'magenta', 'icon' => '🎁',  'budget' => 100.00],
             ['name' => 'Health',        'type' => 'expense', 'color' => 'red',     'icon' => '💊',  'budget' => 100.00],
-            ['name' => 'Shopping',      'type' => 'expense', 'color' => 'cyan',    'icon' => '🛍️',  'budget' => 400.00],
-            ['name' => 'Utilities',     'type' => 'expense', 'color' => 'grey',    'icon' => '💡',  'budget' => 250.00],
-            ['name' => 'Travel',        'type' => 'expense', 'color' => 'magenta', 'icon' => '✈️',  'budget' => 500.00],
+            ['name' => 'Shopping',      'type' => 'expense', 'color' => 'olive',   'icon' => '🛍️',  'budget' => 400.00],
             ['name' => 'Salary',        'type' => 'income',  'color' => 'lime',    'icon' => '💼',  'budget' => null],
-            ['name' => 'Freelance',     'type' => 'income',  'color' => 'olive',   'icon' => '💻',  'budget' => null],
-            ['name' => 'Investments',   'type' => 'income',  'color' => 'yellow',  'icon' => '📈',  'budget' => null],
         ];
 
         // [userId => [categoryName => categoryId]]
@@ -126,7 +144,47 @@ class SeedTestData extends BaseCommand
 
         foreach ([$user1Id, $user2Id] as $userId) {
             $categories[$userId] = [];
-            foreach ($categoryDefs as $def) {
+
+            // Create parent categories first
+            foreach ($parentCategoryDefs as $def) {
+                $id = uniqid();
+                $db->table('categories')->insert([
+                    'id'         => $id,
+                    'user_id'    => $userId,
+                    'name'       => $def['name'],
+                    'type'       => $def['type'],
+                    'color'      => $def['color'],
+                    'icon'       => $def['icon'] ?? null,
+                    'is_parent'  => $def['is_parent'] ?? null,
+                    'budget'     => null,
+                    'parent_id'  => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $categories[$userId][$def['name']] = $id;
+            }
+
+            // Create child categories with parent_id
+            foreach ($childCategoryDefs as $def) {
+                $id = uniqid();
+                $parentId = $categories[$userId][$def['parent']];
+                $db->table('categories')->insert([
+                    'id'         => $id,
+                    'user_id'    => $userId,
+                    'name'       => $def['name'],
+                    'type'       => $def['type'],
+                    'color'      => $def['color'],
+                    'icon'       => $def['icon'],
+                    'budget'     => $def['budget'],
+                    'parent_id'  => $parentId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $categories[$userId][$def['name']] = $id;
+            }
+
+            // Create standalone categories
+            foreach ($standaloneCategoryDefs as $def) {
                 $id = uniqid();
                 $db->table('categories')->insert([
                     'id'         => $id,
@@ -136,6 +194,7 @@ class SeedTestData extends BaseCommand
                     'color'      => $def['color'],
                     'icon'       => $def['icon'],
                     'budget'     => $def['budget'],
+                    'parent_id'  => null,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);
@@ -148,19 +207,25 @@ class SeedTestData extends BaseCommand
         // ---------------------------------------------------------------
         CLI::write('Creating payees...', 'yellow');
 
-        // Payee lists per category
+        // Payee lists per category (using child categories for transactions)
         $payeeDefs = [
             'Groceries'     => ['Walmart', 'Whole Foods', 'Trader Joe\'s', 'Kroger', 'Costco', 'Aldi'],
             'Restaurants'   => ['McDonald\'s', 'Chipotle', 'Olive Garden', 'Uber Eats', 'DoorDash', 'Panera Bread'],
-            'Transport'     => ['Shell', 'BP Gas', 'Uber', 'Lyft', 'Metro Transit', 'ExxonMobil'],
             'Entertainment' => ['Netflix', 'Spotify', 'AMC Theaters', 'Steam', 'Apple TV+', 'Hulu'],
             'Health'        => ['CVS Pharmacy', 'Walgreens', 'LabCorp', 'Kaiser Clinic', 'One Medical'],
             'Shopping'      => ['Amazon', 'Target', 'Best Buy', 'IKEA', 'Zara', 'H&M'],
-            'Utilities'     => ['AT&T', 'Comcast', 'PG&E Electric', 'City Water', 'National Gas'],
-            'Travel'        => ['Delta Airlines', 'Airbnb', 'Marriott', 'Enterprise Rent-A-Car', 'Booking.com'],
+            'Gifts'         => ['Amazon Gift', 'Etsy', 'Hallmark'],
             'Salary'        => ['Employer Inc'],
-            'Freelance'     => ['Upwork Client', 'Freelance Client LLC'],
-            'Investments'   => ['Dividend Payment', 'Robinhood'],
+            // Home children
+            'Rent'          => ['Landlord LLC', 'Property Management'],
+            'Phone'         => ['AT&T', 'Verizon', 'T-Mobile'],
+            'Utilities'     => ['PG&E Electric', 'City Water', 'National Gas'],
+            'Internet'      => ['Comcast', 'Spectrum', 'AT&T Fiber'],
+            // Transportation children
+            'Car Insurance' => ['Geico', 'State Farm', 'Progressive'],
+            'Gas'           => ['Shell', 'BP Gas', 'Chevron', 'ExxonMobil'],
+            'Service'       => ['Jiffy Lube', 'Firestone', 'Pep Boys'],
+            'FastTrack'     => ['FasTrak', 'E-ZPass'],
         ];
 
         // Flatten all payee names to create unique payees
@@ -234,62 +299,72 @@ class SeedTestData extends BaseCommand
                 );
                 $totalCreated++;
 
-                // ------ Income: Freelance ~15th (not every month, deterministic via mt_rand) ------
-                if (mt_rand(0, 1) === 1) {
-                    $day15 = (clone $range['start'])->setDate(
-                        (int)$range['start']->format('Y'),
-                        (int)$range['start']->format('m'),
-                        15
-                    );
-                    // Only insert if the 15th falls within range
-                    if ($day15->getTimestamp() <= $endTs) {
-                        $freelancePayeeNames = $payeeDefs['Freelance'];
-                        $freelancePayeeName  = $freelancePayeeNames[mt_rand(0, count($freelancePayeeNames) - 1)];
-                        $this->insertTransaction(
-                            $db,
-                            $userId,
-                            $checkingId,
-                            $categories[$userId]['Freelance'],
-                            'income',
-                            800.00,
-                            $day15->format('Y-m-d'),
-                            $payees[$freelancePayeeName],
-                            'Freelance project payment'
-                        );
-                        $totalCreated++;
-                    }
-                }
+                // ------ Home bills: Rent on the 1st, others around 5th–10th ------
+                // Rent on the 1st
+                $rentDate = $range['start']->format('Y-m-d');
+                $rentPayeeName = $payeeDefs['Rent'][mt_rand(0, count($payeeDefs['Rent']) - 1)];
+                $this->insertTransaction(
+                    $db,
+                    $userId,
+                    $checkingId,
+                    $categories[$userId]['Rent'],
+                    'expense',
+                    1800.00,
+                    $rentDate,
+                    $payees[$rentPayeeName],
+                    'Monthly rent payment'
+                );
+                $totalCreated++;
 
-                // ------ Utilities: 2–3 fixed bills around 5th–10th ------
-                $utilityBills = [
-                    ['payee' => 'AT&T',        'amount' => 85.00,  'day' => 5,  'note' => 'Monthly phone bill'],
-                    ['payee' => 'Comcast',      'amount' => 120.00, 'day' => 7,  'note' => 'Internet service'],
-                    ['payee' => 'PG&E Electric','amount' => 165.00, 'day' => 8,  'note' => 'Electricity bill'],
-                    ['payee' => 'City Water',   'amount' => 55.00,  'day' => 10, 'note' => 'Water bill'],
+                // Home bills: Phone, Utilities, Internet
+                $homeBills = [
+                    ['category' => 'Phone',     'payees' => $payeeDefs['Phone'],     'amount' => 85.00,  'day' => 5,  'note' => 'Monthly phone bill'],
+                    ['category' => 'Utilities', 'payees' => $payeeDefs['Utilities'], 'amount' => 165.00, 'day' => 8,  'note' => 'Electricity/Gas bill'],
+                    ['category' => 'Internet',  'payees' => $payeeDefs['Internet'],  'amount' => 80.00,  'day' => 7,  'note' => 'Internet service'],
                 ];
-                // Pick 2–3 bills deterministically
-                $billCount = mt_rand(2, 3);
-                for ($b = 0; $b < $billCount; $b++) {
-                    $bill    = $utilityBills[$b];
+                foreach ($homeBills as $bill) {
                     $billDay = (clone $range['start'])->setDate(
                         (int)$range['start']->format('Y'),
                         (int)$range['start']->format('m'),
                         $bill['day']
                     );
                     if ($billDay->getTimestamp() <= $endTs) {
+                        $payeeName = $bill['payees'][mt_rand(0, count($bill['payees']) - 1)];
                         $this->insertTransaction(
                             $db,
                             $userId,
                             $creditCardId,
-                            $categories[$userId]['Utilities'],
+                            $categories[$userId][$bill['category']],
                             'expense',
                             $bill['amount'],
                             $billDay->format('Y-m-d'),
-                            $payees[$bill['payee']],
+                            $payees[$payeeName],
                             $bill['note']
                         );
                         $totalCreated++;
                     }
+                }
+
+                // ------ Transportation: Car Insurance on the 15th ------
+                $day15 = (clone $range['start'])->setDate(
+                    (int)$range['start']->format('Y'),
+                    (int)$range['start']->format('m'),
+                    15
+                );
+                if ($day15->getTimestamp() <= $endTs) {
+                    $insurancePayeeName = $payeeDefs['Car Insurance'][mt_rand(0, count($payeeDefs['Car Insurance']) - 1)];
+                    $this->insertTransaction(
+                        $db,
+                        $userId,
+                        $checkingId,
+                        $categories[$userId]['Car Insurance'],
+                        'expense',
+                        145.00,
+                        $day15->format('Y-m-d'),
+                        $payees[$insurancePayeeName],
+                        'Monthly car insurance'
+                    );
+                    $totalCreated++;
                 }
 
                 // ------ Daily expense transactions across the date range ------
@@ -322,14 +397,27 @@ class SeedTestData extends BaseCommand
                         $totalCreated++;
                     }
 
-                    // Transport: 3–5 times/week — weekdays + Sat
-                    if (in_array($dayOfWeek, [1, 2, 3, 4, 5, 6])) {
+                    // Gas: 2–3 times/week — Mon, Thu, Sat
+                    if (in_array($dayOfWeek, [1, 4, 6])) {
                         if (mt_rand(0, 2) > 0) { // ~66% chance on eligible days
-                            $amount    = mt_rand(500, 6000) / 100; // $5–$60
-                            $payeeName = $payeeDefs['Transport'][mt_rand(0, count($payeeDefs['Transport']) - 1)];
+                            $amount    = mt_rand(3000, 7000) / 100; // $30–$70
+                            $payeeName = $payeeDefs['Gas'][mt_rand(0, count($payeeDefs['Gas']) - 1)];
                             $this->insertTransaction(
-                                $db, $userId, $checkingId, $categories[$userId]['Transport'],
+                                $db, $userId, $creditCardId, $categories[$userId]['Gas'],
                                 'expense', $amount, $dateStr, $payees[$payeeName], null
+                            );
+                            $totalCreated++;
+                        }
+                    }
+
+                    // FastTrack: occasional — weekdays
+                    if (in_array($dayOfWeek, [1, 2, 3, 4, 5])) {
+                        if (mt_rand(0, 4) === 0) { // ~20% chance
+                            $amount    = mt_rand(200, 800) / 100; // $2–$8
+                            $payeeName = $payeeDefs['FastTrack'][mt_rand(0, count($payeeDefs['FastTrack']) - 1)];
+                            $this->insertTransaction(
+                                $db, $userId, $checkingId, $categories[$userId]['FastTrack'],
+                                'expense', $amount, $dateStr, $payees[$payeeName], 'Toll payment'
                             );
                             $totalCreated++;
                         }
@@ -369,13 +457,24 @@ class SeedTestData extends BaseCommand
                         $totalCreated++;
                     }
 
-                    // Travel: occasional — ~once per 2 weeks on Fri
-                    if ($dayOfWeek === 5 && mt_rand(0, 3) === 0) {
-                        $amount    = mt_rand(10000, 60000) / 100; // $100–$600
-                        $payeeName = $payeeDefs['Travel'][mt_rand(0, count($payeeDefs['Travel']) - 1)];
+                    // Gifts: occasional — ~once per 2 weeks on Sat
+                    if ($dayOfWeek === 6 && mt_rand(0, 3) === 0) {
+                        $amount    = mt_rand(2000, 10000) / 100; // $20–$100
+                        $payeeName = $payeeDefs['Gifts'][mt_rand(0, count($payeeDefs['Gifts']) - 1)];
                         $this->insertTransaction(
-                            $db, $userId, $creditCardId, $categories[$userId]['Travel'],
+                            $db, $userId, $creditCardId, $categories[$userId]['Gifts'],
                             'expense', $amount, $dateStr, $payees[$payeeName], null
+                        );
+                        $totalCreated++;
+                    }
+
+                    // Service (car): occasional — ~once per month on Wed
+                    if ($dayOfWeek === 3 && mt_rand(0, 7) === 0) {
+                        $amount    = mt_rand(5000, 30000) / 100; // $50–$300
+                        $payeeName = $payeeDefs['Service'][mt_rand(0, count($payeeDefs['Service']) - 1)];
+                        $this->insertTransaction(
+                            $db, $userId, $creditCardId, $categories[$userId]['Service'],
+                            'expense', $amount, $dateStr, $payees[$payeeName], 'Car maintenance'
                         );
                         $totalCreated++;
                     }
@@ -404,10 +503,20 @@ class SeedTestData extends BaseCommand
                 'notes'      => 'Monthly salary deposit',
             ],
             [
+                'name'       => 'Rent',
+                'type'       => 'expense',
+                'amount'     => 1800.00,
+                'category'   => 'Rent',
+                'account'    => 'Checking Account',
+                'payee'      => 'Landlord LLC',
+                'frequency'  => 'monthly',
+                'notes'      => 'Monthly rent payment',
+            ],
+            [
                 'name'       => 'Phone Bill',
                 'type'       => 'expense',
                 'amount'     => 85.00,
-                'category'   => 'Utilities',
+                'category'   => 'Phone',
                 'account'    => 'Credit Card',
                 'payee'      => 'AT&T',
                 'frequency'  => 'monthly',
@@ -416,12 +525,32 @@ class SeedTestData extends BaseCommand
             [
                 'name'       => 'Internet Service',
                 'type'       => 'expense',
-                'amount'     => 120.00,
-                'category'   => 'Utilities',
+                'amount'     => 80.00,
+                'category'   => 'Internet',
                 'account'    => 'Credit Card',
                 'payee'      => 'Comcast',
                 'frequency'  => 'monthly',
                 'notes'      => 'Internet service',
+            ],
+            [
+                'name'       => 'Utilities',
+                'type'       => 'expense',
+                'amount'     => 165.00,
+                'category'   => 'Utilities',
+                'account'    => 'Credit Card',
+                'payee'      => 'PG&E Electric',
+                'frequency'  => 'monthly',
+                'notes'      => 'Electricity/Gas bill',
+            ],
+            [
+                'name'       => 'Car Insurance',
+                'type'       => 'expense',
+                'amount'     => 145.00,
+                'category'   => 'Car Insurance',
+                'account'    => 'Checking Account',
+                'payee'      => 'Geico',
+                'frequency'  => 'monthly',
+                'notes'      => 'Monthly car insurance',
             ],
             [
                 'name'       => 'Netflix Subscription',
@@ -462,16 +591,6 @@ class SeedTestData extends BaseCommand
                 'payee'      => 'Walmart',
                 'frequency'  => 'weekly',
                 'notes'      => 'Weekly grocery shopping',
-            ],
-            [
-                'name'       => 'Quarterly Investment',
-                'type'       => 'income',
-                'amount'     => 250.00,
-                'category'   => 'Investments',
-                'account'    => 'Savings Account',
-                'payee'      => 'Dividend Payment',
-                'frequency'  => 'quarterly',
-                'notes'      => 'Quarterly dividend payment',
             ],
         ];
 

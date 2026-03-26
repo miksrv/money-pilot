@@ -13,6 +13,7 @@ class Category extends Entity
         'user_id'   => 'string',
         'group_id'  => '?string',
         'parent_id' => '?string',
+        'is_parent' => 'int',
         'icon'      => '?string',
         'color'     => '?string',
         'budget'    => 'float',
