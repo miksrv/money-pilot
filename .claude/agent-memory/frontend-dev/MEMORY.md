@@ -5,3 +5,5 @@
 - [RTK Query api.ts patterns](rtk-query-patterns.md) — tagTypes, endpoint structure, encodeQueryData usage, and export conventions
 - [ESLint catch block pattern](eslint-catch-errors.md) — use bare `catch {` not `catch (_err)` — caughtErrorsIgnorePattern is not set
 - [Template literal type restriction](eslint-template-literals.md) — use string concatenation with `?? ''` for optional fields in i18n keys, not template literals
+- [Apostrophe strings in i18n fallbacks](apostrophe-strings.md) — use double quotes for strings containing apostrophes; Prettier avoidEscape requires this
+- [RTK Query multi-argument hook formatting](rtk-query-multiarg-format.md) — first arg inline, options object expanded on next lines

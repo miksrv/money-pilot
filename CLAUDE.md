@@ -42,8 +42,8 @@ docker-compose up -d          # Start MariaDB on port 3310
 
 ### Frontend (`client/src/`)
 
-- **`api/`** — RTK Query API definitions. Single `api` slice with all endpoints; tags `'Category'` and `'Transaction'` for cache invalidation.
-- **`screens/`** — Page-level components (Dashboard, Transactions, Categories, Accounts, Recurring, Settings, Login, Register).
+- **`api/`** — RTK Query API definitions. Single `api` slice with all endpoints; tags `'Category'`, `'Transaction'`, `'Account'`, `'Payee'`, `'Recurring'`, `'User'`, `'Dashboard'` for cache invalidation.
+- **`screens/`** — Page-level components (Dashboard, Transactions, Categories, Accounts, Recurring, Payees, Reports, Settings, Login, Register).
 - **`components/`** — Shared UI components (AppBar, AppLayout, CurrencyInput, EmojiPicker, ColorPicker, CategorySelectField, AccountSelectField).
 - **`store/`** — Redux store with `authSlice` (JWT token + `isAuth` flag, persisted to localStorage).
 - **`utils/`** — Date helpers (dayjs), money formatting, localStorage helpers.
@@ -56,10 +56,10 @@ docker-compose up -d          # Start MariaDB on port 3310
 
 ### Backend (`server/app/`)
 
-RESTful CodeIgniter 4 API. All routes are under these resource groups: `/auth`, `/register`, `/accounts`, `/transactions`, `/categories`, `/payees`, `/groups`.
+RESTful CodeIgniter 4 API. Routes: `/auth`, `/register`, `/accounts`, `/transactions`, `/categories`, `/payees`, `/groups`, `/users`, `/dashboard`, `/recurring`, `/reports`.
 
 - **`Controllers/`** — One controller per resource. Auth via JWT (`firebase/php-jwt`), sessions tracked in `sessions` DB table.
-- **`Models/`** — CI4 models for `users`, `accounts`, `transactions`, `categories`, `payees`, `groups`, `group_members`, `group_invitations`, `sessions`.
+- **`Models/`** — CI4 models for `users`, `accounts`, `transactions`, `categories`, `payees`, `groups`, `group_members`, `group_invitations`, `sessions`, `recurring_transactions`.
 - **`Filters/CorsFilter`** — Handles CORS preflight; OPTIONS routes are registered for every endpoint.
 - **`Libraries/`** — JWT auth library.
 
