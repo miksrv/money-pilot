@@ -44,10 +44,14 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
     $routes->group('transactions', static function ($routes) {
         $routes->get('', 'TransactionController::index');
         $routes->post('', 'TransactionController::create');
+        // Static routes must come before (:segment) wildcards
+        $routes->post('bulk-delete', 'TransactionController::bulkDelete');
+        $routes->options('bulk-delete', static function () {});
         $routes->get('(:segment)', 'TransactionController::show/$1');
         $routes->put('(:segment)', 'TransactionController::update/$1');
         $routes->delete('(:segment)', 'TransactionController::delete/$1');
         $routes->options('', static function () {});
+        $routes->options('(:segment)', static function () {});
     });
 
     // CategoryController Routes
@@ -80,12 +84,27 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
     $routes->group('groups', static function ($routes) {
         $routes->get('', 'GroupController::index');
         $routes->post('', 'GroupController::create');
+        // Static routes must come before (:segment) wildcards
+        $routes->get('pending-invitations', 'GroupController::pendingInvitations');
+        $routes->post('join', 'GroupController::join');
+        $routes->options('pending-invitations', static function () {});
+        $routes->options('join', static function () {});
+        // Segment routes
         $routes->get('(:segment)', 'GroupController::show/$1');
         $routes->put('(:segment)', 'GroupController::update/$1');
         $routes->delete('(:segment)', 'GroupController::delete/$1');
         $routes->post('(:segment)/invite', 'GroupController::invite/$1');
-        $routes->post('(:segment)/members', 'GroupController::addMember/$1');
+        $routes->get('(:segment)/members', 'GroupController::getMembers/$1');
+        $routes->delete('(:segment)/members/(:segment)', 'GroupController::removeMember/$1/$2');
+        $routes->get('(:segment)/invitations', 'GroupController::getInvitations/$1');
+        $routes->delete('(:segment)/invitations/(:segment)', 'GroupController::revokeInvitation/$1/$2');
         $routes->options('', static function () {});
+        $routes->options('(:segment)', static function () {});
+        $routes->options('(:segment)/invite', static function () {});
+        $routes->options('(:segment)/members', static function () {});
+        $routes->options('(:segment)/members/(:segment)', static function () {});
+        $routes->options('(:segment)/invitations', static function () {});
+        $routes->options('(:segment)/invitations/(:segment)', static function () {});
     });
 
     // UserController Routes
@@ -102,7 +121,9 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
     // DashboardController Routes
     $routes->group('dashboard', static function ($routes) {
         $routes->get('summary', 'DashboardController::summary');
+        $routes->get('monthly-spending', 'DashboardController::monthlySpending');
         $routes->options('summary', static function () {});
+        $routes->options('monthly-spending', static function () {});
     });
 
     // RecurringController Routes
