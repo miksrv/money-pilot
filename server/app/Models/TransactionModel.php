@@ -129,4 +129,18 @@ class TransactionModel extends ApplicationBaseModel
     {
         return $this->where('user_id', $userId)->delete($id);
     }
+
+    /**
+     * Delete multiple transactions by IDs, scoped to a user
+     * @param string[] $ids
+     * @param string $userId
+     * @return int Number of rows deleted
+     */
+    public function bulkDeleteByIds(array $ids, string $userId): int
+    {
+        $db      = $this->db;
+        $builder = $db->table($this->table);
+        $builder->whereIn('id', $ids)->where('user_id', $userId)->delete();
+        return $db->affectedRows();
+    }
 }

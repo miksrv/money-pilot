@@ -8,6 +8,7 @@ class GroupModel extends ApplicationBaseModel
 {
     protected $table          = 'groups';
     protected $primaryKey     = 'id';
+    protected $useAutoIncrement = false;
     protected $returnType     = Group::class;
     protected $useSoftDeletes = false;
     protected $allowedFields  = ['owner_id', 'name', 'description', 'is_active'];
@@ -26,7 +27,7 @@ class GroupModel extends ApplicationBaseModel
     protected $afterDelete    = [];
 
     protected $validationRules = [
-        'owner_id' => 'required|valid_id[users,id]',
+        'owner_id' => 'required',
         'name' => 'required|string|max_length[100]',
         'description' => 'permit_empty|string|max_length[255]',
         'is_active' => 'permit_empty|boolean',
@@ -35,7 +36,6 @@ class GroupModel extends ApplicationBaseModel
     protected $validationMessages = [
         'owner_id' => [
             'required' => 'Owner ID is required.',
-            'valid_id' => 'Invalid owner ID.',
         ],
         'name' => [
             'required' => 'Group name is required.',

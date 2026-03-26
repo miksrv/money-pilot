@@ -8,9 +8,10 @@ class GroupInvitationModel extends ApplicationBaseModel
 {
     protected $table          = 'group_invitations';
     protected $primaryKey     = 'id';
+    protected $useAutoIncrement = false;
     protected $returnType     = GroupInvitation::class;
     protected $useSoftDeletes = false;
-    protected $allowedFields  = ['group_id', 'invited_user_id', 'inviter_user_id', 'status', 'token', 'expires_at'];
+    protected $allowedFields  = ['group_id', 'invited_user_id', 'inviter_user_id', 'status', 'role', 'token', 'expires_at'];
     protected $useTimestamps  = true;
     protected $createdField   = 'created_at';
     protected $updatedField   = '';
@@ -26,10 +27,11 @@ class GroupInvitationModel extends ApplicationBaseModel
     protected $afterDelete    = [];
 
     protected $validationRules = [
-        'group_id' => 'required|valid_id[groups,id]',
-        'invited_user_id' => 'required|valid_id[users,id]',
-        'inviter_user_id' => 'required|valid_id[users,id]',
+        'group_id' => 'required',
+        'invited_user_id' => 'required',
+        'inviter_user_id' => 'required',
         'status' => 'required|in_list[pending,accepted,rejected]',
+        'role' => 'required|in_list[member,viewer]',
         'token' => 'required|string|max_length[255]',
         'expires_at' => 'required|valid_date',
     ];
@@ -37,19 +39,20 @@ class GroupInvitationModel extends ApplicationBaseModel
     protected $validationMessages = [
         'group_id' => [
             'required' => 'Group ID is required.',
-            'valid_id' => 'Invalid group ID.',
         ],
         'invited_user_id' => [
             'required' => 'Invited user ID is required.',
-            'valid_id' => 'Invalid invited user ID.',
         ],
         'inviter_user_id' => [
             'required' => 'Inviter user ID is required.',
-            'valid_id' => 'Invalid inviter user ID.',
         ],
         'status' => [
             'required' => 'Status is required.',
             'in_list' => 'Status must be pending, accepted, or rejected.',
+        ],
+        'role' => [
+            'required' => 'Role is required.',
+            'in_list' => 'Role must be member or viewer.',
         ],
         'token' => [
             'required' => 'Token is required.',

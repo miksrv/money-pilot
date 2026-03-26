@@ -8,6 +8,7 @@ class GroupMemberModel extends ApplicationBaseModel
 {
     protected $table          = 'group_members';
     protected $primaryKey     = 'id';
+    protected $useAutoIncrement = false;
     protected $returnType     = GroupMember::class;
     protected $useSoftDeletes = false;
     protected $allowedFields  = ['group_id', 'user_id', 'role', 'joined_at'];
@@ -24,8 +25,8 @@ class GroupMemberModel extends ApplicationBaseModel
     protected $afterDelete    = [];
 
     protected $validationRules = [
-        'group_id' => 'required|valid_id[groups,id]',
-        'user_id' => 'required|valid_id[users,id]',
+        'group_id' => 'required',
+        'user_id' => 'required',
         'role' => 'required|in_list[owner,member,viewer]',
         'joined_at' => 'required|valid_date',
     ];
@@ -33,11 +34,9 @@ class GroupMemberModel extends ApplicationBaseModel
     protected $validationMessages = [
         'group_id' => [
             'required' => 'Group ID is required.',
-            'valid_id' => 'Invalid group ID.',
         ],
         'user_id' => [
             'required' => 'User ID is required.',
-            'valid_id' => 'Invalid user ID.',
         ],
         'role' => [
             'required' => 'Role is required.',
