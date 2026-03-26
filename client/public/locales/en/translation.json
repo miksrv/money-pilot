@@ -1,5 +1,234 @@
 {
     "register": {
-        "title": "Регистрация"
+        "title": "Register"
+    },
+    "common": {
+        "cancel": "Cancel",
+        "save": "Save",
+        "edit": "Edit",
+        "delete": "Delete",
+        "loading": "Loading...",
+        "required": "Required",
+        "errors": {
+            "unknown": "An error occurred. Please try again."
+        }
+    },
+    "dashboard": {
+        "netWorth": "Net Worth",
+        "spentThisMonth": "Spent This Month",
+        "incomeThisMonth": "Income This Month",
+        "savingsRate": "Savings Rate",
+        "spendingByCategory": "Spending by Category",
+        "incomeVsExpense": "Income vs Expense",
+        "recentTransactions": "Recent Transactions",
+        "viewAll": "View all",
+        "noTransactions": "No transactions yet",
+        "noAccounts": "No accounts yet",
+        "vsLastMonth": "vs last month",
+        "noData": "No data for this period",
+        "income": "Income",
+        "expenses": "Expenses"
+    },
+    "transactions": {
+        "add": "Add Transaction",
+        "payee": "Payee",
+        "account": "Account",
+        "category": "Category",
+        "date": "Date",
+        "amount": "Amount",
+        "noCategory": "No category",
+        "search": "Search transactions...",
+        "filterByDate": "Date range",
+        "filterByType": "Type",
+        "filterByAccount": "Account",
+        "filterByCategory": "Category",
+        "allTypes": "All types",
+        "income": "Income",
+        "expense": "Expense",
+        "deleteConfirmTitle": "Delete transaction?",
+        "deleteConfirmBody": "This action cannot be undone. The account balance will be adjusted.",
+        "delete": "Delete",
+        "showing": "Showing",
+        "of": "of",
+        "noResults": "No transactions found",
+        "notes": "Notes",
+        "types": {
+            "income": "Income",
+            "expense": "Expense"
+        }
+    },
+    "accounts": {
+        "add": "Add Account",
+        "name": "Name",
+        "editAccount": "Edit",
+        "deleteAccount": "Delete",
+        "deleteConfirmTitle": "Delete account?",
+        "deleteConfirmBody": "This account has no transactions and will be permanently deleted.",
+        "deleteBlockedTitle": "Cannot delete",
+        "deleteBlockedBody": "This account cannot be deleted because it has existing transactions. Please delete or reassign the transactions first.",
+        "institution": "Institution",
+        "currency": "Currency",
+        "initialBalance": "Initial Balance",
+        "balance": "Balance",
+        "noAccounts": "No accounts yet",
+        "addFirst": "Add your first account to get started.",
+        "type": {
+            "checking": "Checking",
+            "savings": "Savings",
+            "credit": "Credit",
+            "investment": "Investment"
+        }
+    },
+    "categories": {
+        "add": "Add Category",
+        "name": "Name",
+        "expenses": "Expenses",
+        "budget": "Budget",
+        "selectPlaceholder": "Select a category",
+        "editCategory": "Edit",
+        "deleteCategory": "Delete",
+        "archiveCategory": "Archive",
+        "unarchiveCategory": "Unarchive",
+        "deleteConfirmTitle": "Delete category?",
+        "deleteConfirmBody": "This category will be permanently deleted.",
+        "deleteBlockedTitle": "Cannot delete",
+        "deleteBlockedBody": "This category cannot be deleted because it is used by existing transactions.",
+        "budget_label": "Budget",
+        "spent": "Spent",
+        "of": "of",
+        "noBudget": "No budget set",
+        "archived": "Archived",
+        "noCategories": "No categories yet",
+        "addFirst": "Add your first category to organize your transactions.",
+        "type": {
+            "expense": "Expense",
+            "income": "Income"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "profile": {
+            "title": "Profile",
+            "fullName": "Full Name",
+            "email": "Email",
+            "phone": "Phone",
+            "save": "Save Changes",
+            "saved": "Profile saved!"
+        },
+        "security": {
+            "title": "Security",
+            "currentPassword": "Current Password",
+            "newPassword": "New Password",
+            "confirmPassword": "Confirm New Password",
+            "passwordMismatch": "Passwords do not match",
+            "passwordTooShort": "Password must be at least 8 characters",
+            "changePassword": "Change Password",
+            "passwordChanged": "Password changed successfully!"
+        },
+        "preferences": {
+            "title": "Preferences",
+            "theme": "Theme",
+            "themeLight": "Light",
+            "themeDark": "Dark",
+            "themeSystem": "System",
+            "language": "Language"
+        },
+        "dangerZone": {
+            "title": "Danger Zone",
+            "deleteAccount": "Delete My Account",
+            "deleteConfirmTitle": "Delete your account?",
+            "deleteConfirmBody": "This will permanently delete your account and all associated data. This action cannot be undone.",
+            "typeToConfirm": "Type DELETE to confirm",
+            "confirmWord": "DELETE",
+            "delete": "Permanently Delete Account"
+        }
+    },
+    "recurring": {
+        "title": "Recurring Transactions",
+        "addRecurring": "Add Recurring",
+        "editRecurring": "Edit Recurring",
+        "deleteRecurring": "Delete Recurring",
+        "noRecurring": "No recurring transactions yet",
+        "addFirst": "Add your first recurring transaction",
+        "nextDue": "Next Due",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "autoCreate": "Automatically create transactions on due date",
+        "generateNow": "Generate Now",
+        "active": "Active",
+        "paused": "Paused",
+        "overdue": "Overdue",
+        "deleteConfirmTitle": "Delete Recurring Transaction",
+        "deleteConfirmBody": "Are you sure you want to delete this recurring transaction?",
+        "frequency": {
+            "daily": "Daily",
+            "weekly": "Weekly",
+            "biweekly": "Bi-weekly",
+            "monthly": "Monthly",
+            "quarterly": "Quarterly",
+            "yearly": "Yearly"
+        }
+    },
+    "payees": {
+        "title": "Payees",
+        "searchPayees": "Search payees...",
+        "noPayees": "No payees found",
+        "usageCount": "Usage",
+        "lastUsed": "Last Used",
+        "editPayee": "Edit Payee",
+        "deletePayee": "Delete Payee",
+        "mergePayee": "Merge Payee",
+        "mergeConfirmTitle": "Merge Payees",
+        "mergeConfirmBody": "All transactions from {{source}} will be reassigned to {{target}}. This cannot be undone.",
+        "deleteConfirmTitle": "Delete Payee",
+        "deleteConfirmBody": "Are you sure you want to delete this payee?",
+        "deleteBlockedBody": "This payee cannot be deleted because it is used in {{count}} transaction(s).",
+        "newPayeePlaceholder": "Type payee name..."
+    },
+    "reports": {
+        "title": "Reports",
+        "period": "Period",
+        "thisMonth": "This Month",
+        "lastMonth": "Last Month",
+        "last3Months": "Last 3 Months",
+        "last6Months": "Last 6 Months",
+        "thisYear": "This Year",
+        "custom": "Custom",
+        "spendingByCategory": "Spending by Category",
+        "incomeVsExpense": "Income vs Expense",
+        "spendingTrend": "Spending Trend",
+        "netWorthHistory": "Net Worth History",
+        "topPayees": "Top Payees",
+        "exportCsv": "Export CSV",
+        "noData": "No data for this period",
+        "income": "Income",
+        "expense": "Expenses",
+        "netSavings": "Net Savings",
+        "rank": "Rank",
+        "payee": "Payee",
+        "transactions": "Transactions",
+        "total": "Total"
+    },
+    "menu": {
+        "dashboard": "Dashboard",
+        "transactions": "Transactions",
+        "categories": "Categories",
+        "accounts": "Accounts",
+        "recurring": "Recurring",
+        "payees": "Payees",
+        "reports": "Reports"
+    },
+    "select-date": "Select date",
+    "screens": {
+        "transactions": {
+            "payee": "Payee",
+            "form": {
+                "edit_title": "Edit Transaction",
+                "create_title": "Add Transaction",
+                "type": "Select type",
+                "amount_required": "Amount is required",
+                "amount_min": "Amount must be at least 0.01"
+            }
+        }
     }
 }

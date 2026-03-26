@@ -1,5 +1,234 @@
 {
     "register": {
         "title": "Регистрация"
+    },
+    "common": {
+        "cancel": "Отмена",
+        "save": "Сохранить",
+        "edit": "Редактировать",
+        "delete": "Удалить",
+        "loading": "Загрузка...",
+        "required": "Обязательное поле",
+        "errors": {
+            "unknown": "Произошла ошибка. Пожалуйста, попробуйте снова."
+        }
+    },
+    "dashboard": {
+        "netWorth": "Чистый капитал",
+        "spentThisMonth": "Расходы за месяц",
+        "incomeThisMonth": "Доходы за месяц",
+        "savingsRate": "Норма сбережений",
+        "spendingByCategory": "Расходы по категориям",
+        "incomeVsExpense": "Доходы и расходы",
+        "recentTransactions": "Последние транзакции",
+        "viewAll": "Посмотреть все",
+        "noTransactions": "Нет транзакций",
+        "noAccounts": "Нет счетов",
+        "vsLastMonth": "vs прошлый месяц",
+        "noData": "Нет данных за период",
+        "income": "Доходы",
+        "expenses": "Расходы"
+    },
+    "transactions": {
+        "add": "Добавить транзакцию",
+        "payee": "Получатель",
+        "account": "Счёт",
+        "category": "Категория",
+        "date": "Дата",
+        "amount": "Сумма",
+        "noCategory": "Без категории",
+        "search": "Поиск транзакций...",
+        "filterByDate": "Период",
+        "filterByType": "Тип",
+        "filterByAccount": "Счёт",
+        "filterByCategory": "Категория",
+        "allTypes": "Все типы",
+        "income": "Доход",
+        "expense": "Расход",
+        "deleteConfirmTitle": "Удалить транзакцию?",
+        "deleteConfirmBody": "Это действие нельзя отменить. Баланс счёта будет скорректирован.",
+        "delete": "Удалить",
+        "showing": "Показано",
+        "of": "из",
+        "noResults": "Транзакции не найдены",
+        "notes": "Заметки",
+        "types": {
+            "income": "Доход",
+            "expense": "Расход"
+        }
+    },
+    "accounts": {
+        "add": "Добавить счёт",
+        "name": "Название",
+        "editAccount": "Редактировать",
+        "deleteAccount": "Удалить",
+        "deleteConfirmTitle": "Удалить счёт?",
+        "deleteConfirmBody": "У этого счёта нет транзакций и он будет удалён навсегда.",
+        "deleteBlockedTitle": "Невозможно удалить",
+        "deleteBlockedBody": "Этот счёт нельзя удалить, так как он используется в транзакциях. Удалите или переназначьте транзакции.",
+        "institution": "Организация",
+        "currency": "Валюта",
+        "initialBalance": "Начальный баланс",
+        "balance": "Баланс",
+        "noAccounts": "Счетов пока нет",
+        "addFirst": "Добавьте первый счёт, чтобы начать.",
+        "type": {
+            "checking": "Текущий",
+            "savings": "Сберегательный",
+            "credit": "Кредитный",
+            "investment": "Инвестиционный"
+        }
+    },
+    "categories": {
+        "add": "Добавить категорию",
+        "name": "Название",
+        "expenses": "Расходы",
+        "budget": "Бюджет",
+        "selectPlaceholder": "Выберите категорию",
+        "editCategory": "Редактировать",
+        "deleteCategory": "Удалить",
+        "archiveCategory": "Архивировать",
+        "unarchiveCategory": "Разархивировать",
+        "deleteConfirmTitle": "Удалить категорию?",
+        "deleteConfirmBody": "Категория будет удалена навсегда.",
+        "deleteBlockedTitle": "Невозможно удалить",
+        "deleteBlockedBody": "Эту категорию нельзя удалить, так как она используется в существующих транзакциях.",
+        "budget_label": "Бюджет",
+        "spent": "Потрачено",
+        "of": "из",
+        "noBudget": "Бюджет не установлен",
+        "archived": "Архив",
+        "noCategories": "Категорий пока нет",
+        "addFirst": "Добавьте первую категорию для организации транзакций.",
+        "type": {
+            "expense": "Расход",
+            "income": "Доход"
+        }
+    },
+    "settings": {
+        "title": "Настройки",
+        "profile": {
+            "title": "Профиль",
+            "fullName": "Полное имя",
+            "email": "Email",
+            "phone": "Телефон",
+            "save": "Сохранить изменения",
+            "saved": "Профиль сохранён!"
+        },
+        "security": {
+            "title": "Безопасность",
+            "currentPassword": "Текущий пароль",
+            "newPassword": "Новый пароль",
+            "confirmPassword": "Подтвердите новый пароль",
+            "passwordMismatch": "Пароли не совпадают",
+            "passwordTooShort": "Пароль должен содержать не менее 8 символов",
+            "changePassword": "Изменить пароль",
+            "passwordChanged": "Пароль успешно изменён!"
+        },
+        "preferences": {
+            "title": "Настройки",
+            "theme": "Тема",
+            "themeLight": "Светлая",
+            "themeDark": "Тёмная",
+            "themeSystem": "Системная",
+            "language": "Язык"
+        },
+        "dangerZone": {
+            "title": "Опасная зона",
+            "deleteAccount": "Удалить мой аккаунт",
+            "deleteConfirmTitle": "Удалить ваш аккаунт?",
+            "deleteConfirmBody": "Это навсегда удалит ваш аккаунт и все связанные данные. Это действие нельзя отменить.",
+            "typeToConfirm": "Введите DELETE для подтверждения",
+            "confirmWord": "DELETE",
+            "delete": "Удалить аккаунт навсегда"
+        }
+    },
+    "recurring": {
+        "title": "Регулярные транзакции",
+        "addRecurring": "Добавить регулярную",
+        "editRecurring": "Редактировать регулярную",
+        "deleteRecurring": "Удалить регулярную",
+        "noRecurring": "Регулярных транзакций пока нет",
+        "addFirst": "Добавьте первую регулярную транзакцию",
+        "nextDue": "Следующая дата",
+        "startDate": "Дата начала",
+        "endDate": "Дата окончания",
+        "autoCreate": "Автоматически создавать транзакции в дату платежа",
+        "generateNow": "Создать сейчас",
+        "active": "Активна",
+        "paused": "Приостановлена",
+        "overdue": "Просрочена",
+        "deleteConfirmTitle": "Удалить регулярную транзакцию",
+        "deleteConfirmBody": "Вы уверены, что хотите удалить эту регулярную транзакцию?",
+        "frequency": {
+            "daily": "Ежедневно",
+            "weekly": "Еженедельно",
+            "biweekly": "Раз в две недели",
+            "monthly": "Ежемесячно",
+            "quarterly": "Ежеквартально",
+            "yearly": "Ежегодно"
+        }
+    },
+    "payees": {
+        "title": "Получатели",
+        "searchPayees": "Поиск получателей...",
+        "noPayees": "Получатели не найдены",
+        "usageCount": "Использований",
+        "lastUsed": "Последнее использование",
+        "editPayee": "Редактировать получателя",
+        "deletePayee": "Удалить получателя",
+        "mergePayee": "Объединить получателей",
+        "mergeConfirmTitle": "Объединение получателей",
+        "mergeConfirmBody": "Все транзакции от {{source}} будут переназначены на {{target}}. Это действие необратимо.",
+        "deleteConfirmTitle": "Удалить получателя",
+        "deleteConfirmBody": "Вы уверены, что хотите удалить этого получателя?",
+        "deleteBlockedBody": "Этого получателя нельзя удалить, так как он используется в {{count}} транзакции(ях).",
+        "newPayeePlaceholder": "Введите имя получателя..."
+    },
+    "reports": {
+        "title": "Отчёты",
+        "period": "Период",
+        "thisMonth": "Этот месяц",
+        "lastMonth": "Прошлый месяц",
+        "last3Months": "Последние 3 месяца",
+        "last6Months": "Последние 6 месяцев",
+        "thisYear": "Этот год",
+        "custom": "Произвольный",
+        "spendingByCategory": "Расходы по категориям",
+        "incomeVsExpense": "Доходы и расходы",
+        "spendingTrend": "Тренд расходов",
+        "netWorthHistory": "История чистого капитала",
+        "topPayees": "Топ получателей",
+        "exportCsv": "Экспорт CSV",
+        "noData": "Нет данных за период",
+        "income": "Доходы",
+        "expense": "Расходы",
+        "netSavings": "Чистые сбережения",
+        "rank": "Ранг",
+        "payee": "Получатель",
+        "transactions": "Транзакции",
+        "total": "Итого"
+    },
+    "menu": {
+        "dashboard": "Главная",
+        "transactions": "Транзакции",
+        "categories": "Категории",
+        "accounts": "Счета",
+        "recurring": "Регулярные",
+        "payees": "Получатели",
+        "reports": "Отчёты"
+    },
+    "select-date": "Выберите дату",
+    "screens": {
+        "transactions": {
+            "payee": "Получатель",
+            "form": {
+                "edit_title": "Редактировать транзакцию",
+                "create_title": "Добавить транзакцию",
+                "type": "Выберите тип",
+                "amount_required": "Сумма обязательна",
+                "amount_min": "Сумма должна быть не менее 0.01"
+            }
+        }
     }
 }
