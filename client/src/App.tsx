@@ -8,7 +8,16 @@ import { useAppSelector } from '@/store/hooks'
 import { login, logout } from './store/authSlice'
 import { useAppDispatch } from './store/hooks'
 import { ApiError, useMeQuery } from './api'
-import { Accounts, Categories, Dashboard, Login, Recurring, Register, Settings, Transactions } from './screens'
+import { Accounts, Categories, Dashboard, Login, Payees, Recurring, Register, Reports, Settings, Transactions } from './screens'
+
+const savedTheme = localStorage.getItem('theme') ?? 'light'
+const resolvedTheme =
+    savedTheme === 'system'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+        : savedTheme
+document.documentElement.setAttribute('data-theme', resolvedTheme)
 
 const App: React.FC = () => (
     <Provider store={store}>
@@ -51,10 +60,28 @@ const App: React.FC = () => (
                 />
 
                 <Route
-                    path='/reccuring'
+                    path='/recurring'
                     element={
                         <AuthWrapper>
                             <Recurring />
+                        </AuthWrapper>
+                    }
+                />
+
+                <Route
+                    path='/payees'
+                    element={
+                        <AuthWrapper>
+                            <Payees />
+                        </AuthWrapper>
+                    }
+                />
+
+                <Route
+                    path='/reports'
+                    element={
+                        <AuthWrapper>
+                            <Reports />
                         </AuthWrapper>
                     }
                 />
@@ -97,7 +124,7 @@ const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
 
     const authSlice = useAppSelector((state) => state.auth)
 
-    const authMeQuery = useMeQuery({}, { skip: !authSlice.token || authSlice.isAuth })
+    const authMeQuery = useMeQuery(undefined, { skip: !authSlice.token || authSlice.isAuth })
 
     useEffect(() => {
         if (authMeQuery?.error && (authMeQuery?.error as ApiError)?.status === 401 && authSlice.token) {

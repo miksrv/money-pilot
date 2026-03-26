@@ -7,7 +7,7 @@ const AUTH_TOKEN = 'auth'
 
 export const getStorageToken = (): string | null => LocalStorage.getItem(AUTH_TOKEN)
 
-interface AuthState {
+export interface AuthState {
     token: string | null
     isAuth: boolean
 }
