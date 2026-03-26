@@ -1,6 +1,7 @@
 export { Accounts } from './accounts'
 export { Categories } from './categories'
 export { Dashboard } from './dashboard'
+export { JoinBudget } from './join/JoinBudget'
 export { Login } from './login'
 export { Payees } from './payees'
 export { Recurring } from './recurring'

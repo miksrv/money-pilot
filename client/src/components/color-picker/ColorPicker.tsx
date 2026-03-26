@@ -60,7 +60,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ onSelect, value }) => 
                 <Button
                     mode={'secondary'}
                     className={styles.triggerButton}
-                    style={{ backgroundColor: colors[selectedColor as ColorName][0] }}
+                    style={{ backgroundColor: colors[selectedColor as ColorName]?.[0] ?? '#607d8b' }}
                 />
             }
         >

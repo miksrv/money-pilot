@@ -1,11 +1,17 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Badge, Button, Dialog, Message, Popout, Progress, Table } from 'simple-react-ui-kit'
 
-import { ApiModel, useArchiveCategoryMutation, useDeleteCategoryMutation, useListCategoriesQuery } from '@/api'
+import {
+    ApiModel,
+    useArchiveCategoryMutation,
+    useDeleteCategoryMutation,
+    useGetProfileQuery,
+    useListCategoriesQuery
+} from '@/api'
 import { AppLayout, ColorName, getColorHex } from '@/components'
 import { useAppSelector } from '@/store/hooks'
-import { Currency, formatMoney } from '@/utils/money'
+import { formatMoney } from '@/utils/money'
 
 import { CategoryForm } from './CategoryForm'
 
@@ -14,7 +20,13 @@ import styles from './styles.module.sass'
 export const Categories: React.FC = () => {
     const { t } = useTranslation()
 
-    const isAuth = useAppSelector((state) => state.auth)
+    useEffect(() => {
+        document.title = `${t('page.categories', 'Categories')} — Money Pilot`
+    }, [t])
+
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
+
+    const { data: profile } = useGetProfileQuery(undefined, { skip: !isAuth })
 
     const [openForm, setOpenForm] = useState(false)
     const [categoryData, setCategoryData] = useState<ApiModel.Category | undefined>(undefined)
@@ -119,11 +131,11 @@ export const Categories: React.FC = () => {
                     {
                         header: t('categories.expenses', 'Expenses'),
                         accessor: 'expenses',
-                        formatter: (value) => formatMoney(value as number | undefined, Currency.USD)
+                        formatter: (value) => formatMoney(value as number | undefined, profile?.currency ?? 'USD')
                     },
                     {
                         header: '',
-                        accessor: 'budget',
+                        accessor: 'icon',
                         formatter: (_value, rows, index) => {
                             const cat = rows[index]
                             const percentage = ((cat?.expenses ?? 0) / (cat?.budget || 1)) * 100
@@ -141,7 +153,7 @@ export const Categories: React.FC = () => {
                         accessor: 'budget',
                         formatter: (value) =>
                             (value as number | undefined) !== 0
-                                ? formatMoney(value as number | undefined, Currency.USD)
+                                ? formatMoney(value as number | undefined, profile?.currency ?? 'USD')
                                 : null
                     },
                     {

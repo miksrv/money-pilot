@@ -1,19 +1,19 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactECharts from 'echarts-for-react'
-import { Badge, Button, Container, Message, Progress, Skeleton, Table } from 'simple-react-ui-kit'
+import { Button, Container, Message, Progress, Skeleton } from 'simple-react-ui-kit'
 
 import {
-    ApiModel,
     useGetDashboardSummaryQuery,
-    useListAccountQuery,
+    useGetProfileQuery,
     useListCategoriesQuery,
     useListTransactionsQuery
 } from '@/api'
-import { AppLayout, ColorName, getColorHex } from '@/components'
+import { AppLayout, TransactionTable } from '@/components'
 import { useAppSelector } from '@/store/hooks'
-import { formatUTCDate } from '@/utils/dates'
-import { Currency, formatMoney } from '@/utils/money'
+import { formatMoney } from '@/utils/money'
+
+import { MonthlySpendingWidget } from './MonthlySpendingWidget'
 
 import styles from './styles.module.sass'
 
@@ -57,21 +57,27 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ title, value, current, previo
 export const Dashboard: React.FC = () => {
     const { t } = useTranslation()
 
-    const isAuth = useAppSelector((state) => state.auth)
+    useEffect(() => {
+        document.title = `${t('page.dashboard', 'Dashboard')} — Money Pilot`
+    }, [t])
 
-    const { data: summary, isLoading: summaryLoading } = useGetDashboardSummaryQuery(undefined, {
-        refetchOnReconnect: true,
-        skip: !isAuth
-    })
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
+
+    const { data: profile } = useGetProfileQuery(undefined, { skip: !isAuth })
+
+    const { data: summary, isLoading: summaryLoading } = useGetDashboardSummaryQuery(
+        activeGroupId ? { group_id: activeGroupId } : undefined,
+        { refetchOnReconnect: true, skip: !isAuth }
+    )
     const { data: categories, isLoading: categoriesLoading } = useListCategoriesQuery(
         { withSums: true },
         { refetchOnReconnect: true, skip: !isAuth }
     )
-    const { data: transactions, isLoading: transactionsLoading } = useListTransactionsQuery(undefined, {
-        refetchOnReconnect: true,
-        skip: !isAuth
-    })
-    const { data: accounts } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
+    const { data: transactions, isLoading: transactionsLoading } = useListTransactionsQuery(
+        activeGroupId ? { group_id: activeGroupId } : undefined,
+        { refetchOnReconnect: true, skip: !isAuth }
+    )
 
     const expenseCategories = categories?.filter((c) => c.type === 'expense' && (c.expenses ?? 0) > 0) ?? []
     const totalExpenses = expenseCategories.reduce((sum, c) => sum + (c.expenses ?? 0), 0)
@@ -120,7 +126,7 @@ export const Dashboard: React.FC = () => {
                 <div className={styles.summaryCards}>
                     <SummaryCard
                         title={t('dashboard.netWorth', 'Net Worth')}
-                        value={formatMoney(summary?.net_worth ?? 0, Currency.USD)}
+                        value={formatMoney(summary?.net_worth ?? 0, profile?.currency ?? 'USD')}
                         current={summary?.net_worth ?? 0}
                         previous={
                             (summary?.net_worth ?? 0) -
@@ -131,7 +137,7 @@ export const Dashboard: React.FC = () => {
                     />
                     <SummaryCard
                         title={t('dashboard.spentThisMonth', 'Spent This Month')}
-                        value={formatMoney(summary?.current_month.expenses ?? 0, Currency.USD)}
+                        value={formatMoney(summary?.current_month.expenses ?? 0, profile?.currency ?? 'USD')}
                         current={summary?.current_month.expenses ?? 0}
                         previous={summary?.previous_month.expenses ?? 0}
                         loading={summaryLoading}
@@ -139,7 +145,7 @@ export const Dashboard: React.FC = () => {
                     />
                     <SummaryCard
                         title={t('dashboard.incomeThisMonth', 'Income This Month')}
-                        value={formatMoney(summary?.current_month.income ?? 0, Currency.USD)}
+                        value={formatMoney(summary?.current_month.income ?? 0, profile?.currency ?? 'USD')}
                         current={summary?.current_month.income ?? 0}
                         previous={summary?.previous_month.income ?? 0}
                         loading={summaryLoading}
@@ -152,6 +158,12 @@ export const Dashboard: React.FC = () => {
                         loading={summaryLoading}
                     />
                 </div>
+
+                {/* Monthly spending widget */}
+                <MonthlySpendingWidget
+                    groupId={activeGroupId ?? undefined}
+                    currency={profile?.currency ?? 'USD'}
+                />
 
                 {/* Charts row */}
                 <div className={styles.chartsRow}>
@@ -176,7 +188,7 @@ export const Dashboard: React.FC = () => {
                                             <span>{c.icon ?? ''}</span>
                                             <span className={styles.categoryLegendName}>{c.name ?? ''}</span>
                                             <span className={styles.categoryLegendAmount}>
-                                                {formatMoney(c.expenses ?? 0, Currency.USD)}
+                                                {formatMoney(c.expenses ?? 0, profile?.currency ?? 'USD')}
                                             </span>
                                             <Progress
                                                 value={
@@ -224,60 +236,11 @@ export const Dashboard: React.FC = () => {
                     ) : !recentTransactions?.length ? (
                         <Message type='info'>{t('dashboard.noTransactions', 'No transactions yet')}</Message>
                     ) : (
-                        <Table<ApiModel.Transaction>
-                            data={recentTransactions}
-                            columns={[
-                                {
-                                    header: t('transactions.date', 'Date'),
-                                    accessor: 'date',
-                                    formatter: (value) => formatUTCDate(value as string, 'DD.MM.YYYY')
-                                },
-                                {
-                                    header: t('transactions.payee', 'Payee'),
-                                    accessor: 'payee'
-                                },
-                                {
-                                    header: t('transactions.category', 'Category'),
-                                    accessor: 'category_id',
-                                    formatter: (value) => {
-                                        const category = categories?.find((cat) => cat.id === value)
-
-                                        if (!category) {
-                                            return t('transactions.noCategory', 'No category')
-                                        }
-
-                                        return (
-                                            <Badge
-                                                size='small'
-                                                icon={<>{category.icon}</>}
-                                                key={category.id}
-                                                label={category.name}
-                                                style={{ backgroundColor: getColorHex(category?.color as ColorName) }}
-                                            />
-                                        )
-                                    }
-                                },
-                                {
-                                    header: t('transactions.account', 'Account'),
-                                    accessor: 'account_id',
-                                    formatter: (value) => accounts?.find((acc) => acc.id === value)?.name ?? ''
-                                },
-                                {
-                                    header: t('transactions.amount', 'Amount'),
-                                    accessor: 'amount',
-                                    formatter: (value, rows, index) => {
-                                        const transaction = rows[index]
-                                        const isIncome = transaction?.type === 'income'
-
-                                        return (
-                                            <span className={isIncome ? styles.positive : styles.negative}>
-                                                {isIncome ? '+' : '-'}
-                                                {formatMoney(value as number, Currency.USD)}
-                                            </span>
-                                        )
-                                    }
-                                }
-                            ]}
+                        <TransactionTable
+                            transactions={recentTransactions}
+                            currency={profile?.currency ?? 'USD'}
+                            hideGrouping
+                            hideCheckboxes
                         />
                     )}
                 </Container>

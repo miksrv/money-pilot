@@ -13,7 +13,7 @@ interface AccountSelectFieldProps extends SelectProps<string> {
 export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAutoSelect, ...props }) => {
     const { t } = useTranslation()
 
-    const isAuth = useAppSelector((state) => state.auth)
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const { data, isLoading } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
 

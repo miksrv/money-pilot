@@ -27,7 +27,8 @@
         "vsLastMonth": "vs last month",
         "noData": "No data for this period",
         "income": "Income",
-        "expenses": "Expenses"
+        "expenses": "Expenses",
+        "monthlySpending": "Monthly Spending"
     },
     "transactions": {
         "add": "Add Transaction",
@@ -112,6 +113,7 @@
             "fullName": "Full Name",
             "email": "Email",
             "phone": "Phone",
+            "currency": "Currency",
             "save": "Save Changes",
             "saved": "Profile saved!"
         },
@@ -209,6 +211,49 @@
         "transactions": "Transactions",
         "total": "Total"
     },
+    "groups": {
+        "shareMyBudget": "Share My Budget",
+        "sharedBudgets": "Shared Budgets",
+        "budgetsYouShare": "Budgets You Share",
+        "budgetsYouAccess": "Budgets You Have Access To",
+        "pendingInvitations": "Pending Invitations",
+        "noSharedBudgets": "You haven't shared your budget with anyone yet.",
+        "viewingBudget": "Viewing {{name}}'s Budget",
+        "myBudget": "My Budget",
+        "inviteTitle": "Invite Someone to View Your Budget",
+        "inviteEmail": "Email Address",
+        "inviteRole": "Access Level",
+        "inviteRoleMember": "Member (full access)",
+        "inviteRoleViewer": "Viewer (read-only)",
+        "inviteWarning": "Once {{email}} accepts this invitation, they will have complete visibility into ALL of your accounts and ALL of your transactions, including all historical data. They will see your budget exactly as you see it.",
+        "sendInvitation": "Send Invitation",
+        "inviteSent": "Invitation sent!",
+        "errorUserNotFound": "No Money Pilot account found with this email address. Ask them to register first.",
+        "errorAlreadyMember": "This person already has access to your budget.",
+        "errorInvitationPending": "An invitation is already pending for this email.",
+        "revokeInvitation": "Revoke",
+        "revokeConfirm": "Revoke this invitation?",
+        "removeMember": "Remove",
+        "removeConfirm": "Remove this member from your shared budget?",
+        "leaveGroup": "Leave",
+        "leaveConfirm": "Leave this shared budget? You will lose access to this budget.",
+        "deleteGroup": "Delete Shared Budget",
+        "deleteConfirm": "Permanently delete this shared budget? All members will lose access.",
+        "role": {
+            "owner": "Owner",
+            "member": "Member",
+            "viewer": "Viewer"
+        },
+        "joinTitle": "Join Shared Budget",
+        "joinSuccess": "You now have access to {{name}}'s Budget.",
+        "joinGoTo": "View {{name}}'s Budget",
+        "joinGoToMine": "Go to My Budget",
+        "errorInvalidToken": "This invitation link is invalid or has already been used.",
+        "errorTokenExpired": "This invitation link has expired. Ask the owner to send a new one.",
+        "errorTokenNotForYou": "This invitation was sent to a different email address.",
+        "expiresAt": "Expires {{date}}",
+        "pendingBadge": "Pending"
+    },
     "menu": {
         "dashboard": "Dashboard",
         "transactions": "Transactions",
@@ -216,7 +261,18 @@
         "accounts": "Accounts",
         "recurring": "Recurring",
         "payees": "Payees",
-        "reports": "Reports"
+        "reports": "Reports",
+        "settings": "Settings"
+    },
+    "page": {
+        "dashboard": "Dashboard",
+        "transactions": "Transactions",
+        "accounts": "Accounts",
+        "categories": "Categories",
+        "recurring": "Recurring",
+        "payees": "Payees",
+        "reports": "Reports",
+        "settings": "Settings"
     },
     "select-date": "Select date",
     "screens": {

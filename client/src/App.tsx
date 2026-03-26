@@ -2,13 +2,23 @@ import React, { PropsWithChildren, useEffect } from 'react'
 import { Provider } from 'react-redux'
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
+import { ApiError, useMeQuery } from '@/api'
+import {
+    Accounts,
+    Categories,
+    Dashboard,
+    JoinBudget,
+    Login,
+    Payees,
+    Recurring,
+    Register,
+    Reports,
+    Settings,
+    Transactions
+} from '@/screens'
 import { store } from '@/store'
-import { useAppSelector } from '@/store/hooks'
-
-import { login, logout } from './store/authSlice'
-import { useAppDispatch } from './store/hooks'
-import { ApiError, useMeQuery } from './api'
-import { Accounts, Categories, Dashboard, Login, Payees, Recurring, Register, Reports, Settings, Transactions } from './screens'
+import { login, logout } from '@/store/authSlice'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
 const savedTheme = localStorage.getItem('theme') ?? 'light'
 const resolvedTheme =
@@ -112,6 +122,11 @@ const App: React.FC = () => (
                         </AuthWrapper>
                     }
                 />
+
+                <Route
+                    path='/join/:token'
+                    element={<JoinBudget />}
+                />
             </Routes>
         </BrowserRouter>
     </Provider>
@@ -137,7 +152,9 @@ const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
             dispatch(login(authMeQuery.data.token))
 
             if (location.pathname === '/login' || location.pathname === '/register') {
-                void navigate('/')
+                const params = new URLSearchParams(location.search)
+                const redirect = params.get('redirect')
+                void navigate(redirect ?? '/')
             }
 
             return
@@ -149,11 +166,12 @@ const AuthWrapper: React.FC<PropsWithChildren> = ({ children }) => {
             !authSlice.isAuth &&
             !authSlice.token &&
             location.pathname !== '/login' &&
-            location.pathname !== '/register'
+            location.pathname !== '/register' &&
+            !location.pathname.startsWith('/join/')
         ) {
             void navigate('/login')
         }
-    }, [])
+    }, [authSlice.isAuth, authSlice.token])
 
     return children
 }

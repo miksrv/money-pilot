@@ -13,7 +13,7 @@ interface CategorySelectFieldProps extends SelectProps<string> {
 export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enableAutoSelect, ...props }) => {
     const { t } = useTranslation()
 
-    const isAuth = useAppSelector((state) => state.auth)
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const { data, isLoading } = useListCategoriesQuery({}, { refetchOnReconnect: true, skip: !isAuth })
 

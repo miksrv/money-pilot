@@ -7,7 +7,10 @@ import {
     ApiModel,
     useAddAccountMutation,
     useDeleteAccountMutation,
+    useGetGroupMembersQuery,
+    useGetProfileQuery,
     useListAccountQuery,
+    useListGroupsQuery,
     useUpdateAccountMutation
 } from '@/api'
 import { AppLayout, Currency, CurrencyInput } from '@/components'
@@ -28,14 +31,34 @@ const DEFAULT_FORM: AccountFormData = {
 export const Accounts: React.FC = () => {
     const { t, i18n } = useTranslation()
 
-    const isAuth = useAppSelector((state) => state.auth)
+    useEffect(() => {
+        document.title = `${t('page.accounts', 'Accounts')} — Money Pilot`
+    }, [t])
+
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
+
+    const { data: groups } = useListGroupsQuery(undefined, { skip: !isAuth })
+    const { data: profile } = useGetProfileQuery(undefined, { skip: !isAuth })
+    const { data: groupMembers } = useGetGroupMembersQuery(activeGroupId ?? '', {
+        skip: !isAuth || !activeGroupId
+    })
+
+    const activeGroup = activeGroupId ? (groups?.find((g) => g.id === activeGroupId) ?? null) : null
+    const myMember = groupMembers?.find((m) => m.user_id === profile?.id)
+    const isViewer = activeGroup
+        ? activeGroup.owner_id !== profile?.id && (myMember?.role ?? 'viewer') === 'viewer'
+        : false
 
     const [openForm, setOpenForm] = useState(false)
     const [editAccount, setEditAccount] = useState<ApiModel.Account | undefined>()
     const [deleteTarget, setDeleteTarget] = useState<ApiModel.Account | undefined>()
     const [blockedAccount, setBlockedAccount] = useState<ApiModel.Account | undefined>()
 
-    const { data: accounts, isLoading } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
+    const { data: accounts, isLoading } = useListAccountQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        refetchOnReconnect: true,
+        skip: !isAuth
+    })
 
     const [addAccount, { isLoading: isAdding }] = useAddAccountMutation()
     const [updateAccount, { isLoading: isUpdating }] = useUpdateAccountMutation()
@@ -118,15 +141,17 @@ export const Accounts: React.FC = () => {
     return (
         <AppLayout
             actions={
-                <Button
-                    mode='secondary'
-                    icon='PlusCircle'
-                    onClick={() => {
-                        setEditAccount(undefined)
-                        setOpenForm(true)
-                    }}
-                    label={t('accounts.add', 'Add Account')}
-                />
+                !isViewer ? (
+                    <Button
+                        mode='secondary'
+                        icon='PlusCircle'
+                        onClick={() => {
+                            setEditAccount(undefined)
+                            setOpenForm(true)
+                        }}
+                        label={t('accounts.add', 'Add Account')}
+                    />
+                ) : undefined
             }
         >
             {!isLoading && (!accounts || accounts.length === 0) && (
@@ -142,36 +167,38 @@ export const Accounts: React.FC = () => {
                         key={account.id}
                         title={account.name ?? ''}
                         action={
-                            <Popout
-                                trigger={
+                            !isViewer ? (
+                                <Popout
+                                    trigger={
+                                        <Button
+                                            mode='link'
+                                            icon='VerticalDots'
+                                        />
+                                    }
+                                    closeOnChildrenClick
+                                >
                                     <Button
                                         mode='link'
-                                        icon='VerticalDots'
+                                        icon='Pencil'
+                                        label={t('accounts.editAccount', 'Edit')}
+                                        onClick={() => openEdit(account)}
                                     />
-                                }
-                                closeOnChildrenClick
-                            >
-                                <Button
-                                    mode='link'
-                                    icon='Pencil'
-                                    label={t('accounts.editAccount', 'Edit')}
-                                    onClick={() => openEdit(account)}
-                                />
-                                <Button
-                                    mode='link'
-                                    icon='Close'
-                                    variant='negative'
-                                    label={t('accounts.deleteAccount', 'Delete')}
-                                    onClick={() => handleDeleteClick(account)}
-                                />
-                            </Popout>
+                                    <Button
+                                        mode='link'
+                                        icon='Close'
+                                        variant='negative'
+                                        label={t('accounts.deleteAccount', 'Delete')}
+                                        onClick={() => handleDeleteClick(account)}
+                                    />
+                                </Popout>
+                            ) : undefined
                         }
                     >
                         <div
                             className={styles.accountBalance}
                             style={{ color: (account.balance ?? 0) >= 0 ? 'var(--color-green)' : 'var(--color-red)' }}
                         >
-                            {formatMoney(account.balance ?? 0, Currency.USD)}
+                            {formatMoney(account.balance ?? 0, profile?.currency ?? 'USD')}
                         </div>
                         <Badge
                             label={t('accounts.type.' + (account.type ?? ''), account.type ?? '')}
