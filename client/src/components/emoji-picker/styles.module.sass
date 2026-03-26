@@ -1,19 +1,104 @@
 .emojiTrigger
-    width: 32px
+    width: 42px
+    height: 42px
     font-size: 24px
-    line-height: 32px
+    line-height: 42px
+    padding: 0
+    display: flex
+    align-items: center
+    justify-content: center
+
+.emojiPickerContainer
+    width: 320px
+    display: flex
+    flex-direction: column
+
+.searchContainer
+    padding: 8px 8px 4px
+
+.searchInput
+    width: 100%
+
+.categoryTabs
+    display: flex
+    gap: 2px
+    padding: 4px 8px
+    border-bottom: 1px solid var(--input-border-color)
+    overflow-x: auto
+
+    &::-webkit-scrollbar
+        display: none
+
+.categoryTab
+    flex-shrink: 0
+    width: 32px
+    height: 32px
+    font-size: 18px
+    border: none
+    background: transparent
+    border-radius: 6px
+    cursor: pointer
+    display: flex
+    align-items: center
+    justify-content: center
+    transition: background-color 0.15s ease
+
+    &:hover
+        background-color: var(--input-background-color)
+
+.categoryTabActive
+    background-color: var(--input-background-color)
+
+.categoryLabel
+    padding: 8px 12px 4px
+    font-size: 11px
+    font-weight: 600
+    text-transform: uppercase
+    letter-spacing: 0.05em
+    color: var(--input-label-color)
 
 .emojiList
-    padding: 4px
-    width: 364px
+    padding: 4px 8px 8px
     height: 200px
-    display: flex
-    gap: 4px
-    flex-wrap: wrap
-    overflow: hidden
-    overflow-y: scroll
+    display: grid
+    grid-template-columns: repeat(8, 1fr)
+    gap: 2px
+    overflow-y: auto
+    align-content: start
 
-    button
-        width: 32px
-        font-size: 24px
-        line-height: 32px
+    &::-webkit-scrollbar
+        width: 6px
+
+    &::-webkit-scrollbar-track
+        background: transparent
+
+    &::-webkit-scrollbar-thumb
+        background: var(--input-border-color)
+        border-radius: 3px
+
+.emojiButton
+    width: 36px
+    height: 36px
+    font-size: 22px
+    border: none
+    background: transparent
+    border-radius: 6px
+    cursor: pointer
+    display: flex
+    align-items: center
+    justify-content: center
+    transition: background-color 0.15s ease, transform 0.1s ease
+
+    &:hover
+        background-color: var(--input-background-color)
+        transform: scale(1.15)
+
+    &:active
+        transform: scale(0.95)
+
+.emptyState
+    grid-column: 1 / -1
+    padding: 24px
+    text-align: center
+    color: var(--input-label-color)
+    font-size: 13px

@@ -2,12 +2,18 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Checkbox, Dialog, Message, Skeleton } from 'simple-react-ui-kit'
 
-import { ApiModel, useDeleteTransactionMutation, useListAccountQuery, useListCategoriesQuery } from '@/api'
+import {
+    ApiModel,
+    useDeleteTransactionMutation,
+    useListAccountQuery,
+    useListCategoriesQuery,
+    useUpdateTransactionMutation
+} from '@/api'
+import { CategoryPicker } from '@/components/category-picker'
 import { ColorName, getColorHex } from '@/components/color-picker'
 import { useAppSelector } from '@/store/hooks'
 import { formatMoney } from '@/utils/money'
 
-import { CategoryPicker } from './CategoryPicker'
 import { SKELETON_WIDTHS } from './constants'
 import { TransactionFormDialog } from './TransactionFormDialog'
 import { getDateLabel } from './utils'
@@ -22,6 +28,7 @@ interface TransactionTableProps {
     isReadOnly?: boolean
     hideGrouping?: boolean
     hideCheckboxes?: boolean
+    onTransactionDeleted?: () => void
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
@@ -31,7 +38,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     onSelectionChange,
     isReadOnly,
     hideGrouping,
-    hideCheckboxes
+    hideCheckboxes,
+    onTransactionDeleted
 }) => {
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
@@ -42,11 +50,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [editTransaction, setEditTransaction] = useState<ApiModel.Transaction | undefined>()
     const [openForm, setOpenForm] = useState(false)
-    const [openPickerForId, setOpenPickerForId] = useState<string | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<ApiModel.Transaction | undefined>()
     const [deleteError, setDeleteError] = useState(false)
 
     const [deleteTransaction, { isLoading: isDeleting }] = useDeleteTransactionMutation()
+    const [updateTransaction] = useUpdateTransactionMutation()
 
     const toggleSelect = (id: string) => {
         setSelectedIds((prev) => {
@@ -80,6 +88,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             await deleteTransaction(deleteTarget.id).unwrap()
             setDeleteTarget(undefined)
             handleCloseForm()
+            onTransactionDeleted?.()
         } catch {
             setDeleteError(true)
         }
@@ -109,7 +118,6 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         const account = accounts?.find((a) => a.id === tx.account_id)
         const isIncome = tx.type === 'income'
         const isSelected = selectedIds.has(tx.id)
-        const isPickerOpen = openPickerForId === tx.id
 
         const showCheckbox = !isReadOnly && !hideCheckboxes
 
@@ -149,48 +157,52 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                 {/* Cell 2: category badge with picker */}
                 <div
                     className={styles.cellCategory}
-                    style={{ position: 'relative' }}
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    {category ? (
-                        <button
-                            type='button'
+                    {!isReadOnly ? (
+                        <CategoryPicker
+                            currentCategoryId={tx.category_id}
+                            onSelect={(categoryId) => {
+                                void updateTransaction({ id: tx.id, category_id: categoryId })
+                            }}
+                            trigger={
+                                category ? (
+                                    <button
+                                        type='button'
+                                        className={styles.categoryBadge}
+                                        style={{
+                                            backgroundColor: getColorHex(category.color as ColorName) + '26',
+                                            color: getColorHex(category.color as ColorName)
+                                        }}
+                                        aria-label={t('transactions.changeCategory', 'Change category')}
+                                    >
+                                        <span className={styles.categoryIcon}>{category.icon}</span>
+                                        <span>{category.name}</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        type='button'
+                                        className={styles.categoryBadgeEmpty}
+                                        aria-label={t('transactions.changeCategory', 'Change category')}
+                                    >
+                                        {t('transactions.noCategory', 'No category')}
+                                    </button>
+                                )
+                            }
+                        />
+                    ) : category ? (
+                        <span
                             className={styles.categoryBadge}
                             style={{
                                 backgroundColor: getColorHex(category.color as ColorName) + '26',
                                 color: getColorHex(category.color as ColorName)
                             }}
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                if (!isReadOnly) {
-                                    setOpenPickerForId(isPickerOpen ? null : tx.id)
-                                }
-                            }}
-                            aria-label={t('transactions.changeCategory', 'Change category')}
                         >
                             <span className={styles.categoryIcon}>{category.icon}</span>
                             <span>{category.name}</span>
-                        </button>
+                        </span>
                     ) : (
-                        <button
-                            type='button'
-                            className={styles.categoryBadgeEmpty}
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                if (!isReadOnly) {
-                                    setOpenPickerForId(isPickerOpen ? null : tx.id)
-                                }
-                            }}
-                            aria-label={t('transactions.changeCategory', 'Change category')}
-                        >
-                            {t('transactions.noCategory', 'No category')}
-                        </button>
-                    )}
-                    {isPickerOpen && !isReadOnly && (
-                        <CategoryPicker
-                            transactionId={tx.id}
-                            currentCategoryId={tx.category_id}
-                            onClose={() => setOpenPickerForId(null)}
-                        />
+                        <span className={styles.categoryBadgeEmpty}>{t('transactions.noCategory', 'No category')}</span>
                     )}
                 </div>
 
