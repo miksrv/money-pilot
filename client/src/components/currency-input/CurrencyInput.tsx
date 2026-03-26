@@ -2,24 +2,13 @@ import React, { forwardRef, useEffect, useState } from 'react'
 import { Input, InputProps } from 'simple-react-ui-kit'
 
 import { Currency } from './types'
+import { getCurrencyFormat } from './utils'
 
 export interface CurrencyInputProps extends Omit<InputProps, 'onChange' | 'value' | 'size'> {
     value?: number | string
     onValueChange?: (value: number | null) => void
     currency: Currency
     locale?: string
-}
-
-const getCurrencyFormat = (value: number, currency: Currency, locale: string) => {
-    if (isNaN(value)) {
-        return ''
-    }
-
-    return new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
-        maximumFractionDigits: 2
-    }).format(value)
 }
 
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(

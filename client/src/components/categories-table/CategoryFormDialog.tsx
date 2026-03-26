@@ -14,23 +14,13 @@ import {
 import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
 import { useAppSelector } from '@/store/hooks'
 
+import { DEFAULT_VALUES, NAME_MAX_LENGTH } from './constants'
+
 import styles from './styles.module.sass'
 
 interface CategoryFormDialogProps extends Partial<DialogProps> {
     categoryData?: ApiModel.Category
     onDelete?: (category: ApiModel.Category) => void
-}
-
-const NAME_MAX_LENGTH = 100
-
-const DEFAULT_VALUES: ApiModel.Category = {
-    name: '',
-    type: 'expense',
-    parent_id: undefined,
-    is_parent: false,
-    budget: undefined,
-    color: 'grey',
-    icon: '💵'
 }
 
 export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => {
@@ -231,7 +221,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
                         onSelect={(value) => {
                             reset({
                                 ...getValues(),
-                                type: value?.[0]?.value as 'income' | 'expense',
+                                type: value?.[0]?.key as 'income' | 'expense',
                                 parent_id: undefined
                             })
                         }}

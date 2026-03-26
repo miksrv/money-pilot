@@ -9,36 +9,12 @@ import { useAppSelector } from '@/store/hooks'
 import { getThemeColors } from '@/utils/echart'
 import { formatMoney } from '@/utils/money'
 
+import { colorWithAlpha, getStatusColor } from './utils'
+
 interface TooltipParam {
     dataIndex: number
     value: number | null
     seriesName: string
-}
-
-function getStatusColor(current: number, previous: number): string {
-    if (previous === 0) {
-        return '#4CAF50'
-    }
-
-    const ratio = current / previous
-
-    if (ratio <= 1.0) {
-        return '#4CAF50'
-    }
-
-    if (ratio <= 1.2) {
-        return '#FF9800'
-    }
-
-    return '#F44336'
-}
-
-function colorWithAlpha(hex: string, alpha: number): string {
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
-
-    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')'
 }
 
 interface MonthlySpendingChartProps {

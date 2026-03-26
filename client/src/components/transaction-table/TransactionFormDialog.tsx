@@ -7,25 +7,13 @@ import { ApiModel, useAddTransactionMutation, useListPayeesQuery, useUpdateTrans
 import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
 import { useAppSelector } from '@/store/hooks'
 
+import { DEFAULT_VALUES, TransactionFormData } from './constants'
+
 import styles from './styles.module.sass'
 
 interface TransactionFormDialogProps extends Partial<DialogProps> {
     transactionData?: ApiModel.Transaction
     onDelete?: (transaction: ApiModel.Transaction) => void
-}
-
-type TransactionFormData = Pick<
-    ApiModel.Transaction,
-    'account_id' | 'amount' | 'type' | 'date' | 'category_id' | 'payee'
->
-
-const DEFAULT_VALUES: TransactionFormData = {
-    account_id: '',
-    amount: 0,
-    type: 'expense',
-    date: new Date().toISOString().split('T')[0],
-    category_id: '',
-    payee: ''
 }
 
 export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (props) => {

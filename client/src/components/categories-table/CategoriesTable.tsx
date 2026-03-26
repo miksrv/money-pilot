@@ -8,6 +8,7 @@ import { useAppSelector } from '@/store/hooks'
 import { formatMoney } from '@/utils/money'
 
 import { CategoryFormDialog } from './CategoryFormDialog'
+import { SKELETON_WIDTHS } from './constants'
 
 import styles from './styles.module.sass'
 
@@ -23,8 +24,6 @@ interface CategoryGroup {
     parent: ApiModel.Category
     children: ApiModel.Category[]
 }
-
-const SKELETON_WIDTHS = [80, 60, 70, 55, 65]
 
 export const CategoriesTable: React.FC<CategoriesTableProps> = ({
     categories,
@@ -184,9 +183,17 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
                         />
                         <span
                             className={styles.categoryName}
+                            role='button'
+                            tabIndex={0}
                             onClick={(e) => {
                                 e.stopPropagation()
                                 handleRowClick(parent)
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.stopPropagation()
+                                    handleRowClick(parent)
+                                }
                             }}
                         >
                             {parent.name}

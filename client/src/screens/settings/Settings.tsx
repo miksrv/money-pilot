@@ -9,23 +9,21 @@ import {
     ApiModel,
     useChangePasswordMutation,
     useCreateGroupMutation,
-    useDeleteGroupMutation,
     useDeleteMyAccountMutation,
-    useGetGroupInvitationsQuery,
-    useGetGroupMembersQuery,
     useGetPendingInvitationsQuery,
     useGetProfileQuery,
     useInviteMemberMutation,
     useJoinGroupMutation,
     useListGroupsQuery,
-    useRemoveMemberMutation,
-    useRevokeInvitationMutation,
     useUpdateProfileMutation
 } from '@/api'
 import { AppLayout } from '@/components'
 import { logout, setActiveGroup } from '@/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { formatUTCDate } from '@/utils/dates'
+
+import { AccessedGroupRow } from './AccessedGroupRow'
+import { OwnedGroupCard } from './OwnedGroupCard'
 
 import styles from './styles.module.sass'
 
@@ -34,314 +32,6 @@ type ChangePasswordFormData = ApiModel.ChangePasswordBody & { confirm_password: 
 type InviteFormData = {
     email: string
     role: 'member' | 'viewer'
-}
-
-/* ─── Sub-component: single owned group card ─────────────────────────────── */
-
-interface OwnedGroupCardProps {
-    group: ApiModel.Group
-    currentUserId: string
-    onInvite: (groupId?: string) => void
-}
-
-const OwnedGroupCard: React.FC<OwnedGroupCardProps> = ({ group, currentUserId, onInvite }) => {
-    const { t } = useTranslation()
-    const dispatch = useAppDispatch()
-
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
-
-    const { data: members } = useGetGroupMembersQuery(group.id, { skip: !isAuth })
-    const { data: invitations } = useGetGroupInvitationsQuery(group.id, { skip: !isAuth })
-
-    const [removeMember] = useRemoveMemberMutation()
-    const [revokeInvitation] = useRevokeInvitationMutation()
-    const [deleteGroup] = useDeleteGroupMutation()
-
-    const [removeConfirmId, setRemoveConfirmId] = useState<string | undefined>()
-    const [revokeConfirmId, setRevokeConfirmId] = useState<string | undefined>()
-    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-
-    const handleRemoveMember = async (memberId: string) => {
-        try {
-            await removeMember({ groupId: group.id, memberId }).unwrap()
-            setRemoveConfirmId(undefined)
-        } catch (err) {
-            console.error('Failed to remove member:', err)
-        }
-    }
-
-    const handleRevokeInvitation = async (invitationId: string) => {
-        try {
-            await revokeInvitation({ groupId: group.id, invitationId }).unwrap()
-            setRevokeConfirmId(undefined)
-        } catch (err) {
-            console.error('Failed to revoke invitation:', err)
-        }
-    }
-
-    const handleDeleteGroup = async () => {
-        try {
-            await deleteGroup(group.id).unwrap()
-            dispatch(setActiveGroup(null))
-            setDeleteConfirmOpen(false)
-        } catch (err) {
-            console.error('Failed to delete group:', err)
-        }
-    }
-
-    const memberInitials = (name: string) =>
-        name
-            .split(' ')
-            .map((w) => w[0])
-            .join('')
-            .slice(0, 2)
-            .toUpperCase()
-
-    return (
-        <div className={styles.groupCard}>
-            <div className={styles.groupCardHeader}>
-                <strong>{group.name}</strong>
-            </div>
-
-            {/* Members */}
-            {members && members.length > 0 && (
-                <div className={styles.groupSection}>
-                    {members.map((member) => (
-                        <div
-                            className={styles.memberRow}
-                            key={member.id}
-                        >
-                            <div className={styles.memberAvatar}>{memberInitials(member.name)}</div>
-                            <div className={styles.memberInfo}>
-                                <span className={styles.memberName}>{member.name}</span>
-                                <span className={styles.memberEmail}>{member.email}</span>
-                            </div>
-                            <Badge
-                                label={t('groups.role.' + member.role, member.role)}
-                                size='small'
-                            />
-                            {member.role !== 'owner' && member.user_id !== currentUserId && (
-                                <Button
-                                    mode='link'
-                                    variant='negative'
-                                    icon='Close'
-                                    label={t('groups.removeMember', 'Remove')}
-                                    onClick={() => setRemoveConfirmId(member.id)}
-                                />
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Pending invitations */}
-            {invitations && invitations.length > 0 && (
-                <div className={styles.groupSection}>
-                    <div className={styles.groupSectionTitle}>
-                        {t('groups.pendingInvitations', 'Pending Invitations')}
-                    </div>
-                    {invitations.map((inv) => (
-                        <div
-                            className={styles.invitationRow}
-                            key={inv.id}
-                        >
-                            <span className={styles.invitationEmail}>{inv.email}</span>
-                            <Badge
-                                label={t('groups.role.' + inv.role, inv.role)}
-                                size='small'
-                            />
-                            <span className={styles.invitationExpiry}>
-                                {t('groups.expiresAt', 'Expires {{date}}', {
-                                    date: formatUTCDate(inv.expires_at, 'DD.MM.YYYY')
-                                })}
-                            </span>
-                            <Button
-                                mode='link'
-                                variant='negative'
-                                icon='Close'
-                                label={t('groups.revokeInvitation', 'Revoke')}
-                                onClick={() => setRevokeConfirmId(inv.id)}
-                            />
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Actions */}
-            <div className={styles.groupActions}>
-                <Button
-                    mode='secondary'
-                    icon='PlusCircle'
-                    label={t('groups.shareMyBudget', 'Invite Someone')}
-                    onClick={() => onInvite(group.id)}
-                />
-                <Button
-                    mode='outline'
-                    variant='negative'
-                    label={t('groups.deleteGroup', 'Delete Shared Budget')}
-                    onClick={() => setDeleteConfirmOpen(true)}
-                />
-            </div>
-
-            {/* Remove member confirm */}
-            <Dialog
-                open={!!removeConfirmId}
-                title={t('groups.removeMember', 'Remove Member')}
-                onCloseDialog={() => setRemoveConfirmId(undefined)}
-            >
-                <Message type='warning'>
-                    {t('groups.removeConfirm', 'Remove this member from your shared budget?')}
-                </Message>
-                <Button
-                    mode='primary'
-                    variant='negative'
-                    label={t('groups.removeMember', 'Remove')}
-                    onClick={() => removeConfirmId && handleRemoveMember(removeConfirmId)}
-                    stretched
-                />
-                <Button
-                    mode='outline'
-                    label={t('common.cancel', 'Cancel')}
-                    onClick={() => setRemoveConfirmId(undefined)}
-                    stretched
-                />
-            </Dialog>
-
-            {/* Revoke invitation confirm */}
-            <Dialog
-                open={!!revokeConfirmId}
-                title={t('groups.revokeInvitation', 'Revoke Invitation')}
-                onCloseDialog={() => setRevokeConfirmId(undefined)}
-            >
-                <Message type='warning'>{t('groups.revokeConfirm', 'Revoke this invitation?')}</Message>
-                <Button
-                    mode='primary'
-                    variant='negative'
-                    label={t('groups.revokeInvitation', 'Revoke')}
-                    onClick={() => revokeConfirmId && handleRevokeInvitation(revokeConfirmId)}
-                    stretched
-                />
-                <Button
-                    mode='outline'
-                    label={t('common.cancel', 'Cancel')}
-                    onClick={() => setRevokeConfirmId(undefined)}
-                    stretched
-                />
-            </Dialog>
-
-            {/* Delete group confirm */}
-            <Dialog
-                open={deleteConfirmOpen}
-                title={t('groups.deleteGroup', 'Delete Shared Budget')}
-                onCloseDialog={() => setDeleteConfirmOpen(false)}
-            >
-                <Message type='error'>
-                    {t('groups.deleteConfirm', 'Permanently delete this shared budget? All members will lose access.')}
-                </Message>
-                <Button
-                    mode='primary'
-                    variant='negative'
-                    label={t('groups.deleteGroup', 'Delete Shared Budget')}
-                    onClick={handleDeleteGroup}
-                    stretched
-                />
-                <Button
-                    mode='outline'
-                    label={t('common.cancel', 'Cancel')}
-                    onClick={() => setDeleteConfirmOpen(false)}
-                    stretched
-                />
-            </Dialog>
-        </div>
-    )
-}
-
-/* ─── Sub-component: accessed group row ─────────────────────────────────── */
-
-interface AccessedGroupRowProps {
-    group: ApiModel.Group
-    currentUserId: string
-}
-
-const AccessedGroupRow: React.FC<AccessedGroupRowProps> = ({ group, currentUserId }) => {
-    const { t } = useTranslation()
-    const dispatch = useAppDispatch()
-    const navigate = useNavigate()
-
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
-
-    const { data: members } = useGetGroupMembersQuery(group.id, { skip: !isAuth })
-    const [removeMember] = useRemoveMemberMutation()
-
-    const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
-
-    const myMember = members?.find((m) => m.user_id === currentUserId)
-
-    const handleLeave = async () => {
-        if (!myMember) {
-            return
-        }
-        try {
-            await removeMember({ groupId: group.id, memberId: myMember.id }).unwrap()
-            dispatch(setActiveGroup(null))
-            setLeaveConfirmOpen(false)
-        } catch (err) {
-            console.error('Failed to leave group:', err)
-        }
-    }
-
-    return (
-        <div className={styles.accessedGroupRow}>
-            <div className={styles.accessedGroupInfo}>
-                <span className={styles.accessedGroupName}>{group.name}</span>
-                {myMember && (
-                    <Badge
-                        label={t('groups.role.' + myMember.role, myMember.role)}
-                        size='small'
-                    />
-                )}
-            </div>
-            <div className={styles.accessedGroupActions}>
-                <Button
-                    mode='secondary'
-                    label={t('groups.joinGoTo', "View {{name}}'s Budget", { name: group.name })}
-                    onClick={() => {
-                        dispatch(setActiveGroup(group.id))
-                        void navigate('/')
-                    }}
-                />
-                <Button
-                    mode='outline'
-                    variant='negative'
-                    label={t('groups.leaveGroup', 'Leave')}
-                    onClick={() => setLeaveConfirmOpen(true)}
-                />
-            </div>
-
-            <Dialog
-                open={leaveConfirmOpen}
-                title={t('groups.leaveGroup', 'Leave Shared Budget')}
-                onCloseDialog={() => setLeaveConfirmOpen(false)}
-            >
-                <Message type='warning'>
-                    {t('groups.leaveConfirm', 'Leave this shared budget? You will lose access to this budget.')}
-                </Message>
-                <Button
-                    mode='primary'
-                    variant='negative'
-                    label={t('groups.leaveGroup', 'Leave')}
-                    onClick={handleLeave}
-                    stretched
-                />
-                <Button
-                    mode='outline'
-                    label={t('common.cancel', 'Cancel')}
-                    onClick={() => setLeaveConfirmOpen(false)}
-                    stretched
-                />
-            </Dialog>
-        </div>
-    )
 }
 
 /* ─── Main Settings component ────────────────────────────────────────────── */
@@ -483,8 +173,10 @@ export const Settings: React.FC = () => {
             await deleteMyAccount().unwrap()
             dispatch(logout())
             void navigate('/login')
-        } catch (err) {
-            console.error('Failed to delete account:', err)
+        } catch {
+            setProfileError(t('common.errors.unknown', 'An error occurred. Please try again.'))
+            setDeleteDialogOpen(false)
+            setDeleteConfirmText('')
         }
     }
 
@@ -553,8 +245,8 @@ export const Settings: React.FC = () => {
         try {
             const group = await joinGroup({ token }).unwrap()
             dispatch(setActiveGroup(group.id))
-        } catch (err) {
-            console.error('Failed to accept invitation:', err)
+        } catch {
+            setProfileError(t('common.errors.unknown', 'An error occurred. Please try again.'))
         }
     }
 

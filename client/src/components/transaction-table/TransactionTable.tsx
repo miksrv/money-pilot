@@ -1,20 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import dayjs from 'dayjs'
 import { Button, Checkbox, Dialog, Message, Skeleton } from 'simple-react-ui-kit'
 
-import {
-    ApiModel,
-    useDeleteTransactionMutation,
-    useListAccountQuery,
-    useListCategoriesQuery,
-    useUpdateTransactionMutation
-} from '@/api'
+import { ApiModel, useDeleteTransactionMutation, useListAccountQuery, useListCategoriesQuery } from '@/api'
 import { ColorName, getColorHex } from '@/components/color-picker'
 import { useAppSelector } from '@/store/hooks'
 import { formatMoney } from '@/utils/money'
 
+import { CategoryPicker } from './CategoryPicker'
+import { SKELETON_WIDTHS } from './constants'
 import { TransactionFormDialog } from './TransactionFormDialog'
+import { getDateLabel } from './utils'
 
 import styles from './styles.module.sass'
 
@@ -27,81 +23,6 @@ interface TransactionTableProps {
     hideGrouping?: boolean
     hideCheckboxes?: boolean
 }
-
-function getDateLabel(dateStr: string, t: ReturnType<typeof useTranslation>['t']): string {
-    const today = dayjs().format('YYYY-MM-DD')
-    const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
-    if (dateStr === today) {
-        return t('transactions.today', 'TODAY')
-    }
-    if (dateStr === yesterday) {
-        return t('transactions.yesterday', 'YESTERDAY')
-    }
-    return dayjs(dateStr).format('dddd, MMMM D').toUpperCase()
-}
-
-interface CategoryPickerProps {
-    transactionId: string
-    currentCategoryId?: string
-    onClose: () => void
-}
-
-const CategoryPicker: React.FC<CategoryPickerProps> = ({ transactionId, currentCategoryId, onClose }) => {
-    const { t } = useTranslation()
-    const containerRef = useRef<HTMLDivElement>(null)
-    const isAuth = useAppSelector((state) => state.auth.isAuth)
-
-    const { data: categories } = useListCategoriesQuery(undefined, { skip: !isAuth })
-    const [updateTransaction] = useUpdateTransactionMutation()
-
-    useEffect(() => {
-        const handleMouseDown = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                onClose()
-            }
-        }
-        document.addEventListener('mousedown', handleMouseDown)
-        return () => document.removeEventListener('mousedown', handleMouseDown)
-    }, [onClose])
-
-    const handleSelect = async (categoryId: string, e: React.MouseEvent) => {
-        e.stopPropagation()
-        try {
-            await updateTransaction({ id: transactionId, category_id: categoryId }).unwrap()
-        } catch {
-            console.error('Failed to update category')
-        }
-        onClose()
-    }
-
-    return (
-        <div
-            ref={containerRef}
-            className={styles.categoryPicker}
-            onClick={(e) => e.stopPropagation()}
-        >
-            {(categories ?? []).map((cat) => (
-                <button
-                    key={cat.id}
-                    type='button'
-                    className={[
-                        styles.categoryPickerItem,
-                        cat.id === currentCategoryId ? styles.categoryPickerItemActive : ''
-                    ].join(' ')}
-                    onClick={(e) => void handleSelect(cat.id ?? '', e)}
-                >
-                    <span className={styles.categoryPickerIcon}>{cat.icon}</span>
-                    <span>{cat.name}</span>
-                </button>
-            ))}
-            {(!categories || categories.length === 0) && (
-                <span className={styles.categoryPickerEmpty}>{t('transactions.noCategory', 'No category')}</span>
-            )}
-        </div>
-    )
-}
-
-const SKELETON_WIDTHS = [80, 60, 70, 55, 65]
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
     transactions,
@@ -123,6 +44,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     const [openForm, setOpenForm] = useState(false)
     const [openPickerForId, setOpenPickerForId] = useState<string | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<ApiModel.Transaction | undefined>()
+    const [deleteError, setDeleteError] = useState(false)
 
     const [deleteTransaction, { isLoading: isDeleting }] = useDeleteTransactionMutation()
 
@@ -153,12 +75,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         if (!deleteTarget?.id) {
             return
         }
+        setDeleteError(false)
         try {
             await deleteTransaction(deleteTarget.id).unwrap()
             setDeleteTarget(undefined)
             handleCloseForm()
         } catch {
-            console.error('Failed to delete transaction')
+            setDeleteError(true)
         }
     }
 
@@ -323,11 +246,17 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             <Dialog
                 open={!!deleteTarget}
                 title={t('transactions.deleteConfirmTitle', 'Delete transaction?')}
-                onCloseDialog={() => setDeleteTarget(undefined)}
+                onCloseDialog={() => {
+                    setDeleteTarget(undefined)
+                    setDeleteError(false)
+                }}
             >
                 <Message type='warning'>
                     {t('transactions.confirmDelete', 'Are you sure you want to delete this transaction?')}
                 </Message>
+                {deleteError && (
+                    <Message type='error'>{t('common.errors.unknown', 'An unknown error occurred')}</Message>
+                )}
                 <Button
                     mode='primary'
                     variant='negative'

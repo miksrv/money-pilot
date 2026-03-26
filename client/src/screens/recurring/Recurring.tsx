@@ -29,6 +29,8 @@ import { useAppSelector } from '@/store/hooks'
 import { formatDate } from '@/utils/dates'
 import { formatMoney } from '@/utils/money'
 
+import { FREQUENCY_KEYS } from './constants'
+
 import styles from './styles.module.sass'
 
 type RecurringFormData = {
@@ -59,15 +61,6 @@ const DEFAULT_FORM: RecurringFormData = {
     notes: ''
 }
 
-const FREQUENCY_KEYS: Array<ApiModel.RecurringTransaction['frequency']> = [
-    'daily',
-    'weekly',
-    'biweekly',
-    'monthly',
-    'quarterly',
-    'yearly'
-]
-
 export const Recurring: React.FC = () => {
     const { t, i18n } = useTranslation()
 
@@ -81,6 +74,7 @@ export const Recurring: React.FC = () => {
     const [editTarget, setEditTarget] = useState<ApiModel.RecurringTransaction | undefined>()
     const [deleteTarget, setDeleteTarget] = useState<ApiModel.RecurringTransaction | undefined>()
     const [isDeleting, setIsDeleting] = useState(false)
+    const [deleteError, setDeleteError] = useState(false)
 
     const { data: items, isLoading } = useListRecurringQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
 
@@ -164,11 +158,12 @@ export const Recurring: React.FC = () => {
             return
         }
         setIsDeleting(true)
+        setDeleteError(false)
         try {
             await deleteRecurring(deleteTarget.id).unwrap()
             setDeleteTarget(undefined)
         } catch {
-            // silent
+            setDeleteError(true)
         } finally {
             setIsDeleting(false)
         }
@@ -483,11 +478,17 @@ export const Recurring: React.FC = () => {
             <Dialog
                 open={!!deleteTarget}
                 title={t('recurring.deleteConfirmTitle', 'Delete Recurring Transaction')}
-                onCloseDialog={() => setDeleteTarget(undefined)}
+                onCloseDialog={() => {
+                    setDeleteTarget(undefined)
+                    setDeleteError(false)
+                }}
             >
                 <Message type='warning'>
                     {t('recurring.deleteConfirmBody', 'Are you sure you want to delete this recurring transaction?')}
                 </Message>
+                {deleteError && (
+                    <Message type='error'>{t('common.errors.unknown', 'An unknown error occurred')}</Message>
+                )}
                 <Button
                     mode='primary'
                     variant='negative'
