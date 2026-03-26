@@ -9,4 +9,7 @@ export interface Category {
     expenses?: number
     icon?: string
     color?: string
+    archived?: boolean
+    transaction_count?: number
+    usage_count?: number
 }

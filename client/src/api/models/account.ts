@@ -7,4 +7,5 @@ export interface Account {
     balance?: number
     institution?: string | null
     last_synced: string | null
+    transaction_count?: number
 }

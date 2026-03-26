@@ -4,12 +4,16 @@ import type { RootState } from '@/store'
 
 import { ApiModel, ApiType } from './index'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const encodeQueryData = (data: any): string => {
-    const ret = []
+export const encodeQueryData = (data: Record<string, string | number | boolean | undefined | null> | void): string => {
+    if (!data) {
+        return ''
+    }
+
+    const ret: string[] = []
+
     for (const d in data) {
-        if (d && data[d]) {
-            ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]))
+        if (d && data[d] != null && data[d] !== '') {
+            ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(String(data[d])))
         }
     }
 
@@ -21,13 +25,14 @@ export const HOST_API = 'http://localhost:8080/'
 export interface ApiError {
     status: number
     messages: {
+        [field: string]: string | undefined
         error?: string
     }
 }
 
 export const api = createApi({
     reducerPath: 'api',
-    tagTypes: ['Category', 'Transaction'],
+    tagTypes: ['Category', 'Transaction', 'Account', 'Dashboard', 'User', 'Recurring', 'Payee', 'Report'],
     baseQuery: fetchBaseQuery({
         baseUrl: HOST_API,
         prepareHeaders: (headers, { getState }) => {
@@ -74,6 +79,7 @@ export const api = createApi({
         }),
         /* Add account */
         addAccount: builder.mutation<void, ApiType.Account.Request>({
+            invalidatesTags: [{ id: 'LIST', type: 'Account' }],
             query: (body) => ({
                 url: 'accounts',
                 method: 'POST',
@@ -81,13 +87,27 @@ export const api = createApi({
             })
         }),
         /* List accounts */
-        listAccount: builder.query<ApiType.Account.Response[], void>({
+        listAccount: builder.query<ApiModel.Account[], void>({
+            providesTags: [{ id: 'LIST', type: 'Account' }],
             query: () => 'accounts'
         }),
+        /* Update account */
+        updateAccount: builder.mutation<ApiModel.Account, { id: string } & Partial<ApiModel.Account>>({
+            invalidatesTags: [{ id: 'LIST', type: 'Account' }],
+            query: ({ id, ...body }) => ({ url: `accounts/${id}`, method: 'PUT', body })
+        }),
+        /* Delete account */
+        deleteAccount: builder.mutation<void, string>({
+            invalidatesTags: [
+                { id: 'LIST', type: 'Account' },
+                { id: 'LIST', type: 'Transaction' }
+            ],
+            query: (id) => ({ url: `accounts/${id}`, method: 'DELETE' })
+        }),
         /* List transactions */
-        listTransactions: builder.query<ApiType.Transaction.Response[], void>({
+        listTransactions: builder.query<ApiModel.TransactionListResponse, ApiModel.TransactionListParams | void>({
             providesTags: () => [{ id: 'LIST', type: 'Transaction' }],
-            query: () => '/transactions'
+            query: (params) => `/transactions${encodeQueryData(params)}`
         }),
         /* Add Transaction */
         addTransaction: builder.mutation<void, ApiType.Transaction.Request>({
@@ -109,8 +129,19 @@ export const api = createApi({
                 body: formData
             })
         }),
+        /* Delete Transaction */
+        deleteTransaction: builder.mutation<void, string>({
+            invalidatesTags: [
+                { id: 'LIST', type: 'Transaction' },
+                { id: 'LIST', type: 'Account' }
+            ],
+            query: (id) => ({ url: `transactions/${id}`, method: 'DELETE' })
+        }),
         /* List Categories */
-        listCategories: builder.query<ApiType.Category.Response[], { withSums?: boolean } | void>({
+        listCategories: builder.query<
+            ApiType.Category.Response[],
+            { withSums?: boolean; include_archived?: number } | void
+        >({
             providesTags: () => [{ id: 'LIST', type: 'Category' }],
             query: (param) => `/categories${encodeQueryData(param)}`
         }),
@@ -133,6 +164,129 @@ export const api = createApi({
                 method: 'PUT',
                 body: formData
             })
+        }),
+        /* Delete Category */
+        deleteCategory: builder.mutation<void, string>({
+            invalidatesTags: [{ id: 'LIST', type: 'Category' }],
+            query: (id) => ({ url: `categories/${id}`, method: 'DELETE' })
+        }),
+        /* Archive Category */
+        archiveCategory: builder.mutation<ApiModel.Category, { id: string; archived: boolean }>({
+            invalidatesTags: [{ id: 'LIST', type: 'Category' }],
+            query: ({ id, archived }) => ({
+                url: `categories/${id}/archive`,
+                method: 'PATCH',
+                body: { archived }
+            })
+        }),
+        /* Get dashboard summary */
+        getDashboardSummary: builder.query<ApiModel.DashboardSummary, { month?: string } | void>({
+            providesTags: [{ id: 'SUMMARY', type: 'Dashboard' }],
+            query: (param) => `/dashboard/summary${encodeQueryData(param)}`
+        }),
+        /* Get user profile */
+        getProfile: builder.query<ApiModel.UserProfile, void>({
+            providesTags: [{ id: 'PROFILE', type: 'User' }],
+            query: () => 'users/profile'
+        }),
+        /* Update profile */
+        updateProfile: builder.mutation<ApiModel.UserProfile, ApiModel.UpdateProfileBody>({
+            invalidatesTags: [{ id: 'PROFILE', type: 'User' }],
+            query: (body) => ({ url: 'users/profile', method: 'PUT', body })
+        }),
+        /* Change password */
+        changePassword: builder.mutation<void, ApiModel.ChangePasswordBody>({
+            query: (body) => ({ url: 'users/password', method: 'PUT', body })
+        }),
+        /* Delete my account */
+        deleteMyAccount: builder.mutation<void, void>({
+            query: () => ({ url: 'users/me', method: 'DELETE' })
+        }),
+        /* List recurring transactions */
+        listRecurring: builder.query<ApiModel.RecurringTransaction[], void>({
+            providesTags: [{ id: 'LIST', type: 'Recurring' }],
+            query: () => '/recurring'
+        }),
+        /* Add recurring transaction */
+        addRecurring: builder.mutation<ApiModel.RecurringTransaction, ApiModel.CreateRecurringBody>({
+            invalidatesTags: [{ id: 'LIST', type: 'Recurring' }],
+            query: (body) => ({ url: '/recurring', method: 'POST', body })
+        }),
+        /* Update recurring transaction */
+        updateRecurring: builder.mutation<
+            ApiModel.RecurringTransaction,
+            { id: string } & Partial<ApiModel.CreateRecurringBody>
+        >({
+            invalidatesTags: [{ id: 'LIST', type: 'Recurring' }],
+            query: ({ id, ...body }) => ({ url: `/recurring/${id}`, method: 'PUT', body })
+        }),
+        /* Delete recurring transaction */
+        deleteRecurring: builder.mutation<void, string>({
+            invalidatesTags: [{ id: 'LIST', type: 'Recurring' }],
+            query: (id) => ({ url: `/recurring/${id}`, method: 'DELETE' })
+        }),
+        /* Generate transaction from recurring */
+        generateRecurring: builder.mutation<ApiModel.Transaction, string>({
+            invalidatesTags: [
+                { id: 'LIST', type: 'Recurring' },
+                { id: 'LIST', type: 'Transaction' },
+                { id: 'LIST', type: 'Account' }
+            ],
+            query: (id) => ({ url: `/recurring/${id}/generate`, method: 'POST' })
+        }),
+        /* Toggle recurring active/paused */
+        toggleRecurring: builder.mutation<ApiModel.RecurringTransaction, string>({
+            invalidatesTags: [{ id: 'LIST', type: 'Recurring' }],
+            query: (id) => ({ url: `/recurring/${id}/toggle`, method: 'PATCH' })
+        }),
+        /* List payees */
+        listPayees: builder.query<ApiModel.Payee[], { search?: string } | void>({
+            providesTags: [{ id: 'LIST', type: 'Payee' }],
+            query: (params) => `/payees${encodeQueryData(params)}`
+        }),
+        /* Update payee */
+        updatePayee: builder.mutation<ApiModel.Payee, { id: string; name: string }>({
+            invalidatesTags: [{ id: 'LIST', type: 'Payee' }],
+            query: ({ id, ...body }) => ({ url: `/payees/${id}`, method: 'PUT', body })
+        }),
+        /* Delete payee */
+        deletePayee: builder.mutation<void, string>({
+            invalidatesTags: [{ id: 'LIST', type: 'Payee' }],
+            query: (id) => ({ url: `/payees/${id}`, method: 'DELETE' })
+        }),
+        /* Merge payees */
+        mergePayees: builder.mutation<void, { sourceId: string; targetId: string }>({
+            invalidatesTags: [{ id: 'LIST', type: 'Payee' }, { id: 'LIST', type: 'Transaction' }],
+            query: ({ sourceId, targetId }) => ({
+                url: `/payees/${sourceId}/merge`,
+                method: 'POST',
+                body: { target_id: targetId }
+            })
+        }),
+        /* Reports — spending by category */
+        getSpendingByCategory: builder.query<ApiModel.CategorySpend[], ApiModel.ReportParams>({
+            providesTags: [{ id: 'SPENDING', type: 'Report' }],
+            query: (params) => `/reports/spending-by-category${encodeQueryData(params)}`
+        }),
+        /* Reports — income vs expense */
+        getIncomeExpense: builder.query<ApiModel.MonthlyIncomeExpense[], ApiModel.ReportParams>({
+            providesTags: [{ id: 'INCOME_EXPENSE', type: 'Report' }],
+            query: (params) => `/reports/income-expense${encodeQueryData(params)}`
+        }),
+        /* Reports — spending trend */
+        getSpendingTrend: builder.query<ApiModel.DailySpend[], ApiModel.ReportParams>({
+            providesTags: [{ id: 'TREND', type: 'Report' }],
+            query: (params) => `/reports/spending-trend${encodeQueryData(params)}`
+        }),
+        /* Reports — net worth history */
+        getNetWorth: builder.query<ApiModel.MonthlyNetWorth[], ApiModel.ReportParams>({
+            providesTags: [{ id: 'NET_WORTH', type: 'Report' }],
+            query: (params) => `/reports/net-worth${encodeQueryData(params)}`
+        }),
+        /* Reports — top payees */
+        getTopPayees: builder.query<ApiModel.PayeeSpend[], ApiModel.ReportParams>({
+            providesTags: [{ id: 'TOP_PAYEES', type: 'Report' }],
+            query: (params) => `/reports/top-payees${encodeQueryData(params)}`
         })
     })
 })
@@ -144,10 +298,35 @@ export const {
     useMeQuery,
     useAddTransactionMutation,
     useListTransactionsQuery,
+    useDeleteTransactionMutation,
     useAddAccountMutation,
     useListAccountQuery,
+    useUpdateAccountMutation,
+    useDeleteAccountMutation,
     useAddCategoryMutation,
     useListCategoriesQuery,
     useUpdateCategoryMutation,
-    useUpdateTransactionMutation
+    useDeleteCategoryMutation,
+    useArchiveCategoryMutation,
+    useUpdateTransactionMutation,
+    useGetDashboardSummaryQuery,
+    useGetProfileQuery,
+    useUpdateProfileMutation,
+    useChangePasswordMutation,
+    useDeleteMyAccountMutation,
+    useListRecurringQuery,
+    useAddRecurringMutation,
+    useUpdateRecurringMutation,
+    useDeleteRecurringMutation,
+    useGenerateRecurringMutation,
+    useToggleRecurringMutation,
+    useListPayeesQuery,
+    useUpdatePayeeMutation,
+    useDeletePayeeMutation,
+    useMergePayeesMutation,
+    useGetSpendingByCategoryQuery,
+    useGetIncomeExpenseQuery,
+    useGetSpendingTrendQuery,
+    useGetNetWorthQuery,
+    useGetTopPayeesQuery
 } = api
