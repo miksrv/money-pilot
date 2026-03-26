@@ -1,0 +1,1 @@
+export { SpendingByCategoryChart } from './SpendingByCategoryChart'

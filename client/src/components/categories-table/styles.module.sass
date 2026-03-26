@@ -122,8 +122,53 @@
         display: flex
         gap: 4px
 
+    .pickersParent
+        display: flex
+        gap: 4px
+
     .nameInput
         flex-grow: 1
+
+.parentRow
+    display: flex
+    align-items: center
+    gap: 12px
+    padding: 6px 6px
+    cursor: pointer
+    font-weight: 600
+    font-size: 14px
+    color: var(--text-primary, inherit)
+    background-color: rgba(0, 0, 0, 0.02)
+    transition: background-color 0.15s ease
+    user-select: none
+
+    [data-theme='dark'] &
+        background-color: rgba(255, 255, 255, 0.03)
+
+    &:hover
+        background-color: rgba(0, 0, 0, 0.05)
+
+        [data-theme='dark'] &
+            background-color: rgba(255, 255, 255, 0.07)
+
+    &:focus-visible
+        outline: .5px solid var(--color-blue, #2196F3)
+        outline-offset: 2px
+
+.parentRowChevron
+    display: flex
+    align-items: center
+    flex-shrink: 0
+    color: var(--input-label-color)
+    font-size: 10px
+
+.childCellName
+    display: flex
+    align-items: center
+    gap: 10px
+    flex: 1
+    min-width: 0
+    padding-left: 24px
 
 .errorMessage
     margin-bottom: 8px

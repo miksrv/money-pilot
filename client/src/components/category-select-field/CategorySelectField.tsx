@@ -19,11 +19,13 @@ export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enable
 
     const options: Array<SelectOptionType<string>> = useMemo(
         () =>
-            data?.map((category) => ({
-                key: category?.id || '',
-                value: category?.name || '',
-                emoji: category?.icon
-            })) || [],
+            (data ?? [])
+                .filter((category) => !category.is_parent)
+                .map((category) => ({
+                    key: category?.id || '',
+                    value: category?.name || '',
+                    emoji: category?.icon
+                })),
         [data]
     )
 

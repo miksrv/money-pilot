@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, Dialog, DialogProps, Input, Message, Select } from 'simple-react-ui-kit'
+import { Button, Checkbox, Dialog, DialogProps, Input, Message, Select } from 'simple-react-ui-kit'
 
 import {
     ApiModel,
     useAddCategoryMutation,
     useArchiveCategoryMutation,
     useDeleteCategoryMutation,
+    useListCategoriesQuery,
     useUpdateCategoryMutation
 } from '@/api'
 import { ColorPicker, Currency, CurrencyInput, EmojiPicker } from '@/components'
+import { useAppSelector } from '@/store/hooks'
 
 import styles from './styles.module.sass'
 
@@ -25,6 +27,7 @@ const DEFAULT_VALUES: ApiModel.Category = {
     name: '',
     type: 'expense',
     parent_id: undefined,
+    is_parent: false,
     budget: undefined,
     color: 'grey',
     icon: '💵'
@@ -33,8 +36,11 @@ const DEFAULT_VALUES: ApiModel.Category = {
 export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => {
     const { t, i18n } = useTranslation()
 
+    const isAuth = useAppSelector((state) => state.auth.isAuth)
+
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [blockedDelete, setBlockedDelete] = useState(false)
+    const [isParent, setIsParent] = useState(false)
 
     const {
         register,
@@ -46,6 +52,8 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
         defaultValues: DEFAULT_VALUES
     })
 
+    const { data: allCategories } = useListCategoriesQuery({}, { skip: !isAuth })
+
     const [addCategory, { isLoading: isCreateLoading, error: createApiError, reset: createReset }] =
         useAddCategoryMutation()
     const [updateCategory, { isLoading: isUpdateLoading, error: updateApiError, reset: updateReset }] =
@@ -53,12 +61,26 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
     const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation()
     const [archiveCategory, { isLoading: isArchiving }] = useArchiveCategoryMutation()
 
+    const currentType = getValues('type')
+
+    const parentOptions = (allCategories ?? [])
+        .filter((cat) => cat.is_parent && cat.type === currentType && cat.id !== props.categoryData?.id)
+        .map((cat) => ({ key: cat.id ?? '', value: cat.name ?? '' }))
+
     const onSubmit = async (data: ApiModel.Category) => {
         try {
+            const payload: ApiModel.Category = {
+                ...data,
+                is_parent: isParent,
+                icon: isParent ? undefined : data.icon,
+                budget: isParent ? undefined : data.budget,
+                parent_id: isParent ? undefined : data.parent_id
+            }
+
             if (props?.categoryData?.id) {
-                await updateCategory(data).unwrap()
+                await updateCategory(payload).unwrap()
             } else {
-                await addCategory(data).unwrap()
+                await addCategory(payload).unwrap()
             }
 
             props?.onCloseDialog?.()
@@ -109,6 +131,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
     useEffect(() => {
         if (props?.categoryData) {
             reset(props.categoryData)
+            setIsParent(!!props.categoryData.is_parent)
         }
     }, [props?.categoryData])
 
@@ -117,9 +140,13 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
         createReset()
         setShowDeleteConfirm(false)
         setBlockedDelete(false)
+        if (!props?.categoryData) {
+            setIsParent(false)
+        }
     }, [props.open])
 
     const isEditing = !!props?.categoryData?.id
+    const isParentLocked = isEditing && !!props.categoryData?.is_parent
 
     return (
         <>
@@ -148,13 +175,22 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
                         </Message>
                     )}
 
-                    <div className={styles.pickers}>
-                        <EmojiPicker
-                            value={getValues('icon')}
-                            onSelect={(icon) => {
-                                reset({ ...getValues(), icon })
-                            }}
-                        />
+                    <Checkbox
+                        label={t('screens.categories.form.is_parent', 'Group category (parent)')}
+                        checked={isParent}
+                        disabled={isParentLocked}
+                        onChange={(e) => setIsParent(e.target.checked)}
+                    />
+
+                    <div className={isParent ? styles.pickersParent : styles.pickers}>
+                        {!isParent && (
+                            <EmojiPicker
+                                value={getValues('icon')}
+                                onSelect={(icon) => {
+                                    reset({ ...getValues(), icon })
+                                }}
+                            />
+                        )}
 
                         <ColorPicker
                             value={getValues('color')}
@@ -193,20 +229,40 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
                             { key: 'income', value: t('categories.types.income', 'Income') }
                         ]}
                         onSelect={(value) => {
-                            reset({ ...getValues(), type: value?.[0]?.value as 'income' | 'expense' })
+                            reset({
+                                ...getValues(),
+                                type: value?.[0]?.value as 'income' | 'expense',
+                                parent_id: undefined
+                            })
                         }}
                     />
 
-                    <CurrencyInput
-                        id={'budget'}
-                        locale={i18n.language}
-                        currency={Currency.USD}
-                        value={getValues('budget')}
-                        placeholder={t('screens.categories.form.budget_placeholder', 'Budget')}
-                        onValueChange={(value) => {
-                            reset({ ...getValues(), budget: value || undefined })
-                        }}
-                    />
+                    {!isParent && (
+                        <>
+                            {!!parentOptions.length && (
+                                <Select<string>
+                                    clearable
+                                    value={getValues('parent_id') ?? undefined}
+                                    placeholder={t('screens.categories.form.parent_group', 'Parent group (optional)')}
+                                    options={parentOptions}
+                                    onSelect={(items) => {
+                                        reset({ ...getValues(), parent_id: items?.[0]?.key ?? undefined })
+                                    }}
+                                />
+                            )}
+
+                            <CurrencyInput
+                                id={'budget'}
+                                locale={i18n.language}
+                                currency={Currency.USD}
+                                value={getValues('budget')}
+                                placeholder={t('screens.categories.form.budget_placeholder', 'Budget')}
+                                onValueChange={(value) => {
+                                    reset({ ...getValues(), budget: value || undefined })
+                                }}
+                            />
+                        </>
+                    )}
 
                     <Button
                         type='submit'

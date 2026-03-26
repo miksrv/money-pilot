@@ -5,6 +5,7 @@ export interface Category {
     name?: string
     type?: CategoryType
     parent_id?: string
+    is_parent?: boolean
     budget?: number
     expenses?: number
     icon?: string

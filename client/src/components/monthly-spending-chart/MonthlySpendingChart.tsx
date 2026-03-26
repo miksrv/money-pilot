@@ -6,6 +6,7 @@ import { Container, Skeleton } from 'simple-react-ui-kit'
 
 import { useGetMonthlySpendingQuery } from '@/api'
 import { useAppSelector } from '@/store/hooks'
+import { getThemeColors } from '@/utils/echart'
 import { formatMoney } from '@/utils/money'
 
 interface TooltipParam {
@@ -26,7 +27,7 @@ function getStatusColor(current: number, previous: number): string {
     }
 
     if (ratio <= 1.2) {
-        return '#FFC107'
+        return '#FF9800'
     }
 
     return '#F44336'
@@ -40,14 +41,16 @@ function colorWithAlpha(hex: string, alpha: number): string {
     return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')'
 }
 
-interface MonthlySpendingWidgetProps {
+interface MonthlySpendingChartProps {
     groupId?: string
     currency?: string
 }
 
-export const MonthlySpendingWidget: React.FC<MonthlySpendingWidgetProps> = ({ groupId, currency = 'USD' }) => {
+export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ groupId, currency = 'USD' }) => {
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const themeColors = getThemeColors(isDark)
 
     const { data, isLoading } = useGetMonthlySpendingQuery(groupId ? { group_id: groupId } : undefined, {
         refetchOnReconnect: true,
@@ -94,6 +97,7 @@ export const MonthlySpendingWidget: React.FC<MonthlySpendingWidgetProps> = ({ gr
     const currentDayValue = data.current_month.find((d) => d.day === data.current_day)?.cumulative ?? 0
 
     const option = {
+        backgroundColor: 'transparent',
         grid: {
             left: 8,
             right: 8,
@@ -112,6 +116,12 @@ export const MonthlySpendingWidget: React.FC<MonthlySpendingWidgetProps> = ({ gr
         },
         tooltip: {
             trigger: 'axis',
+            backgroundColor: themeColors.backgroundColor,
+            borderColor: themeColors.borderColor,
+            textStyle: {
+                color: themeColors.textPrimaryColor,
+                fontSize: 12
+            },
             formatter: (params: TooltipParam[]) => {
                 const day = xAxisDays[params[0].dataIndex]
                 const lines = params
@@ -133,7 +143,7 @@ export const MonthlySpendingWidget: React.FC<MonthlySpendingWidgetProps> = ({ gr
                 lineStyle: { width: 2, color: statusColor },
                 areaStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: colorWithAlpha(statusColor, 0.7) },
+                        { offset: 0, color: colorWithAlpha(statusColor, 0.5) },
                         { offset: 1, color: colorWithAlpha(statusColor, 0) }
                     ])
                 },
@@ -164,7 +174,7 @@ export const MonthlySpendingWidget: React.FC<MonthlySpendingWidgetProps> = ({ gr
                 data: previousData,
                 connectNulls: false,
                 showSymbol: false,
-                lineStyle: { type: 'dashed', width: 1.5, color: '#999' },
+                lineStyle: { type: 'dashed', width: 1.5, color: themeColors.textSecondaryColor },
                 areaStyle: {}
             }
         ]

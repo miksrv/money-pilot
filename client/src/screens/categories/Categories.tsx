@@ -18,7 +18,7 @@ export const Categories: React.FC = () => {
     const [openForm, setOpenForm] = useState(false)
 
     const { data: categories, isLoading } = useListCategoriesQuery(
-        { withSums: true, include_archived: 1 },
+        { withSums: true, include_archived: 1, withChildren: true },
         { refetchOnReconnect: true, skip: !isAuth }
     )
 
@@ -37,6 +37,7 @@ export const Categories: React.FC = () => {
                 categories={categories ?? []}
                 isLoading={isLoading}
                 showHeader={true}
+                defaultExpanded={true}
             />
 
             <CategoryFormDialog

@@ -13,6 +13,7 @@ import {
 } from '@/api'
 import { AppLayout, Currency } from '@/components'
 import { useAppSelector } from '@/store/hooks'
+import { CHART_COLORS, getEChartBaseConfig, getThemeColors } from '@/utils/echart'
 import { formatMoney } from '@/utils/money'
 
 import styles from './styles.module.sass'
@@ -69,6 +70,9 @@ export const Reports: React.FC = () => {
     }, [t])
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const baseConfig = getEChartBaseConfig(isDark)
+    const themeColors = getThemeColors(isDark)
 
     const [preset, setPreset] = useState<Preset>('thisMonth')
     const defaultRange = getPresetRange('thisMonth')
@@ -106,11 +110,35 @@ export const Reports: React.FC = () => {
     ]
 
     const doughnutOption = {
-        tooltip: { trigger: 'item' },
+        backgroundColor: 'transparent',
+        tooltip: {
+            ...baseConfig.tooltip,
+            trigger: 'item'
+        },
         series: [
             {
                 type: 'pie',
-                radius: ['40%', '70%'],
+                radius: ['45%', '75%'],
+                center: ['50%', '50%'],
+                avoidLabelOverlap: true,
+                itemStyle: {
+                    borderRadius: 4,
+                    borderColor: themeColors.backgroundColor,
+                    borderWidth: 2
+                },
+                label: {
+                    show: false
+                },
+                emphasis: {
+                    label: {
+                        show: false
+                    },
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.3)'
+                    }
+                },
                 data: (categoryData ?? []).map((c) => ({
                     value: c.total,
                     name: [c.emoji ?? '', c.category_name ?? t('transactions.noCategory', 'No category')].join(' ')
@@ -120,62 +148,109 @@ export const Reports: React.FC = () => {
     }
 
     const barOption = {
-        tooltip: { trigger: 'axis' },
+        ...baseConfig,
         legend: {
+            ...baseConfig.legend,
             data: [
                 t('reports.income', 'Income'),
                 t('reports.expense', 'Expenses'),
                 t('reports.netSavings', 'Net Savings')
             ]
         },
-        xAxis: { type: 'category', data: (incomeExpenseData ?? []).map((m) => m.month) },
-        yAxis: { type: 'value' },
+        xAxis: {
+            ...baseConfig.xAxis,
+            data: (incomeExpenseData ?? []).map((m) => m.month)
+        },
+        yAxis: baseConfig.yAxis,
         series: [
             {
                 name: t('reports.income', 'Income'),
                 type: 'bar',
                 data: (incomeExpenseData ?? []).map((m) => m.income),
-                color: '#4bb34b'
+                itemStyle: { color: CHART_COLORS.green, borderRadius: [4, 4, 0, 0] },
+                barMaxWidth: 24
             },
             {
                 name: t('reports.expense', 'Expenses'),
                 type: 'bar',
                 data: (incomeExpenseData ?? []).map((m) => m.expenses),
-                color: '#e64646'
+                itemStyle: { color: CHART_COLORS.red, borderRadius: [4, 4, 0, 0] },
+                barMaxWidth: 24
             },
             {
                 name: t('reports.netSavings', 'Net Savings'),
                 type: 'line',
                 data: (incomeExpenseData ?? []).map((m) => m.net),
-                color: '#5a9eff'
+                lineStyle: { color: CHART_COLORS.blue, width: 2 },
+                itemStyle: { color: CHART_COLORS.blue },
+                showSymbol: false,
+                smooth: true
             }
         ]
     }
 
     const trendOption = {
-        tooltip: { trigger: 'axis' },
-        xAxis: { type: 'category', data: (trendData ?? []).map((d) => d.date) },
-        yAxis: { type: 'value' },
+        ...baseConfig,
+        legend: { show: false },
+        xAxis: {
+            ...baseConfig.xAxis,
+            data: (trendData ?? []).map((d) => d.date)
+        },
+        yAxis: baseConfig.yAxis,
         series: [
             {
                 type: 'line',
-                areaStyle: {},
+                areaStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0,
+                        y: 0,
+                        x2: 0,
+                        y2: 1,
+                        colorStops: [
+                            { offset: 0, color: CHART_COLORS.red + '80' },
+                            { offset: 1, color: CHART_COLORS.red + '00' }
+                        ]
+                    }
+                },
                 data: (trendData ?? []).map((d) => d.cumulative),
-                color: '#e64646'
+                lineStyle: { color: CHART_COLORS.red, width: 2 },
+                itemStyle: { color: CHART_COLORS.red },
+                showSymbol: false,
+                smooth: true
             }
         ]
     }
 
     const netWorthOption = {
-        tooltip: { trigger: 'axis' },
-        xAxis: { type: 'category', data: (netWorthData ?? []).map((m) => m.month) },
-        yAxis: { type: 'value' },
+        ...baseConfig,
+        legend: { show: false },
+        xAxis: {
+            ...baseConfig.xAxis,
+            data: (netWorthData ?? []).map((m) => m.month)
+        },
+        yAxis: baseConfig.yAxis,
         series: [
             {
                 type: 'line',
-                areaStyle: {},
+                areaStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0,
+                        y: 0,
+                        x2: 0,
+                        y2: 1,
+                        colorStops: [
+                            { offset: 0, color: CHART_COLORS.green + '80' },
+                            { offset: 1, color: CHART_COLORS.green + '00' }
+                        ]
+                    }
+                },
                 data: (netWorthData ?? []).map((m) => m.net_worth),
-                color: '#4bb34b'
+                lineStyle: { color: CHART_COLORS.green, width: 2 },
+                itemStyle: { color: CHART_COLORS.green },
+                showSymbol: false,
+                smooth: true
             }
         ]
     }

@@ -148,7 +148,7 @@ export const api = createApi({
         /* List Categories */
         listCategories: builder.query<
             ApiType.Category.Response[],
-            { withSums?: boolean; include_archived?: number } | void
+            { withSums?: boolean; include_archived?: number; withChildren?: boolean } | void
         >({
             providesTags: () => [{ id: 'LIST', type: 'Category' }],
             query: (param) => `/categories${encodeQueryData(param)}`
