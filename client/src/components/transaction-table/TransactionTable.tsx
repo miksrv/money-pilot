@@ -44,8 +44,16 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
-    const { data: categories } = useListCategoriesQuery(undefined, { skip: !isAuth })
-    const { data: accounts } = useListAccountQuery(undefined, { skip: !isAuth })
+    const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
+
+    const { data: categories } = useListCategoriesQuery(
+        activeGroupId ? { group_id: activeGroupId } : undefined,
+        { skip: !isAuth }
+    )
+    const { data: accounts } = useListAccountQuery(
+        activeGroupId ? { group_id: activeGroupId } : undefined,
+        { skip: !isAuth }
+    )
 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [editTransaction, setEditTransaction] = useState<ApiModel.Transaction | undefined>()
@@ -248,6 +256,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                 open={openForm}
                 transactionData={editTransaction}
                 onCloseDialog={handleCloseForm}
+                onTransactionSaved={onTransactionDeleted}
                 onDelete={(tx) => {
                     setOpenForm(false)
                     setDeleteTarget(tx)

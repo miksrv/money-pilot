@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SelectOptionType, SelectProps } from 'simple-react-ui-kit'
 import { Select } from 'simple-react-ui-kit'
@@ -8,14 +8,19 @@ import { useAppSelector } from '@/store/hooks'
 
 interface AccountSelectFieldProps extends SelectProps<string> {
     enableAutoSelect?: boolean
+    groupId?: string
 }
 
-export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAutoSelect, ...props }) => {
+export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAutoSelect, groupId, ...props }) => {
     const { t } = useTranslation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const hasAutoSelected = useRef(false)
 
-    const { data, isLoading } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
+    const { data, isLoading } = useListAccountQuery(groupId ? { group_id: groupId } : undefined, {
+        refetchOnReconnect: true,
+        skip: !isAuth
+    })
 
     const options: Array<SelectOptionType<string>> = useMemo(
         () =>
@@ -27,16 +32,24 @@ export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAu
     )
 
     useEffect(() => {
-        if (enableAutoSelect && !props.value && !!options?.length) {
-            props?.onSelect?.(options)
+        if (enableAutoSelect && !hasAutoSelected.current && !props.value && options.length > 0) {
+            hasAutoSelected.current = true
+            props.onSelect?.([options[0]])
         }
-    }, [props?.value, options])
+    }, [enableAutoSelect, options, props.value])
+
+    // Reset autoselect flag when value is cleared
+    useEffect(() => {
+        if (!props.value) {
+            hasAutoSelected.current = false
+        }
+    }, [props.value])
 
     return (
         <Select<string>
             loading={isLoading}
             disabled={isLoading}
-            placeholder={t('categories.selectPlaceholder', 'Select an account')}
+            placeholder={t('accounts.selectPlaceholder', 'Select an account')}
             options={options}
             {...props}
         />

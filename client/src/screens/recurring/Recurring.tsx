@@ -16,10 +16,14 @@ export const Recurring: React.FC = () => {
     }, [t])
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
 
     const [openForm, setOpenForm] = useState(false)
 
-    const { data: items, isLoading } = useListRecurringQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
+    const { data: items, isLoading } = useListRecurringQuery(
+        activeGroupId ? { group_id: activeGroupId } : undefined,
+        { refetchOnReconnect: true, skip: !isAuth }
+    )
 
     return (
         <AppLayout

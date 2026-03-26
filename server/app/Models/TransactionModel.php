@@ -143,4 +143,26 @@ class TransactionModel extends ApplicationBaseModel
         $builder->whereIn('id', $ids)->where('user_id', $userId)->delete();
         return $db->affectedRows();
     }
+
+    /**
+     * Update a transaction by ID only (no user_id check) — used for group-owned transactions.
+     * @param string $id
+     * @param mixed  $data
+     * @return bool
+     * @throws ReflectionException
+     */
+    public function updateByIdDirect(string $id, $data): bool
+    {
+        return $this->update($id, $data);
+    }
+
+    /**
+     * Delete a transaction by ID only (no user_id check) — used for group-owned transactions.
+     * @param string $id
+     * @return bool
+     */
+    public function deleteByIdDirect(string $id): bool
+    {
+        return $this->delete($id);
+    }
 }

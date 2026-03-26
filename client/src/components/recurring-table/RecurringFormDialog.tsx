@@ -5,6 +5,7 @@ import { Button, Checkbox, DatePicker, Dialog, DialogProps, Input, Message, Sele
 
 import { ApiModel, useAddRecurringMutation, useUpdateRecurringMutation } from '@/api'
 import { AccountSelectField, CategorySelectField, Currency, CurrencyInput } from '@/components'
+import { useAppSelector } from '@/store/hooks'
 
 import styles from './styles.module.sass'
 
@@ -52,6 +53,7 @@ const DEFAULT_FORM: RecurringFormData = {
 
 export const RecurringFormDialog: React.FC<RecurringFormDialogProps> = (props) => {
     const { t, i18n } = useTranslation()
+    const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
 
     const {
         register,
@@ -119,7 +121,7 @@ export const RecurringFormDialog: React.FC<RecurringFormDialogProps> = (props) =
             if (props.recurringData?.id) {
                 await updateRecurring({ id: props.recurringData.id, ...body }).unwrap()
             } else {
-                await addRecurring(body).unwrap()
+                await addRecurring({ ...body, ...(activeGroupId && { group_id: activeGroupId }) }).unwrap()
             }
             props?.onCloseDialog?.()
             reset(DEFAULT_FORM)
@@ -211,6 +213,7 @@ export const RecurringFormDialog: React.FC<RecurringFormDialogProps> = (props) =
 
                 <AccountSelectField
                     label={t('transactions.account', 'Account')}
+                    groupId={activeGroupId ?? undefined}
                     value={formAccountId}
                     error={errors?.account_id?.message}
                     onSelect={(opt) => setValue('account_id', opt?.[0]?.key ?? '')}
@@ -218,6 +221,7 @@ export const RecurringFormDialog: React.FC<RecurringFormDialogProps> = (props) =
 
                 <CategorySelectField
                     label={t('transactions.category', 'Category')}
+                    groupId={activeGroupId ?? undefined}
                     value={formCategoryId}
                     onSelect={(opt) => setValue('category_id', opt?.[0]?.key ?? '')}
                 />

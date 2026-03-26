@@ -9,7 +9,7 @@ class AddRoleToGroupInvitations extends Migration
     public function up(): void
     {
         $this->db->query(
-            "ALTER TABLE group_invitations ADD COLUMN role ENUM('member','viewer') NOT NULL DEFAULT 'member' AFTER status"
+            "ALTER TABLE group_invitations ADD COLUMN role ENUM('editor','viewer') NOT NULL DEFAULT 'editor' AFTER status"
         );
     }
 

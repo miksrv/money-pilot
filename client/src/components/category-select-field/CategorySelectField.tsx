@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SelectOptionType, SelectProps } from 'simple-react-ui-kit'
 import { Select } from 'simple-react-ui-kit'
@@ -8,14 +8,19 @@ import { useAppSelector } from '@/store/hooks'
 
 interface CategorySelectFieldProps extends SelectProps<string> {
     enableAutoSelect?: boolean
+    groupId?: string
 }
 
-export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enableAutoSelect, ...props }) => {
+export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enableAutoSelect, groupId, ...props }) => {
     const { t } = useTranslation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const hasAutoSelected = useRef(false)
 
-    const { data, isLoading } = useListCategoriesQuery({}, { refetchOnReconnect: true, skip: !isAuth })
+    const { data, isLoading } = useListCategoriesQuery(groupId ? { group_id: groupId } : {}, {
+        refetchOnReconnect: true,
+        skip: !isAuth
+    })
 
     const options: Array<SelectOptionType<string>> = useMemo(
         () =>
@@ -30,10 +35,18 @@ export const CategorySelectField: React.FC<CategorySelectFieldProps> = ({ enable
     )
 
     useEffect(() => {
-        if (enableAutoSelect && !props.value && !!options?.length) {
-            props?.onSelect?.(options)
+        if (enableAutoSelect && !hasAutoSelected.current && !props.value && options.length > 0) {
+            hasAutoSelected.current = true
+            props.onSelect?.([options[0]])
         }
-    }, [props?.value, options])
+    }, [enableAutoSelect, options, props.value])
+
+    // Reset autoselect flag when dialog closes/opens
+    useEffect(() => {
+        if (!props.value) {
+            hasAutoSelected.current = false
+        }
+    }, [props.value])
 
     return (
         <Select<string>

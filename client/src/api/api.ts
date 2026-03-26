@@ -148,7 +148,7 @@ export const api = createApi({
         /* List Categories */
         listCategories: builder.query<
             ApiType.Category.Response[],
-            { withSums?: boolean; include_archived?: number; withChildren?: boolean } | void
+            { withSums?: boolean; include_archived?: number; withChildren?: boolean; group_id?: string } | void
         >({
             providesTags: () => [{ id: 'LIST', type: 'Category' }],
             query: (param) => `/categories${encodeQueryData(param)}`
@@ -216,9 +216,9 @@ export const api = createApi({
             query: () => ({ url: 'users/me', method: 'DELETE' })
         }),
         /* List recurring transactions */
-        listRecurring: builder.query<ApiModel.RecurringTransaction[], void>({
+        listRecurring: builder.query<ApiModel.RecurringTransaction[], { group_id?: string } | void>({
             providesTags: [{ id: 'LIST', type: 'Recurring' }],
-            query: () => '/recurring'
+            query: (params) => `/recurring${encodeQueryData(params)}`
         }),
         /* Add recurring transaction */
         addRecurring: builder.mutation<ApiModel.RecurringTransaction, ApiModel.CreateRecurringBody>({

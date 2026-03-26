@@ -53,8 +53,12 @@ export const Transactions: React.FC = () => {
     const [allTransactions, setAllTransactions] = useState<ApiModel.Transaction[]>([])
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [openAddForm, setOpenAddForm] = useState(false)
+    const listVersionRef = useRef(0)
+    const expectedPageRef = useRef(1)
 
     const resetList = () => {
+        listVersionRef.current += 1
+        expectedPageRef.current = 1
         setPage(1)
         setAllTransactions([])
         setSelectedIds([])
@@ -62,8 +66,14 @@ export const Transactions: React.FC = () => {
 
     const sentinelRef = useRef<HTMLDivElement>(null)
 
-    const { data: accounts } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
-    const { data: categories } = useListCategoriesQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
+    const { data: accounts } = useListAccountQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        refetchOnReconnect: true,
+        skip: !isAuth
+    })
+    const { data: categories } = useListCategoriesQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        refetchOnReconnect: true,
+        skip: !isAuth
+    })
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(search), 300)
@@ -90,6 +100,8 @@ export const Transactions: React.FC = () => {
 
     // Reset accumulated list when filters change
     useEffect(() => {
+        listVersionRef.current += 1
+        expectedPageRef.current = 1
         setPage(1)
         setAllTransactions([])
         setSelectedIds([])
@@ -110,13 +122,35 @@ export const Transactions: React.FC = () => {
         skip: !isAuth
     })
 
-    // Accumulate pages
+    // Accumulate pages — only accept responses in expected sequence
     useEffect(() => {
         if (!transactionData?.data) {
             return
         }
-        setAllTransactions((prev) => (page === 1 ? transactionData.data : [...prev, ...transactionData.data]))
-    }, [transactionData?.data])
+
+        const responsePage = transactionData.meta?.page ?? 1
+
+        // Only accept responses that match expected page
+        if (responsePage !== expectedPageRef.current) {
+            return
+        }
+
+        if (responsePage === 1) {
+            // Fresh data or refetch — replace entire list
+            setAllTransactions(transactionData.data)
+            setSelectedIds([])
+        } else {
+            // Paginating — append
+            setAllTransactions((prev) => {
+                const existingIds = new Set(prev.map((t) => t.id))
+                const newTransactions = transactionData.data.filter((t) => !existingIds.has(t.id))
+                return [...prev, ...newTransactions]
+            })
+        }
+
+        // Increment expected page for next load
+        expectedPageRef.current = responsePage + 1
+    }, [transactionData])
 
     // IntersectionObserver for infinite scroll
     useEffect(() => {
@@ -246,6 +280,7 @@ export const Transactions: React.FC = () => {
             <TransactionFormDialog
                 open={openAddForm}
                 onCloseDialog={() => setOpenAddForm(false)}
+                onTransactionSaved={resetList}
             />
         </AppLayout>
     )

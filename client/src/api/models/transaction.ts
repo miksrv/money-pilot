@@ -9,4 +9,5 @@ export interface Transaction {
     date: string
     created_at: string
     updated_at: string
+    group_id?: string
 }

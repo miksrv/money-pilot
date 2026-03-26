@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Button, Select } from 'simple-react-ui-kit'
 
-import { useListGroupsQuery, useLogoutMutation } from '@/api'
+import { useGetProfileQuery, useListGroupsQuery, useLogoutMutation } from '@/api'
 import { logout, setActiveGroup } from '@/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
@@ -26,6 +26,7 @@ export const AppBar: React.FC<AppBarProps> = ({ actions, onToggle }) => {
     const [logoutMutation, { isSuccess }] = useLogoutMutation()
 
     const { data: groups } = useListGroupsQuery(undefined, { skip: !isAuth })
+    const { data: profile } = useGetProfileQuery(undefined, { skip: !isAuth })
 
     const handleLogout = async () => {
         await logoutMutation()
@@ -38,11 +39,14 @@ export const AppBar: React.FC<AppBarProps> = ({ actions, onToggle }) => {
         }
     }, [isSuccess])
 
-    const showSwitcher = (groups?.length ?? 0) > 0
+    // Show the switcher only for groups the user was invited to (not their own groups).
+    // Owners see the same data in personal and group mode — the switcher adds no value for them.
+    const invitedGroups = groups?.filter((g) => g.owner_id !== profile?.id) ?? []
+    const showSwitcher = invitedGroups.length > 0
 
     const switcherOptions = [
         { key: '', value: t('groups.myBudget', 'My Budget') },
-        ...(groups?.map((g) => ({ key: g.id, value: g.name })) ?? [])
+        ...invitedGroups.map((g) => ({ key: g.id, value: g.name }))
     ]
 
     return (

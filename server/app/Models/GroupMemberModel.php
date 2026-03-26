@@ -27,7 +27,7 @@ class GroupMemberModel extends ApplicationBaseModel
     protected $validationRules = [
         'group_id' => 'required',
         'user_id' => 'required',
-        'role' => 'required|in_list[owner,member,viewer]',
+        'role' => 'required|in_list[owner,editor,viewer]',
         'joined_at' => 'required|valid_date',
     ];
 
@@ -40,7 +40,7 @@ class GroupMemberModel extends ApplicationBaseModel
         ],
         'role' => [
             'required' => 'Role is required.',
-            'in_list' => 'Role must be owner, member, or viewer.',
+            'in_list' => 'Role must be owner, editor, or viewer.',
         ],
         'joined_at' => [
             'required' => 'Joined date is required.',

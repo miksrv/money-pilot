@@ -31,4 +31,5 @@ export interface CreateRecurringBody {
     end_date?: string | null
     is_active?: 0 | 1
     auto_create?: 0 | 1
+    group_id?: string
 }

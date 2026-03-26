@@ -31,45 +31,43 @@ export const Register: React.FC = () => {
         setError
     } = useForm<RegisterFormData>()
 
-    const [registerMutation, { isLoading, error: apiError, data: apiData }] = useRegistrationMutation()
+    const [registerMutation, { isLoading }] = useRegistrationMutation()
 
     const onSubmit = async (data: RegisterFormData) => {
         try {
-            await registerMutation({ email: data.email, password: data.password })
-            await navigate('/')
+            const result = await registerMutation({ email: data.email, password: data.password }).unwrap()
+            if (result?.token) {
+                dispatch(login(result.token))
+                await navigate('/')
+            }
         } catch (err) {
-            console.error('Registration failed:', err)
+            const errorData = err as { data?: ApiError }
+            if (errorData.data?.messages) {
+                Object.keys(errorData.data.messages).forEach((field) => {
+                    if (field === 'error') {
+                        setError('root', {
+                            type: 'server',
+                            message: errorData.data!.messages[field]
+                        })
+                    } else {
+                        setError(field as keyof RegisterFormData, {
+                            type: 'server',
+                            message: errorData.data!.messages[field]
+                        })
+                    }
+                })
+            } else {
+                setError('root', {
+                    type: 'server',
+                    message: t('common.errors.unknown', 'An error occurred. Please try again.')
+                })
+            }
         }
     }
 
     useEffect(() => {
         document.title = 'Create Account — Money Pilot'
     }, [])
-
-    useEffect(() => {
-        if (apiError) {
-            const errorData = apiError as ApiError
-            if (errorData.messages) {
-                Object.keys(errorData.messages).forEach((field) => {
-                    setError(field as keyof RegisterFormData, {
-                        type: 'server',
-                        message: errorData.messages[field]
-                    })
-                })
-            } else {
-                setError('root', {
-                    type: 'server',
-                    message: t('register.error')
-                })
-            }
-        }
-    }, [apiError, setError, t])
-
-    useEffect(() => {
-        if (apiData?.token) {
-            dispatch(login(apiData.token))
-        }
-    }, [apiData])
 
     return (
         <div className={styles.page}>

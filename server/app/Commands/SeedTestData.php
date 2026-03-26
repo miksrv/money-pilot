@@ -23,6 +23,7 @@ class SeedTestData extends BaseCommand
         $db->query('SET FOREIGN_KEY_CHECKS = 0');
 
         foreach ([
+            'subscriptions',
             'sessions',
             'group_invitations',
             'group_members',
@@ -66,6 +67,18 @@ class SeedTestData extends BaseCommand
             'name'       => 'Maria Smith',
             'password'   => $password,
             'currency'   => 'USD',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        // Create paid subscription for test1@test.com (user1 is the group owner in tests)
+        $db->table('subscriptions')->insert([
+            'id'         => uniqid(),
+            'user_id'    => $user1Id,
+            'plan'       => 'pro',
+            'status'     => 'active',
+            'started_at' => $now,
+            'expires_at' => null,
             'created_at' => $now,
             'updated_at' => $now,
         ]);

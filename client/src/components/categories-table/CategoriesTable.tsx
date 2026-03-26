@@ -18,6 +18,7 @@ interface CategoriesTableProps {
     isLoading?: boolean
     showHeader?: boolean
     defaultExpanded?: boolean
+    groupId?: string
 }
 
 interface CategoryGroup {
@@ -30,7 +31,8 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
     currency,
     isLoading,
     showHeader = false,
-    defaultExpanded = true
+    defaultExpanded = true,
+    groupId
 }) => {
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
@@ -313,6 +315,7 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
                 open={openForm}
                 categoryData={editCategory}
                 onCloseDialog={handleCloseForm}
+                groupId={groupId}
             />
         </div>
     )

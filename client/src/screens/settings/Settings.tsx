@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Badge, Button, Container, Dialog, Input, Message, Select } from 'simple-react-ui-kit'
 
 import {
@@ -21,6 +21,7 @@ import { AppLayout } from '@/components'
 import { logout, setActiveGroup } from '@/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { formatUTCDate } from '@/utils/dates'
+import { getCurrencyOptions } from '@/utils/money'
 
 import { AccessedGroupRow } from './AccessedGroupRow'
 import { OwnedGroupCard } from './OwnedGroupCard'
@@ -31,7 +32,7 @@ type ChangePasswordFormData = ApiModel.ChangePasswordBody & { confirm_password: 
 
 type InviteFormData = {
     email: string
-    role: 'member' | 'viewer'
+    role: 'editor' | 'viewer'
 }
 
 /* ─── Main Settings component ────────────────────────────────────────────── */
@@ -40,6 +41,7 @@ export const Settings: React.FC = () => {
     const { t, i18n } = useTranslation()
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
+    const location = useLocation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
@@ -69,7 +71,6 @@ export const Settings: React.FC = () => {
     /* Invite dialog state */
     const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
     const [inviteGroupId, setInviteGroupId] = useState<string | undefined>()
-    const [inviteSuccess, setInviteSuccess] = useState(false)
     const [inviteError, setInviteError] = useState<string | undefined>()
     const [createGroupError, setCreateGroupError] = useState<string | undefined>()
 
@@ -97,10 +98,9 @@ export const Settings: React.FC = () => {
         reset: resetInvite,
         setValue: setInviteValue,
         formState: { errors: inviteErrors }
-    } = useForm<InviteFormData>({ defaultValues: { role: 'member' } })
+    } = useForm<InviteFormData>({ defaultValues: { role: 'editor' } })
 
-    const inviteEmail = watchInvite('email') ?? ''
-    const inviteRole = watchInvite('role') ?? 'member'
+    const inviteRole = watchInvite('role') ?? 'editor'
     const newPassword = watch('new_password')
 
     useEffect(() => {
@@ -112,6 +112,16 @@ export const Settings: React.FC = () => {
             resetProfile({ name: profile.name, phone: profile.phone ?? '', currency: profile.currency ?? 'USD' })
         }
     }, [profile])
+
+    useEffect(() => {
+        if (location.hash && pendingInvitations) {
+            const elementId = location.hash.slice(1)
+            const element = document.getElementById(elementId)
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+        }
+    }, [location.hash, pendingInvitations])
 
     const initials = profile?.name
         ? profile.name
@@ -183,9 +193,8 @@ export const Settings: React.FC = () => {
     /* Open invite dialog — creating group first if needed */
     const handleOpenInvite = async (groupId?: string) => {
         setInviteError(undefined)
-        setInviteSuccess(false)
         setCreateGroupError(undefined)
-        resetInvite({ role: 'member' })
+        resetInvite({ role: 'editor' })
 
         if (groupId) {
             setInviteGroupId(groupId)
@@ -206,8 +215,14 @@ export const Settings: React.FC = () => {
             setInviteGroupId(newGroup.id)
             setInviteDialogOpen(true)
         } catch (err) {
-            console.error('Failed to create group:', err)
-            setCreateGroupError(t('common.errors.unknown', 'An error occurred. Please try again.'))
+            const apiErr = err as { data?: ApiError }
+            const code = apiErr?.data?.messages?.error
+
+            if (code === 'subscription_required') {
+                setCreateGroupError(t('groups.subscriptionRequired', 'A paid subscription is required to create a shared budget'))
+            } else {
+                setCreateGroupError(t('common.errors.unknown', 'An error occurred. Please try again.'))
+            }
         }
     }
 
@@ -219,12 +234,8 @@ export const Settings: React.FC = () => {
 
         try {
             await inviteMember({ groupId: inviteGroupId, body: { email: data.email, role: data.role } }).unwrap()
-            setInviteSuccess(true)
-            setTimeout(() => {
-                setInviteDialogOpen(false)
-                setInviteSuccess(false)
-                resetInvite({ role: 'member' })
-            }, 3000)
+            setInviteDialogOpen(false)
+            resetInvite({ role: 'editor' })
         } catch (err) {
             const apiErr = err as { data?: ApiError }
             const code = apiErr?.data?.messages?.error
@@ -252,28 +263,7 @@ export const Settings: React.FC = () => {
 
     const profileCurrency = watchProfile('currency') ?? 'USD'
 
-    const currencyOptions = [
-        { key: 'USD', value: 'USD — US Dollar' },
-        { key: 'EUR', value: 'EUR — Euro' },
-        { key: 'GBP', value: 'GBP — British Pound' },
-        { key: 'JPY', value: 'JPY — Japanese Yen' },
-        { key: 'CAD', value: 'CAD — Canadian Dollar' },
-        { key: 'AUD', value: 'AUD — Australian Dollar' },
-        { key: 'CHF', value: 'CHF — Swiss Franc' },
-        { key: 'CNY', value: 'CNY — Chinese Yuan' },
-        { key: 'INR', value: 'INR — Indian Rupee' },
-        { key: 'RUB', value: 'RUB — Russian Ruble' },
-        { key: 'BRL', value: 'BRL — Brazilian Real' },
-        { key: 'MXN', value: 'MXN — Mexican Peso' },
-        { key: 'KRW', value: 'KRW — South Korean Won' },
-        { key: 'SGD', value: 'SGD — Singapore Dollar' },
-        { key: 'HKD', value: 'HKD — Hong Kong Dollar' },
-        { key: 'NOK', value: 'NOK — Norwegian Krone' },
-        { key: 'SEK', value: 'SEK — Swedish Krona' },
-        { key: 'PLN', value: 'PLN — Polish Zloty' },
-        { key: 'TRY', value: 'TRY — Turkish Lira' },
-        { key: 'AED', value: 'AED — UAE Dirham' }
-    ]
+    const currencyOptions = getCurrencyOptions()
 
     const themeOptions = [
         { key: 'light', value: t('settings.preferences.themeLight', 'Light') },
@@ -287,7 +277,7 @@ export const Settings: React.FC = () => {
     ]
 
     const roleOptions = [
-        { key: 'member', value: t('groups.inviteRoleMember', 'Member (full access)') },
+        { key: 'editor', value: t('groups.inviteRoleEditor', 'Editor (full access)') },
         { key: 'viewer', value: t('groups.inviteRoleViewer', 'Viewer (read-only)') }
     ]
 
@@ -438,7 +428,10 @@ export const Settings: React.FC = () => {
                     <div className={styles.sharedBudgets}>
                         {/* Pending invitations for current user */}
                         {hasPendingInvitations && (
-                            <div className={styles.sharedBudgetsSection}>
+                            <div
+                                id='pending-invitations'
+                                className={styles.sharedBudgetsSection}
+                            >
                                 <div className={styles.sharedBudgetsSectionTitle}>
                                     {t('groups.pendingInvitations', 'Pending Invitations')}
                                 </div>
@@ -624,72 +617,66 @@ export const Settings: React.FC = () => {
                 title={t('groups.inviteTitle', 'Invite Someone to View Your Budget')}
                 onCloseDialog={() => {
                     setInviteDialogOpen(false)
-                    setInviteSuccess(false)
                     setInviteError(undefined)
-                    resetInvite({ role: 'member' })
+                    resetInvite({ role: 'editor' })
                 }}
             >
-                {inviteSuccess ? (
-                    <Message type='success'>{t('groups.inviteSent', 'Invitation sent!')}</Message>
-                ) : (
-                    <form onSubmit={handleInviteSubmit(onInviteSubmit)}>
-                        <div className={styles.inviteForm}>
-                            <Input
-                                id='invite-email'
-                                type='email'
-                                size='medium'
-                                label={t('groups.inviteEmail', 'Email Address')}
-                                placeholder='email@example.com'
-                                error={inviteErrors.email?.message}
-                                {...registerInvite('email', {
-                                    required: t('common.required', 'Required')
-                                })}
-                            />
+                <form onSubmit={handleInviteSubmit(onInviteSubmit)}>
+                    <div className={styles.inviteForm}>
+                        <Input
+                            id='invite-email'
+                            type='email'
+                            size='medium'
+                            label={t('groups.inviteEmail', 'Email Address')}
+                            placeholder='email@example.com'
+                            error={inviteErrors.email?.message}
+                            {...registerInvite('email', {
+                                required: t('common.required', 'Required')
+                            })}
+                        />
 
-                            <Select<string>
-                                label={t('groups.inviteRole', 'Access Level')}
-                                options={roleOptions}
-                                value={inviteRole}
-                                onSelect={(items) =>
-                                    setInviteValue('role', (items?.[0]?.key ?? 'member') as 'member' | 'viewer')
-                                }
-                            />
+                        <Select<string>
+                            label={t('groups.inviteRole', 'Access Level')}
+                            options={roleOptions}
+                            value={inviteRole}
+                            onSelect={(items) =>
+                                setInviteValue('role', (items?.[0]?.key ?? 'editor') as 'editor' | 'viewer')
+                            }
+                        />
 
-                            <Message type='warning'>
-                                {t(
-                                    'groups.inviteWarning',
-                                    'Once {{email}} accepts this invitation, they will have complete visibility into ALL of your accounts and ALL of your transactions, including all historical data.',
-                                    { email: inviteEmail || '...' }
-                                )}
-                            </Message>
-
-                            {inviteError && inviteError === t('groups.errorInvitationPending') && (
-                                <Message type='warning'>{inviteError}</Message>
+                        <Message type='warning'>
+                            {t(
+                                'groups.inviteWarning',
+                                'Once accepts this invitation, they will have complete visibility into ALL of your accounts and ALL of your transactions, including all historical data.'
                             )}
-                            {inviteError && inviteError !== t('groups.errorInvitationPending') && (
-                                <Message type='error'>{inviteError}</Message>
-                            )}
+                        </Message>
 
-                            <Button
-                                type='submit'
-                                mode='primary'
-                                label={isSendingInvite ? '...' : t('groups.sendInvitation', 'Send Invitation')}
-                                disabled={isSendingInvite}
-                                stretched
-                            />
-                            <Button
-                                mode='outline'
-                                label={t('common.cancel', 'Cancel')}
-                                onClick={() => {
-                                    setInviteDialogOpen(false)
-                                    setInviteError(undefined)
-                                    resetInvite({ role: 'member' })
-                                }}
-                                stretched
-                            />
-                        </div>
-                    </form>
-                )}
+                        {inviteError && inviteError === t('groups.errorInvitationPending') && (
+                            <Message type='warning'>{inviteError}</Message>
+                        )}
+                        {inviteError && inviteError !== t('groups.errorInvitationPending') && (
+                            <Message type='error'>{inviteError}</Message>
+                        )}
+
+                        <Button
+                            type='submit'
+                            mode='primary'
+                            label={isSendingInvite ? '...' : t('groups.sendInvitation', 'Send Invitation')}
+                            disabled={isSendingInvite}
+                            stretched
+                        />
+                        <Button
+                            mode='outline'
+                            label={t('common.cancel', 'Cancel')}
+                            onClick={() => {
+                                setInviteDialogOpen(false)
+                                setInviteError(undefined)
+                                resetInvite({ role: 'editor' })
+                            }}
+                            stretched
+                        />
+                    </div>
+                </form>
             </Dialog>
         </AppLayout>
     )

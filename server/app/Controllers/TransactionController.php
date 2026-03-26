@@ -36,7 +36,6 @@ class TransactionController extends ApplicationBaseController
 
         $currentUserId = $this->authLibrary->user->id;
         $groupId       = $this->request->getGet('group_id');
-        $userId        = $currentUserId;
 
         if ($groupId) {
             $groupMemberModel = new GroupMemberModel();
@@ -55,7 +54,24 @@ class TransactionController extends ApplicationBaseController
                 return $this->failNotFound('Group not found');
             }
 
-            $userId = $group->owner_id;
+            $ownerId = $group->owner_id;
+
+            // Show: tagged group transactions (all members) + owner's untagged personal transactions
+            $baseWhere = function ($builder) use ($groupId, $ownerId) {
+                $builder->groupStart()
+                    ->where('t.group_id', $groupId)
+                    ->orGroupStart()
+                        ->where('t.user_id', $ownerId)
+                        ->where('t.group_id IS NULL')
+                    ->groupEnd()
+                ->groupEnd();
+            };
+        } else {
+            $ownerId   = null;
+            $baseWhere = function ($builder) use ($currentUserId) {
+                $builder->where('t.user_id', $currentUserId)
+                        ->where('t.group_id IS NULL');
+            };
         }
 
         $page       = max(1, (int)($this->request->getGet('page') ?? 1));
@@ -72,8 +88,9 @@ class TransactionController extends ApplicationBaseController
         // Build base builder
         $builder = $db->table('transactions t')
             ->select('t.*, p.name as payee')
-            ->join('payees p', 'p.id = t.payee_id', 'left')
-            ->where('t.user_id', $userId);
+            ->join('payees p', 'p.id = t.payee_id', 'left');
+
+        $baseWhere($builder);
 
         if ($search) {
             $builder->groupStart()
@@ -100,8 +117,9 @@ class TransactionController extends ApplicationBaseController
         // Build separate count query
         $countBuilder = $db->table('transactions t')
             ->select('COUNT(*) as cnt')
-            ->join('payees p', 'p.id = t.payee_id', 'left')
-            ->where('t.user_id', $userId);
+            ->join('payees p', 'p.id = t.payee_id', 'left');
+
+        $baseWhere($countBuilder);
 
         if ($search) {
             $countBuilder->groupStart()
@@ -186,7 +204,31 @@ class TransactionController extends ApplicationBaseController
                 $categoryModel->incrementUsageCount($input['category_id']);
             }
 
-            $account = $accountModel->getById($input['account_id'], $this->authLibrary->user->id);
+            $inputGroupId       = !empty($input['group_id']) ? $input['group_id'] : null;
+            $accountOwnerUserId = $this->authLibrary->user->id;
+
+            if ($inputGroupId) {
+                // Verify membership
+                $groupMemberModel = new GroupMemberModel();
+                $membership = $groupMemberModel
+                    ->where(['group_id' => $inputGroupId, 'user_id' => $this->authLibrary->user->id])
+                    ->first();
+                if (!$membership) {
+                    return $this->failForbidden('You are not a member of this group');
+                }
+
+                // For group mode, the account might belong to the group owner — try owner first
+                $db    = db_connect();
+                $group = $db->table('groups')->where('id', $inputGroupId)->get()->getRowObject();
+                if ($group) {
+                    $ownerAccount = $accountModel->getById($input['account_id'], $group->owner_id);
+                    if ($ownerAccount) {
+                        $accountOwnerUserId = $group->owner_id;
+                    }
+                }
+            }
+
+            $account = $accountModel->getById($input['account_id'], $accountOwnerUserId);
 
             if (!$account) {
                 return $this->failNotFound(['error' => '1002', 'messages' => ['account' => 'Account not found']]);
@@ -213,6 +255,7 @@ class TransactionController extends ApplicationBaseController
 
             $this->model->insert([
                 'user_id'     => $this->authLibrary->user->id,
+                'group_id'    => $inputGroupId,
                 'account_id'  => $input['account_id'],
                 'category_id' => $input['category_id'] ?? null,
                 'payee_id'    => $payeeId,
@@ -222,7 +265,7 @@ class TransactionController extends ApplicationBaseController
                 'notes'       => $input['notes'] ?? null,
             ]);
 
-            $accountModel->updateById($input['account_id'], $this->authLibrary->user->id, ['balance' => $newBalance]);
+            $accountModel->updateById($input['account_id'], $accountOwnerUserId, ['balance' => $newBalance]);
 
             return $this->respondCreated();
         } catch (\Exception $e) {
@@ -242,7 +285,7 @@ class TransactionController extends ApplicationBaseController
             return $this->failUnauthorized();
         }
 
-        $transaction = $this->model->getById($id, $this->authLibrary->user->id);
+        $transaction = $this->resolveAccessibleTransaction($id);
 
         if (!$transaction) {
             return $this->failNotFound();
@@ -300,6 +343,12 @@ class TransactionController extends ApplicationBaseController
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
+        // Verify the current user can access this transaction (own or group member with edit rights)
+        $transaction = $this->resolveAccessibleTransaction($id);
+        if (!$transaction) {
+            return $this->failNotFound();
+        }
+
         try {
             // Remove fields that shouldn't be updated directly
             unset($input['id'], $input['user_id']);
@@ -311,7 +360,26 @@ class TransactionController extends ApplicationBaseController
                 return $this->failValidationErrors(['error' => 'No valid fields to update']);
             }
 
-            if (!$this->model->updateById($id, $this->authLibrary->user->id, $updateData)) {
+            // Handle payee name to payee_id conversion
+            if (isset($updateData['payee'])) {
+                $payeeName = $updateData['payee'];
+                unset($updateData['payee']);
+
+                if (!empty($payeeName)) {
+                    $payeeModel = new PayeeModel();
+                    $updateData['payee_id'] = $payeeModel->getOrCreateByName($payeeName, $this->authLibrary->user->id);
+                } else {
+                    $updateData['payee_id'] = null;
+                }
+            }
+
+            // Use direct update (no user_id check) for group transactions; scoped update for own
+            $isOwnTransaction = $transaction->user_id === $this->authLibrary->user->id;
+            $success = $isOwnTransaction
+                ? $this->model->updateById($id, $this->authLibrary->user->id, $updateData)
+                : $this->model->updateByIdDirect($id, $updateData);
+
+            if (!$success) {
                 return $this->failValidationErrors($this->model->errors());
             }
 
@@ -362,16 +430,28 @@ class TransactionController extends ApplicationBaseController
             return $this->failUnauthorized();
         }
 
-        $transactions = $this->model->getById($id, $this->authLibrary->user->id);
+        $transaction = $this->resolveAccessibleTransaction($id);
 
-        if (empty($transactions)) {
+        if (!$transaction) {
             return $this->failNotFound();
         }
 
         try {
-            $transaction  = $transactions[0];
-            $accountModel = new AccountModel();
-            $account      = $accountModel->getById($transaction->account_id, $this->authLibrary->user->id);
+            $accountModel       = new AccountModel();
+            $accountOwnerUserId = $this->authLibrary->user->id;
+
+            // Try current user's account first; fall back to group owner if the transaction is group-tagged
+            $account = $accountModel->getById($transaction->account_id, $this->authLibrary->user->id);
+            if (empty($account) && !empty($transaction->group_id)) {
+                $db    = db_connect();
+                $group = $db->table('groups')->where('id', $transaction->group_id)->get()->getRowObject();
+                if ($group) {
+                    $account = $accountModel->getById($transaction->account_id, $group->owner_id);
+                    if (!empty($account)) {
+                        $accountOwnerUserId = $group->owner_id;
+                    }
+                }
+            }
 
             if (!empty($account)) {
                 $currentBalance = (float)$account[0]->balance;
@@ -379,10 +459,16 @@ class TransactionController extends ApplicationBaseController
                 $newBalance = $transaction->type === 'expense'
                     ? $currentBalance + (float)$transaction->amount
                     : $currentBalance - (float)$transaction->amount;
-                $accountModel->updateById($transaction->account_id, $this->authLibrary->user->id, ['balance' => $newBalance]);
+                $accountModel->updateById($transaction->account_id, $accountOwnerUserId, ['balance' => $newBalance]);
             }
 
-            if (!$this->model->deleteById($id, $this->authLibrary->user->id)) {
+            // Use direct delete (no user_id check) for group transactions; scoped delete for own
+            $isOwnTransaction = $transaction->user_id === $this->authLibrary->user->id;
+            $deleted = $isOwnTransaction
+                ? $this->model->deleteById($id, $this->authLibrary->user->id)
+                : $this->model->deleteByIdDirect($id);
+
+            if (!$deleted) {
                 return $this->fail(['error' => '1003', 'messages' => 'Failed to delete transaction']);
             }
 
@@ -391,5 +477,47 @@ class TransactionController extends ApplicationBaseController
             log_message('error', __METHOD__ . ': ' . $e->getMessage());
             return $this->fail($e->getMessage());
         }
+    }
+
+    /**
+     * Resolve a transaction the current user is authorised to access.
+     *
+     * Returns the transaction object when:
+     *   a) The current user owns it (user_id = current user), OR
+     *   b) The transaction belongs to a group the current user is a member of
+     *      with role 'owner' or 'editor' (viewers cannot mutate data).
+     *
+     * Returns null if not found or the user lacks access.
+     */
+    private function resolveAccessibleTransaction(?string $id): ?object
+    {
+        if (empty($id)) {
+            return null;
+        }
+
+        $currentUserId = $this->authLibrary->user->id;
+
+        // Fast path: own transaction
+        $own = $this->model->getById($id, $currentUserId);
+        if (!empty($own)) {
+            return $own[0];
+        }
+
+        // Slow path: look up by ID only and verify group membership
+        $db          = db_connect();
+        $transaction = $db->table('transactions')->where('id', $id)->get()->getRowObject();
+
+        if (!$transaction || empty($transaction->group_id)) {
+            return null;
+        }
+
+        $groupMemberModel = new GroupMemberModel();
+        $membership       = $groupMemberModel
+            ->where('group_id', $transaction->group_id)
+            ->where('user_id', $currentUserId)
+            ->whereIn('role', ['owner', 'editor'])
+            ->first();
+
+        return $membership ? $transaction : null;
     }
 }

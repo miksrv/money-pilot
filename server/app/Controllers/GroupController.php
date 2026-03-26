@@ -6,6 +6,7 @@ use App\Libraries\Auth;
 use App\Models\GroupModel;
 use App\Models\GroupMemberModel;
 use App\Models\GroupInvitationModel;
+use App\Models\SubscriptionModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -85,6 +86,16 @@ class GroupController extends ResourceController
         }
 
         $userId = $this->authLibrary->user->id;
+
+        // Require an active paid subscription to create a group
+        $subscriptionModel = new SubscriptionModel();
+        if (!$subscriptionModel->hasActiveSubscription($userId)) {
+            return $this->fail(
+                ['error' => 'subscription_required', 'message' => 'An active paid subscription is required to create a group'],
+                403
+            );
+        }
+
         $data   = $this->request->getJSON(true);
         $data['owner_id'] = $userId;
 
@@ -201,13 +212,13 @@ class GroupController extends ResourceController
 
         $data  = $this->request->getJSON(true);
         $email = $data['email'] ?? null;
-        $role  = $data['role'] ?? 'member';
+        $role  = $data['role'] ?? 'editor';
 
         if (!$email) {
             return $this->failValidationErrors(['error' => 'email_required']);
         }
 
-        if (!in_array($role, ['member', 'viewer'], true)) {
+        if (!in_array($role, ['editor', 'viewer'], true)) {
             return $this->failValidationErrors(['error' => 'invalid_role']);
         }
 

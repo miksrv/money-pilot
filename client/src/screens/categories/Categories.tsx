@@ -14,11 +14,14 @@ export const Categories: React.FC = () => {
     }, [t])
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
 
     const [openForm, setOpenForm] = useState(false)
 
     const { data: categories, isLoading } = useListCategoriesQuery(
-        { withSums: true, include_archived: 1, withChildren: true },
+        activeGroupId
+            ? { withSums: true, include_archived: 1, withChildren: true, group_id: activeGroupId }
+            : { withSums: true, include_archived: 1, withChildren: true },
         { refetchOnReconnect: true, skip: !isAuth }
     )
 
@@ -38,11 +41,13 @@ export const Categories: React.FC = () => {
                 isLoading={isLoading}
                 showHeader={true}
                 defaultExpanded={true}
+                groupId={activeGroupId ?? undefined}
             />
 
             <CategoryFormDialog
                 open={openForm}
                 onCloseDialog={() => setOpenForm(false)}
+                groupId={activeGroupId ?? undefined}
             />
         </AppLayout>
     )

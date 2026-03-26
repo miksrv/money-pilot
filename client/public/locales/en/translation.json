@@ -2,6 +2,28 @@
     "register": {
         "title": "Register"
     },
+    "currency": {
+        "USD": "US Dollar",
+        "EUR": "Euro",
+        "GBP": "British Pound",
+        "JPY": "Japanese Yen",
+        "CAD": "Canadian Dollar",
+        "AUD": "Australian Dollar",
+        "CHF": "Swiss Franc",
+        "CNY": "Chinese Yuan",
+        "INR": "Indian Rupee",
+        "RUB": "Russian Ruble",
+        "BRL": "Brazilian Real",
+        "MXN": "Mexican Peso",
+        "KRW": "South Korean Won",
+        "SGD": "Singapore Dollar",
+        "HKD": "Hong Kong Dollar",
+        "NOK": "Norwegian Krone",
+        "SEK": "Swedish Krona",
+        "PLN": "Polish Zloty",
+        "TRY": "Turkish Lira",
+        "AED": "UAE Dirham"
+    },
     "common": {
         "cancel": "Cancel",
         "save": "Save",
@@ -53,6 +75,9 @@
         "of": "of",
         "noResults": "No transactions found",
         "notes": "Notes",
+        "notesPlaceholder": "Optional note\u2026",
+        "save_button": "Save Transaction",
+        "deleteTransaction": "Delete Transaction",
         "types": {
             "income": "Income",
             "expense": "Expense"
@@ -223,11 +248,10 @@
         "inviteTitle": "Invite Someone to View Your Budget",
         "inviteEmail": "Email Address",
         "inviteRole": "Access Level",
-        "inviteRoleMember": "Member (full access)",
+        "inviteRoleEditor": "Editor (full access)",
         "inviteRoleViewer": "Viewer (read-only)",
-        "inviteWarning": "Once {{email}} accepts this invitation, they will have complete visibility into ALL of your accounts and ALL of your transactions, including all historical data. They will see your budget exactly as you see it.",
+        "inviteWarning": "Once user accepts this invitation, they will have complete visibility into ALL of your accounts and ALL of your transactions, including all historical data. They will see your budget exactly as you see it.",
         "sendInvitation": "Send Invitation",
-        "inviteSent": "Invitation sent!",
         "errorUserNotFound": "No Money Pilot account found with this email address. Ask them to register first.",
         "errorAlreadyMember": "This person already has access to your budget.",
         "errorInvitationPending": "An invitation is already pending for this email.",
@@ -241,7 +265,7 @@
         "deleteConfirm": "Permanently delete this shared budget? All members will lose access.",
         "role": {
             "owner": "Owner",
-            "member": "Member",
+            "editor": "Editor",
             "viewer": "Viewer"
         },
         "joinTitle": "Join Shared Budget",
@@ -252,7 +276,11 @@
         "errorTokenExpired": "This invitation link has expired. Ask the owner to send a new one.",
         "errorTokenNotForYou": "This invitation was sent to a different email address.",
         "expiresAt": "Expires {{date}}",
-        "pendingBadge": "Pending"
+        "pendingBadge": "Pending",
+        "invitationBannerSingle": "{{name}} invited you to view their budget",
+        "invitationBannerMultiple": "You have {{count}} pending budget invitations",
+        "viewInvitations": "View",
+        "subscriptionRequired": "A paid subscription is required to create a shared budget"
     },
     "menu": {
         "dashboard": "Dashboard",

@@ -14,7 +14,7 @@ export interface GroupMember {
     user_id: string
     name: string
     email: string
-    role: 'owner' | 'member' | 'viewer'
+    role: 'owner' | 'editor' | 'viewer'
     joined_at: string
 }
 
@@ -22,7 +22,7 @@ export interface GroupInvitation {
     id: string
     group_id: string
     email: string
-    role: 'member' | 'viewer'
+    role: 'editor' | 'viewer'
     expires_at: string
     created_at: string
 }
@@ -33,11 +33,11 @@ export interface PendingInvitation {
     group_id: string
     group_name: string
     inviter_name: string
-    role: 'member' | 'viewer'
+    role: 'editor' | 'viewer'
     expires_at: string
 }
 
 export interface InviteMemberBody {
     email: string
-    role: 'member' | 'viewer'
+    role: 'editor' | 'viewer'
 }

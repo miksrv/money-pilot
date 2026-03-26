@@ -1,5 +1,6 @@
 import React, { PropsWithChildren, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Badge, Button, cn } from 'simple-react-ui-kit'
 
 import { useGetGroupMembersQuery, useGetProfileQuery, useListGroupsQuery } from '@/api'
@@ -9,6 +10,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { AppBar, AppBarProps } from '../app-bar'
 
 import Menu from './Menu'
+import { PendingInvitationBanner } from './PendingInvitationBanner'
 
 import styles from './styles.module.sass'
 
@@ -25,6 +27,7 @@ export interface AppLayoutProps extends PropsWithChildren<AppBarProps> {
 export const AppLayout: React.FC<AppLayoutProps> = (props) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
+    const navigate = useNavigate()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
     const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
@@ -40,7 +43,7 @@ export const AppLayout: React.FC<AppLayoutProps> = (props) => {
 
     const myMember = members?.find((m) => m.user_id === profile?.id)
 
-    let myRole: 'owner' | 'member' | 'viewer' | null = null
+    let myRole: 'owner' | 'editor' | 'viewer' | null = null
     if (activeGroup) {
         myRole = activeGroup.owner_id === profile?.id ? 'owner' : (myMember?.role ?? 'viewer')
     }
@@ -125,15 +128,26 @@ export const AppLayout: React.FC<AppLayoutProps> = (props) => {
                                 />
                             )}
                         </div>
-                        <Button
-                            mode='link'
-                            label={t('groups.myBudget', 'My Budget')}
-                            onClick={() => dispatch(setActiveGroup(null))}
-                        />
+                        {myRole === 'owner' ? (
+                            <Button
+                                mode='link'
+                                label={t('common.settings', 'Settings')}
+                                onClick={() => void navigate('/settings')}
+                            />
+                        ) : (
+                            <Button
+                                mode='link'
+                                label={t('groups.myBudget', 'My Budget')}
+                                onClick={() => dispatch(setActiveGroup(null))}
+                            />
+                        )}
                     </div>
                 )}
 
-                <div className={styles.content}>{props.children}</div>
+                <div className={styles.content}>
+                    <PendingInvitationBanner />
+                    {props.children}
+                </div>
             </main>
         </div>
     )
