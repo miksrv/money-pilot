@@ -15,7 +15,7 @@ export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAu
 
     const isAuth = useAppSelector((state) => state.auth)
 
-    const { data, isLoading } = useListAccountQuery({}, { refetchOnReconnect: true, skip: !isAuth })
+    const { data, isLoading } = useListAccountQuery(undefined, { refetchOnReconnect: true, skip: !isAuth })
 
     const options: Array<SelectOptionType<string>> = useMemo(
         () =>

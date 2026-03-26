@@ -46,7 +46,7 @@ export const LoginForm: React.FC = () => {
             } else {
                 setError('root', {
                     type: 'server',
-                    message: errorData.messages?.error || t('register.error')
+                    message: t('register.error')
                 })
             }
         }

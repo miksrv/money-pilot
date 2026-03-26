@@ -42,8 +42,18 @@ const Menu: React.FC<MenuProps> = ({ onClick }) => {
         },
         {
             icon: 'BarChart',
-            link: '/reccuring',
-            text: t('menu.reccuring', 'Reccuring')
+            link: '/recurring',
+            text: t('menu.recurring', 'Recurring')
+        },
+        {
+            icon: 'Pressure',
+            link: '/payees',
+            text: t('menu.payees', 'Payees')
+        },
+        {
+            icon: 'Chart',
+            link: '/reports',
+            text: t('menu.reports', 'Reports')
         }
     ]
 
