@@ -1,4 +1,4 @@
-# Feature 14 — Smart Categorization
+# DONE: Feature 14 — Smart Categorization
 
 ## Goal
 

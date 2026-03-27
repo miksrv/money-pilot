@@ -98,6 +98,7 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->delete('(:segment)/members/(:segment)', 'GroupController::removeMember/$1/$2');
         $routes->get('(:segment)/invitations', 'GroupController::getInvitations/$1');
         $routes->delete('(:segment)/invitations/(:segment)', 'GroupController::revokeInvitation/$1/$2');
+        $routes->get('(:segment)/last-modified', 'GroupController::lastModified/$1');
         $routes->options('', static function () {});
         $routes->options('(:segment)', static function () {});
         $routes->options('(:segment)/invite', static function () {});
@@ -105,6 +106,7 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->options('(:segment)/members/(:segment)', static function () {});
         $routes->options('(:segment)/invitations', static function () {});
         $routes->options('(:segment)/invitations/(:segment)', static function () {});
+        $routes->options('(:segment)/last-modified', static function () {});
     });
 
     // UserController Routes
