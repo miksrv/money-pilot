@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Button, Select } from 'simple-react-ui-kit'
+import { Button, Icon, Select } from 'simple-react-ui-kit'
 
 import { useGetProfileQuery, useListGroupsQuery, useLogoutMutation } from '@/api'
 import { logout, setActiveGroup } from '@/store/authSlice'
@@ -54,19 +54,15 @@ export const AppBar: React.FC<AppBarProps> = ({ actions, onToggle }) => {
             <div className={styles.wrapper}>
                 <div className={styles.left}>
                     <button
+                        aria-label='Toggle sidebar'
                         className={styles.hamburgerButton}
                         onClick={onToggle}
-                        aria-label='Toggle sidebar'
                     >
-                        <svg
-                            viewBox='0 0 24 24'
-                            xmlns='http://www.w3.org/2000/svg'
-                        >
-                            <path d='M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z' />
-                        </svg>
+                        <Icon name={'Menu'} />
                     </button>
                     {actions}
                 </div>
+
                 <div className={styles.right}>
                     {showSwitcher && (
                         <Select<string>
@@ -75,6 +71,7 @@ export const AppBar: React.FC<AppBarProps> = ({ actions, onToggle }) => {
                             onSelect={(items) => dispatch(setActiveGroup(items?.[0]?.key || null))}
                         />
                     )}
+
                     <Button onClick={handleLogout}>{t('components.app-bar.logout', 'Logout')}</Button>
                 </div>
             </div>

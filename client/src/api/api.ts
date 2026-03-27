@@ -259,12 +259,18 @@ export const api = createApi({
         }),
         /* Update payee */
         updatePayee: builder.mutation<ApiModel.Payee, { id: string; name: string }>({
-            invalidatesTags: [{ id: 'LIST', type: 'Payee' }, { id: 'LIST', type: 'Transaction' }],
+            invalidatesTags: [
+                { id: 'LIST', type: 'Payee' },
+                { id: 'LIST', type: 'Transaction' }
+            ],
             query: ({ id, ...body }) => ({ url: `/payees/${id}`, method: 'PUT', body })
         }),
         /* Delete payee */
         deletePayee: builder.mutation<void, string>({
-            invalidatesTags: [{ id: 'LIST', type: 'Payee' }, { id: 'LIST', type: 'Transaction' }],
+            invalidatesTags: [
+                { id: 'LIST', type: 'Payee' },
+                { id: 'LIST', type: 'Transaction' }
+            ],
             query: (id) => ({ url: `/payees/${id}`, method: 'DELETE' })
         }),
         /* Merge payees */

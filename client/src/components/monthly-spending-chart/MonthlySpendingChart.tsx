@@ -161,6 +161,7 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
             action={
                 <Button
                     mode='link'
+                    icon='External'
                     label={t('dashboard.transactions', 'Transactions')}
                     link='/transactions'
                 />

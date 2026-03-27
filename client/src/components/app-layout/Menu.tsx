@@ -85,6 +85,7 @@ const Menu: React.FC<MenuProps> = ({ onClick, collapsed }) => {
                         </li>
                     ))}
             </menu>
+
             <menu className={cn(styles.menu, styles.menuBottom)}>
                 {bottomItems.map((item, i) => (
                     <li key={`menuBottom${i}`}>
