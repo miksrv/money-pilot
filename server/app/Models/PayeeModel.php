@@ -19,6 +19,7 @@ class PayeeModel extends ApplicationBaseModel
     protected $allowedFields = [
         'id',
         'name',
+        'default_category_id',
         'created_by_user_id',
         'usage_count',
         'created_at',

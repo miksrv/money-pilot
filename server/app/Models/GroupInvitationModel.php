@@ -31,7 +31,7 @@ class GroupInvitationModel extends ApplicationBaseModel
         'invited_user_id' => 'required',
         'inviter_user_id' => 'required',
         'status' => 'required|in_list[pending,accepted,rejected]',
-        'role' => 'required|in_list[member,viewer]',
+        'role' => 'required|in_list[editor,viewer]',
         'token' => 'required|string|max_length[255]',
         'expires_at' => 'required|valid_date',
     ];

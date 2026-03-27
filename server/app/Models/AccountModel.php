@@ -9,7 +9,7 @@ class AccountModel extends ApplicationBaseModel
 {
     protected $table          = 'accounts';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'balance', 'institution', 'last_synced'];
+    protected $allowedFields  = ['user_id', 'name', 'type', 'balance', 'institution', 'last_synced'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
@@ -31,7 +31,6 @@ class AccountModel extends ApplicationBaseModel
 
     protected $validationRules = [
         'user_id'     => 'permit_empty',
-        'group_id'    => 'permit_empty',
         'name'        => 'required|string|max_length[100]',
         'type'        => 'required|in_list[checking,savings,credit,investment]',
         'balance'     => 'permit_empty|decimal',
@@ -43,9 +42,6 @@ class AccountModel extends ApplicationBaseModel
         'user_id' => [
             'required' => 'User ID is required.',
             'valid_id' => 'Invalid user ID.',
-        ],
-        'group_id' => [
-            'valid_id' => 'Invalid group ID.',
         ],
         'name' => [
             'required' => 'Account name is required.',
@@ -74,16 +70,6 @@ class AccountModel extends ApplicationBaseModel
     public function findByUserId(string $userId): array
     {
         return $this->where('user_id', $userId)->findAll();
-    }
-
-    /**
-     * Find accounts by group ID
-     * @param string $groupId
-     * @return array
-     */
-    public function findByGroupId(string $groupId): array
-    {
-        return $this->where('group_id', $groupId)->findAll();
     }
 
     /**

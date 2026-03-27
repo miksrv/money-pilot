@@ -9,7 +9,7 @@ class CategoryModel extends ApplicationBaseModel
 {
     protected $table          = 'categories';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['user_id', 'group_id', 'name', 'type', 'parent_id', 'is_parent', 'icon', 'color', 'budget', 'usage_count', 'archived'];
+    protected $allowedFields  = ['user_id', 'name', 'type', 'parent_id', 'is_parent', 'icon', 'color', 'budget', 'usage_count', 'archived'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
@@ -31,7 +31,6 @@ class CategoryModel extends ApplicationBaseModel
 
     protected $validationRules = [
         'user_id'     => 'permit_empty',
-        'group_id'    => 'permit_empty',
         'name'        => 'required|string|max_length[100]',
         'type'        => 'required|in_list[income,expense]',
         'parent_id'   => 'permit_empty|valid_id[categories,id]',
