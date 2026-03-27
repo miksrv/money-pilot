@@ -17,8 +17,11 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({ currentCategoryI
     const { t } = useTranslation()
     const popoutRef = useRef<PopoutHandleProps>(null)
     const isAuth = useAppSelector((state) => state.auth.isAuth)
+    const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
 
-    const { data: categories } = useListCategoriesQuery(undefined, { skip: !isAuth })
+    const { data: categories } = useListCategoriesQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        skip: !isAuth
+    })
 
     const handleSelect = (categoryId: string, e: React.MouseEvent) => {
         e.stopPropagation()

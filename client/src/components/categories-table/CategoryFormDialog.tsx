@@ -21,11 +21,9 @@ import styles from './styles.module.sass'
 interface CategoryFormDialogProps extends Partial<DialogProps> {
     categoryData?: ApiModel.Category
     onDelete?: (category: ApiModel.Category) => void
-    groupId?: string
 }
 
 export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => {
-    const { groupId } = props
     const { t, i18n } = useTranslation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
@@ -44,10 +42,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
         defaultValues: DEFAULT_VALUES
     })
 
-    const { data: allCategories } = useListCategoriesQuery(
-        groupId ? { group_id: groupId } : {},
-        { skip: !isAuth }
-    )
+    const { data: allCategories } = useListCategoriesQuery({}, { skip: !isAuth })
 
     const [addCategory, { isLoading: isCreateLoading, error: createApiError, reset: createReset }] =
         useAddCategoryMutation()
@@ -75,7 +70,7 @@ export const CategoryFormDialog: React.FC<CategoryFormDialogProps> = (props) => 
             if (props?.categoryData?.id) {
                 await updateCategory(payload).unwrap()
             } else {
-                await addCategory({ ...payload, ...(groupId && { group_id: groupId }) }).unwrap()
+                await addCategory(payload).unwrap()
             }
 
             props?.onCloseDialog?.()

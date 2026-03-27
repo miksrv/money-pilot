@@ -1,21 +1,16 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import * as echarts from 'echarts/core'
 import ReactECharts from 'echarts-for-react'
-import { Container, Skeleton } from 'simple-react-ui-kit'
+import { Button, Container, Skeleton } from 'simple-react-ui-kit'
 
 import { useGetMonthlySpendingQuery } from '@/api'
 import { useAppSelector } from '@/store/hooks'
 import { getThemeColors } from '@/utils/echart'
 import { formatMoney } from '@/utils/money'
 
-import { colorWithAlpha, getStatusColor } from './utils'
+import { getSegmentColor, getStatusColor } from './utils'
 
-interface TooltipParam {
-    dataIndex: number
-    value: number | null
-    seriesName: string
-}
+import styles from './styles.module.sass'
 
 interface MonthlySpendingChartProps {
     groupId?: string
@@ -36,7 +31,7 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
     if (isLoading || !data) {
         return (
             <Container title={t('dashboard.monthlySpending', 'Monthly Spending')}>
-                <Skeleton style={{ height: '180px', width: '100%' }} />
+                <Skeleton style={{ height: '150px', width: '100%' }} />
             </Container>
         )
     }
@@ -51,10 +46,16 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
               )
 
     const pctLabel = (pctDiff > 0 ? '+' : '') + pctDiff + '%'
+    const amountDiff = data.current_month_to_date - data.previous_month_same_day
+    const amountDiffLabel = (amountDiff >= 0 ? '+' : '') + formatMoney(amountDiff, currency)
 
     const xAxisDays = Array.from({ length: data.days_in_current_month }, (_, i) => i + 1)
 
     const currentData = xAxisDays.map((day) => {
+        if (day > data.current_day) {
+            return null
+        }
+
         const found = data.current_month.find((d) => d.day === day)
 
         return found ? found.cumulative : null
@@ -72,57 +73,57 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
 
     const currentDayValue = data.current_month.find((d) => d.day === data.current_day)?.cumulative ?? 0
 
+    // Создаем pieces для visualMap — по одному для каждого сегмента между точками
+    const pieces: Array<{ min: number; max: number; color: string }> = []
+
+    for (let i = 0; i < data.current_day - 1; i++) {
+        const color = getSegmentColor(currentData[i + 1], previousData[i + 1])
+
+        pieces.push({
+            min: i,
+            max: i + 1,
+            color: color
+        })
+    }
+
     const option = {
         backgroundColor: 'transparent',
         grid: {
-            left: 8,
-            right: 8,
-            top: 24,
-            bottom: 8,
+            left: 0,
+            right: 0,
+            top: 10,
+            bottom: 0,
             containLabel: false
         },
         xAxis: {
             type: 'category',
             data: xAxisDays,
-            show: false
+            show: false,
+            boundaryGap: false
         },
         yAxis: {
             type: 'value',
-            show: false
+            show: false,
+            min: 'dataMin',
+            max: 'dataMax'
         },
         tooltip: {
-            trigger: 'axis',
-            backgroundColor: themeColors.backgroundColor,
-            borderColor: themeColors.borderColor,
-            textStyle: {
-                color: themeColors.textPrimaryColor,
-                fontSize: 12
-            },
-            formatter: (params: TooltipParam[]) => {
-                const day = xAxisDays[params[0].dataIndex]
-                const lines = params
-                    .filter((p) => p.value != null)
-                    .map((p) => p.seriesName + ': ' + formatMoney(p.value as number, currency))
-                    .join('<br/>')
-
-                return 'Day ' + String(day) + '<br/>' + lines
-            }
+            show: false
+        },
+        visualMap: {
+            show: false,
+            dimension: 0,
+            pieces: pieces,
+            seriesIndex: 0
         },
         series: [
             {
-                name: t('dashboard.monthlySpending', 'Monthly Spending'),
                 type: 'line',
                 smooth: true,
                 data: currentData,
                 connectNulls: false,
                 showSymbol: false,
-                lineStyle: { width: 2, color: statusColor },
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: colorWithAlpha(statusColor, 0.5) },
-                        { offset: 1, color: colorWithAlpha(statusColor, 0) }
-                    ])
-                },
+                lineStyle: { width: 3 },
                 markPoint: {
                     data: [
                         {
@@ -131,7 +132,7 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
                             symbolSize: 0,
                             label: {
                                 show: true,
-                                formatter: pctLabel,
+                                formatter: amountDiffLabel,
                                 backgroundColor: statusColor,
                                 color: '#fff',
                                 borderRadius: 10,
@@ -144,50 +145,43 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
                 }
             },
             {
-                name: t('dashboard.vsLastMonth', 'vs last month'),
                 type: 'line',
                 smooth: true,
                 data: previousData,
                 connectNulls: false,
                 showSymbol: false,
-                lineStyle: { type: 'dashed', width: 1.5, color: themeColors.textSecondaryColor },
-                areaStyle: {}
+                lineStyle: { type: 'dashed', width: 1, color: themeColors.textSecondaryColor }
             }
         ]
     }
 
     return (
-        <Container title={t('dashboard.monthlySpending', 'Monthly Spending')}>
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    marginBottom: 4,
-                    fontSize: 13,
-                    color: 'var(--input-label-color)'
-                }}
-            >
-                <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-color)' }}>
-                    {formatMoney(data.current_month_to_date, currency)}
-                </span>
+        <Container
+            title={t('dashboard.monthlySpending', 'Monthly Spending')}
+            action={
+                <Button
+                    mode='link'
+                    label={t('dashboard.transactions', 'Transactions')}
+                    link='/transactions'
+                />
+            }
+        >
+            <div className={styles.header}>
                 <span
-                    style={{
-                        backgroundColor: statusColor,
-                        color: '#fff',
-                        borderRadius: 10,
-                        padding: '2px 8px',
-                        fontSize: 11,
-                        fontWeight: 600
-                    }}
+                    className={styles.badge}
+                    style={{ backgroundColor: statusColor }}
                 >
                     {pctLabel}
                 </span>
                 <span>{t('dashboard.vsLastMonth', 'vs last month')}</span>
             </div>
+
             <ReactECharts
                 option={option}
-                style={{ height: 180 }}
+                className={styles.chart}
+                style={{ height: '170px' }}
+                opts={{ renderer: 'svg' }}
+                notMerge={true}
             />
         </Container>
     )

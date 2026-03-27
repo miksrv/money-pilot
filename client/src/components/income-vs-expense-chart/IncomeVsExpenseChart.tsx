@@ -1,17 +1,24 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import dayjs from 'dayjs'
 import ReactECharts from 'echarts-for-react'
 import { Container, Message, Skeleton } from 'simple-react-ui-kit'
 
 import { ApiModel } from '@/api'
 import { CHART_COLORS, getEChartBaseConfig } from '@/utils/echart'
+import { formatMoney } from '@/utils/money'
 
 interface IncomeVsExpenseChartProps {
     monthlyHistory: ApiModel.DashboardMonthHistory[]
     loading?: boolean
+    currency?: string
 }
 
-export const IncomeVsExpenseChart: React.FC<IncomeVsExpenseChartProps> = ({ monthlyHistory, loading }) => {
+export const IncomeVsExpenseChart: React.FC<IncomeVsExpenseChartProps> = ({
+    monthlyHistory,
+    loading,
+    currency = 'USD'
+}) => {
     const { t } = useTranslation()
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
     const baseConfig = getEChartBaseConfig(isDark)
@@ -22,9 +29,29 @@ export const IncomeVsExpenseChart: React.FC<IncomeVsExpenseChartProps> = ({ mont
             ...baseConfig.legend,
             data: [t('dashboard.income', 'Income'), t('dashboard.expenses', 'Expenses')]
         },
+        tooltip: {
+            ...baseConfig.tooltip,
+            formatter: (params: Array<{ name: string; seriesName: string; value: number; marker: string }>) => {
+                const monthLabel = dayjs(params[0].name).format('MMMM YYYY')
+                const items = params
+                    .map(
+                        (p) =>
+                            `<div style="display: flex; justify-content: space-between; color: var(--text-color-secondary)"><div style="font-size: 11px">${p.marker} ${p.seriesName}</div><div style="color: var(--text-color-primary); font-size: 11px">${String(formatMoney(p.value, currency))}</div></div>`
+                    )
+                    .join('')
+                return `<div style="min-width: 150px"><div style="text-transform: capitalize; margin-bottom: 10px">${monthLabel}</div>${items}</div>`
+            }
+        },
         xAxis: {
             ...baseConfig.xAxis,
-            data: monthlyHistory.map((m) => m.month)
+            data: monthlyHistory.map((m) => m.month),
+            axisLabel: {
+                ...baseConfig.xAxis.axisLabel,
+                formatter: (value: string) => {
+                    const formatted = dayjs(value).format('MMM YYYY')
+                    return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+                }
+            }
         },
         yAxis: baseConfig.yAxis,
         series: [
@@ -48,13 +75,13 @@ export const IncomeVsExpenseChart: React.FC<IncomeVsExpenseChartProps> = ({ mont
     return (
         <Container title={t('dashboard.incomeVsExpense', 'Income vs Expense')}>
             {loading ? (
-                <Skeleton style={{ height: '250px', width: '100%' }} />
+                <Skeleton style={{ height: '200px', width: '100%' }} />
             ) : !monthlyHistory.length ? (
                 <Message type='info'>{t('dashboard.noData', 'No data for this period')}</Message>
             ) : (
                 <ReactECharts
                     option={barOption}
-                    style={{ height: 250 }}
+                    style={{ height: 200 }}
                 />
             )}
         </Container>

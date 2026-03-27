@@ -16,9 +16,9 @@ interface CategoriesTableProps {
     categories: ApiModel.Category[]
     currency?: string
     isLoading?: boolean
+    isFetching?: boolean
     showHeader?: boolean
     defaultExpanded?: boolean
-    groupId?: string
 }
 
 interface CategoryGroup {
@@ -30,9 +30,9 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
     categories,
     currency,
     isLoading,
+    isFetching,
     showHeader = false,
-    defaultExpanded = true,
-    groupId
+    defaultExpanded = true
 }) => {
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
@@ -281,7 +281,7 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
         )
     }
 
-    const isEmpty = !isLoading && categories.length === 0
+    const isEmpty = !isLoading && !isFetching && categories.length === 0
 
     return (
         <div className={styles.tableWrapper}>
@@ -315,7 +315,6 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
                 open={openForm}
                 categoryData={editCategory}
                 onCloseDialog={handleCloseForm}
-                groupId={groupId}
             />
         </div>
     )

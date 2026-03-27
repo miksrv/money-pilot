@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Badge, Button, cn } from 'simple-react-ui-kit'
 
 import { useGetGroupMembersQuery, useGetProfileQuery, useListGroupsQuery } from '@/api'
+import { useGroupSync } from '@/hooks/useGroupSync'
 import { setActiveGroup } from '@/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
@@ -28,6 +29,8 @@ export const AppLayout: React.FC<AppLayoutProps> = (props) => {
     const { t } = useTranslation()
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
+
+    useGroupSync()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
     const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)

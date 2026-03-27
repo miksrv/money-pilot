@@ -61,7 +61,8 @@ export const RecurringFormDialog: React.FC<RecurringFormDialogProps> = (props) =
         formState: { errors },
         reset,
         watch,
-        setValue
+        setValue,
+        setError
     } = useForm<RecurringFormData>({ defaultValues: DEFAULT_FORM })
 
     const formType = watch('type')
@@ -103,6 +104,14 @@ export const RecurringFormDialog: React.FC<RecurringFormDialogProps> = (props) =
     }, [props.open])
 
     const onSubmit = async (data: RecurringFormData) => {
+        // Manual validation for amount
+        if (!data.amount || data.amount < 0.01) {
+            setError('amount', {
+                message: t('screens.transactions.form.amount_required', 'Amount is required')
+            })
+            return
+        }
+
         const body: ApiModel.CreateRecurringBody = {
             name: data.name,
             type: data.type,
@@ -201,14 +210,8 @@ export const RecurringFormDialog: React.FC<RecurringFormDialogProps> = (props) =
                     currency={Currency.USD}
                     locale={i18n.language}
                     error={errors?.amount?.message}
-                    onValueChange={(val) => setValue('amount', val ?? 0)}
-                    {...register('amount', {
-                        required: t('screens.transactions.form.amount_required', 'Amount is required'),
-                        min: {
-                            value: 0.01,
-                            message: t('screens.transactions.form.amount_min', 'Amount must be at least 0.01')
-                        }
-                    })}
+                    min={0.01}
+                    onValueChange={(val) => setValue('amount', val ?? 0, { shouldValidate: true })}
                 />
 
                 <AccountSelectField
