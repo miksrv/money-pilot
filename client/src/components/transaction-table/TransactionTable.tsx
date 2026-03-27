@@ -1,21 +1,14 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, Checkbox, Dialog, Message, Skeleton } from 'simple-react-ui-kit'
+import { Skeleton } from 'simple-react-ui-kit'
 
-import {
-    ApiModel,
-    useDeleteTransactionMutation,
-    useListAccountQuery,
-    useListCategoriesQuery,
-    useUpdateTransactionMutation
-} from '@/api'
-import { CategoryPicker } from '@/components/category-picker'
-import { ColorName, getColorHex } from '@/components/color-picker'
+import { ApiModel, useListAccountQuery, useListCategoriesQuery, useUpdateTransactionMutation } from '@/api'
 import { useAppSelector } from '@/store/hooks'
-import { formatMoney } from '@/utils/money'
 
 import { SKELETON_WIDTHS } from './constants'
+import { DeleteTransactionDialog } from './DeleteTransactionDialog'
 import { TransactionFormDialog } from './TransactionFormDialog'
+import { TransactionRow } from './TransactionRow'
 import { getDateLabel } from './utils'
 
 import styles from './styles.module.sass'
@@ -29,8 +22,9 @@ interface TransactionTableProps {
     isReadOnly?: boolean
     hideGrouping?: boolean
     hideCheckboxes?: boolean
-    onTransactionDeleted?: () => void
-    onTransactionUpdated?: () => void
+    onTransactionChange?: () => void
+    openAddForm?: boolean
+    onCloseAddForm?: () => void
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
@@ -42,8 +36,9 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     isReadOnly,
     hideGrouping,
     hideCheckboxes,
-    onTransactionDeleted,
-    onTransactionUpdated
+    onTransactionChange,
+    openAddForm,
+    onCloseAddForm
 }) => {
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
@@ -57,52 +52,119 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         skip: !isAuth
     })
 
+    // Create lookup maps for O(1) access instead of O(n) find() calls
+    const categoriesMap = useMemo(() => new Map(categories?.map((c) => [c.id, c]) ?? []), [categories])
+    const accountsMap = useMemo(() => new Map(accounts?.map((a) => [a.id, a]) ?? []), [accounts])
+
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [editTransaction, setEditTransaction] = useState<ApiModel.Transaction | undefined>()
     const [openForm, setOpenForm] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<ApiModel.Transaction | undefined>()
-    const [deleteError, setDeleteError] = useState(false)
 
-    const [deleteTransaction, { isLoading: isDeleting }] = useDeleteTransactionMutation()
+    // Category picker state - single instance for all rows
+    const [categoryPickerTransaction, setCategoryPickerTransaction] = useState<ApiModel.Transaction | null>(null)
+    const [pickerPosition, setPickerPosition] = useState<{ top: number; left: number } | null>(null)
+    const pickerRef = useRef<HTMLDivElement>(null)
     const [updateTransaction] = useUpdateTransactionMutation()
 
-    const toggleSelect = (id: string) => {
-        setSelectedIds((prev) => {
-            const next = new Set(prev)
-            if (next.has(id)) {
-                next.delete(id)
-            } else {
-                next.add(id)
-            }
-            onSelectionChange?.(Array.from(next))
-            return next
-        })
-    }
+    const toggleSelect = useCallback(
+        (id: string) => {
+            setSelectedIds((prev) => {
+                const next = new Set(prev)
+                if (next.has(id)) {
+                    next.delete(id)
+                } else {
+                    next.add(id)
+                }
+                onSelectionChange?.(Array.from(next))
+                return next
+            })
+        },
+        [onSelectionChange]
+    )
 
-    const handleRowClick = (transaction: ApiModel.Transaction) => {
+    const handleRowClick = useCallback((transaction: ApiModel.Transaction) => {
         setEditTransaction(transaction)
         setOpenForm(true)
-    }
+    }, [])
 
     const handleCloseForm = () => {
         setOpenForm(false)
         setEditTransaction(undefined)
+        onCloseAddForm?.()
     }
 
-    const handleDeleteConfirm = async () => {
-        if (!deleteTarget?.id) {
+    const handleDeleteComplete = () => {
+        setDeleteTarget(undefined)
+        handleCloseForm()
+        onTransactionChange?.()
+    }
+
+    const handleCategoryPickerOpen = useCallback(
+        (transaction: ApiModel.Transaction, triggerElement: HTMLButtonElement) => {
+            const rect = triggerElement.getBoundingClientRect()
+            setPickerPosition({
+                top: rect.bottom + 4,
+                left: rect.left
+            })
+            setCategoryPickerTransaction(transaction)
+        },
+        []
+    )
+
+    const handleCategoryPickerClose = useCallback(() => {
+        setCategoryPickerTransaction(null)
+        setPickerPosition(null)
+    }, [])
+
+    const handleCategorySelect = useCallback(
+        (categoryId: string) => {
+            if (!categoryPickerTransaction) {
+                return
+            }
+            updateTransaction({ id: categoryPickerTransaction.id, category_id: categoryId })
+                .unwrap()
+                .then(() => onTransactionChange?.())
+                .catch(() => {})
+            handleCategoryPickerClose()
+        },
+        [categoryPickerTransaction, updateTransaction, onTransactionChange, handleCategoryPickerClose]
+    )
+
+    // Close picker on outside click
+    useEffect(() => {
+        if (!categoryPickerTransaction) {
             return
         }
-        setDeleteError(false)
-        try {
-            await deleteTransaction(deleteTarget.id).unwrap()
-            setDeleteTarget(undefined)
-            handleCloseForm()
-            onTransactionDeleted?.()
-        } catch {
-            setDeleteError(true)
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+                handleCategoryPickerClose()
+            }
         }
-    }
+
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                handleCategoryPickerClose()
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        document.addEventListener('keydown', handleEscape)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+            document.removeEventListener('keydown', handleEscape)
+        }
+    }, [categoryPickerTransaction, handleCategoryPickerClose])
+
+    // Filter out parent categories for picker
+    const selectableCategories = useMemo(
+        () =>
+            (categories ?? [])
+                .filter((cat) => !cat.is_parent)
+                .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+        [categories]
+    )
 
     // Group transactions by date, sort groups descending
     const grouped = transactions.reduce<Record<string, ApiModel.Transaction[]>>((acc, tx) => {
@@ -123,111 +185,28 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     // Flat list for hideGrouping mode
     const flatTransactions = hideGrouping ? sortedDates.flatMap((date) => grouped[date]) : []
 
-    const renderRow = (tx: ApiModel.Transaction) => {
-        const category = categories?.find((c) => c.id === tx.category_id)
-        const account = accounts?.find((a) => a.id === tx.account_id)
-        const isIncome = tx.type === 'income'
-        const isSelected = selectedIds.has(tx.id)
+    const showCheckbox = !isReadOnly && !hideCheckboxes
 
-        const showCheckbox = !isReadOnly && !hideCheckboxes
+    const renderRow = (tx: ApiModel.Transaction) => (
+        <TransactionRow
+            key={tx.id}
+            transaction={tx}
+            category={categoriesMap.get(tx.category_id)}
+            account={accountsMap.get(tx.account_id)}
+            currency={currency}
+            isSelected={selectedIds.has(tx.id)}
+            isReadOnly={isReadOnly}
+            showCheckbox={showCheckbox}
+            onToggleSelect={toggleSelect}
+            onRowClick={handleRowClick}
+            onCategoryPickerOpen={handleCategoryPickerOpen}
+        />
+    )
 
-        return (
-            <div
-                key={tx.id}
-                className={[styles.row, isSelected ? styles.rowSelected : ''].join(' ')}
-                onClick={() => !isReadOnly && handleRowClick(tx)}
-                role='button'
-                tabIndex={0}
-                onKeyDown={(e) => {
-                    if (!isReadOnly && (e.key === 'Enter' || e.key === ' ')) {
-                        handleRowClick(tx)
-                    }
-                }}
-            >
-                {/* Cell 1: checkbox + payee + account */}
-                <div className={styles.cellPayee}>
-                    {showCheckbox && (
-                        <div
-                            className={styles.checkboxWrapper}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <Checkbox
-                                className={styles.checkbox}
-                                checked={isSelected}
-                                onChange={() => toggleSelect(tx.id)}
-                            />
-                        </div>
-                    )}
-                    <div className={styles.payeeInfo}>
-                        <span className={styles.payeeName}>{tx.payee ?? '—'}</span>
-                        {account && <span className={styles.accountName}>{account.name}</span>}
-                    </div>
-                </div>
-
-                {/* Cell 2: category badge with picker */}
-                <div
-                    className={styles.cellCategory}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {!isReadOnly ? (
-                        <CategoryPicker
-                            currentCategoryId={tx.category_id}
-                            onSelect={(categoryId) => {
-                                updateTransaction({ id: tx.id, category_id: categoryId })
-                                    .unwrap()
-                                    .then(() => onTransactionUpdated?.())
-                                    .catch(() => {})
-                            }}
-                            trigger={
-                                category ? (
-                                    <button
-                                        type='button'
-                                        className={styles.categoryBadge}
-                                        style={{
-                                            backgroundColor: getColorHex(category.color as ColorName) + '26',
-                                            color: getColorHex(category.color as ColorName)
-                                        }}
-                                        aria-label={t('transactions.changeCategory', 'Change category')}
-                                    >
-                                        <span className={styles.categoryIcon}>{category.icon}</span>
-                                        <span>{category.name}</span>
-                                    </button>
-                                ) : (
-                                    <button
-                                        type='button'
-                                        className={styles.categoryBadgeEmpty}
-                                        aria-label={t('transactions.changeCategory', 'Change category')}
-                                    >
-                                        {t('transactions.noCategory', 'No category')}
-                                    </button>
-                                )
-                            }
-                        />
-                    ) : category ? (
-                        <span
-                            className={styles.categoryBadge}
-                            style={{
-                                backgroundColor: getColorHex(category.color as ColorName) + '26',
-                                color: getColorHex(category.color as ColorName)
-                            }}
-                        >
-                            <span className={styles.categoryIcon}>{category.icon}</span>
-                            <span>{category.name}</span>
-                        </span>
-                    ) : (
-                        <span className={styles.categoryBadgeEmpty}>{t('transactions.noCategory', 'No category')}</span>
-                    )}
-                </div>
-
-                {/* Cell 3: amount */}
-                <div className={styles.cellAmount}>
-                    <span className={isIncome ? styles.amountIncome : styles.amountExpense}>
-                        {formatMoney(Math.abs(tx.amount), currency)}
-                    </span>
-                </div>
-            </div>
-        )
-    }
+    // Get current category for picker
+    const pickerCurrentCategory = categoryPickerTransaction
+        ? categoriesMap.get(categoryPickerTransaction.category_id)
+        : null
 
     return (
         <div className={styles.tableWrapper}>
@@ -246,7 +225,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                         key={i}
                         className={styles.skeletonRow}
                     >
-                        <Skeleton style={{ height: 16, width: '32px', borderRadius: 4 }} />
+                        <Skeleton style={{ height: 16, width: '80px', borderRadius: 4 }} />
                         <Skeleton style={{ height: 16, width: width + '%', borderRadius: 4 }} />
                         <Skeleton style={{ height: 16, width: '18%', borderRadius: 4, marginLeft: 'auto' }} />
                     </div>
@@ -256,12 +235,50 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                 <div className={styles.emptyState}>{t('transactions.noResults', 'No transactions found')}</div>
             )}
 
-            {/* Edit form dialog */}
+            {/* Single CategoryPicker instance for all rows */}
+            {!isReadOnly && categoryPickerTransaction && pickerPosition && (
+                <div
+                    ref={pickerRef}
+                    className={styles.categoryPickerDropdown}
+                    style={{
+                        top: pickerPosition.top,
+                        left: pickerPosition.left
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className={styles.categoryPicker}>
+                        {selectableCategories.map((cat) => (
+                            <button
+                                key={cat.id}
+                                type='button'
+                                className={[
+                                    styles.categoryPickerItem,
+                                    cat.id === pickerCurrentCategory?.id ? styles.categoryPickerItemActive : ''
+                                ].join(' ')}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleCategorySelect(cat.id ?? '')
+                                }}
+                            >
+                                <span className={styles.categoryPickerIcon}>{cat.icon}</span>
+                                <span>{cat.name}</span>
+                            </button>
+                        ))}
+                        {selectableCategories.length === 0 && (
+                            <span className={styles.categoryPickerEmpty}>
+                                {t('transactions.noCategories', 'No categories')}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Edit/Add form dialog */}
             <TransactionFormDialog
-                open={openForm}
+                open={openForm || !!openAddForm}
                 transactionData={editTransaction}
                 onCloseDialog={handleCloseForm}
-                onTransactionSaved={onTransactionDeleted}
+                onTransactionSaved={onTransactionChange}
                 onDelete={(tx) => {
                     setOpenForm(false)
                     setDeleteTarget(tx)
@@ -269,39 +286,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             />
 
             {/* Delete confirmation dialog */}
-            <Dialog
-                open={!!deleteTarget}
-                title={t('transactions.deleteConfirmTitle', 'Delete transaction?')}
-                onCloseDialog={() => {
-                    setDeleteTarget(undefined)
-                    setDeleteError(false)
-                }}
-            >
-                <Message type='warning'>
-                    {t('transactions.confirmDelete', 'Are you sure you want to delete this transaction?')}
-                </Message>
-                {deleteError && (
-                    <Message type='error'>{t('common.errors.unknown', 'An unknown error occurred')}</Message>
-                )}
-                <Button
-                    mode='primary'
-                    variant='negative'
-                    label={
-                        isDeleting
-                            ? t('common.loading', 'Loading...')
-                            : t('transactions.deleteTransaction', 'Delete Transaction')
-                    }
-                    onClick={() => void handleDeleteConfirm()}
-                    disabled={isDeleting}
-                    stretched
-                />
-                <Button
-                    mode='outline'
-                    label={t('common.cancel', 'Cancel')}
-                    onClick={() => setDeleteTarget(undefined)}
-                    stretched
-                />
-            </Dialog>
+            <DeleteTransactionDialog
+                transaction={deleteTarget}
+                onClose={() => setDeleteTarget(undefined)}
+                onDeleted={handleDeleteComplete}
+            />
         </div>
     )
 }

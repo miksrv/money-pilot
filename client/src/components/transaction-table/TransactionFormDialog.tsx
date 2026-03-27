@@ -22,6 +22,8 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
     const isAuth = useAppSelector((state) => state.auth.isAuth)
     const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
 
+    const amountInputRef = useRef<HTMLInputElement>(null)
+
     const [payeeSearch, setPayeeSearch] = useState('')
     const [debouncedPayeeSearch, setDebouncedPayeeSearch] = useState('')
     const [autoSelectedCategory, setAutoSelectedCategory] = useState(false)
@@ -122,6 +124,13 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
     useEffect(() => {
         updateReset()
         createReset()
+
+        // Focus amount input when dialog opens
+        if (props.open) {
+            setTimeout(() => {
+                amountInputRef.current?.focus()
+            }, 100)
+        }
     }, [props.open])
 
     const isExpense = currentType === 'expense'
@@ -168,6 +177,7 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
 
                 <div className={styles.amountWrapper}>
                     <CurrencyInput
+                        ref={amountInputRef}
                         value={watch('amount')}
                         currency={Currency.USD}
                         locale={i18n.language}
