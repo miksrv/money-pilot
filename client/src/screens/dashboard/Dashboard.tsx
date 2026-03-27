@@ -2,20 +2,8 @@ import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Container, Message, Skeleton } from 'simple-react-ui-kit'
 
-import {
-    useGetDashboardSummaryQuery,
-    useGetProfileQuery,
-    useListCategoriesQuery,
-    useListTransactionsQuery
-} from '@/api'
-import {
-    AppLayout,
-    IncomeVsExpenseChart,
-    MonthlySpendingChart,
-    SpendingByCategoryChart,
-    SummaryCard,
-    TransactionTable
-} from '@/components'
+import { useGetDashboardSummaryQuery, useGetProfileQuery, useListTransactionsQuery } from '@/api'
+import { AppLayout, IncomeVsExpenseChart, MonthlySpendingChart, SummaryCard, TransactionTable } from '@/components'
 import { useAppSelector } from '@/store/hooks'
 import { formatMoney } from '@/utils/money'
 
@@ -37,10 +25,7 @@ export const Dashboard: React.FC = () => {
         activeGroupId ? { group_id: activeGroupId } : undefined,
         { refetchOnReconnect: true, skip: !isAuth }
     )
-    const { data: categories, isLoading: categoriesLoading } = useListCategoriesQuery(
-        { withSums: true },
-        { refetchOnReconnect: true, skip: !isAuth }
-    )
+
     const { data: transactions, isLoading: transactionsLoading } = useListTransactionsQuery(
         activeGroupId ? { group_id: activeGroupId } : undefined,
         { refetchOnReconnect: true, skip: !isAuth }
@@ -64,6 +49,7 @@ export const Dashboard: React.FC = () => {
                         }
                         loading={summaryLoading}
                     />
+
                     <SummaryCard
                         title={t('dashboard.spentThisMonth', 'Spent This Month')}
                         value={formatMoney(summary?.current_month.expenses ?? 0, profile?.currency ?? 'USD')}
@@ -72,6 +58,7 @@ export const Dashboard: React.FC = () => {
                         loading={summaryLoading}
                         invertPositive
                     />
+
                     <SummaryCard
                         title={t('dashboard.incomeThisMonth', 'Income This Month')}
                         value={formatMoney(summary?.current_month.income ?? 0, profile?.currency ?? 'USD')}
@@ -79,6 +66,7 @@ export const Dashboard: React.FC = () => {
                         previous={summary?.previous_month.income ?? 0}
                         loading={summaryLoading}
                     />
+
                     <SummaryCard
                         title={t('dashboard.savingsRate', 'Savings Rate')}
                         value={(summary?.current_month.savings_rate ?? 0).toFixed(1) + '%'}
@@ -88,25 +76,15 @@ export const Dashboard: React.FC = () => {
                     />
                 </div>
 
-                {/* Monthly spending widget */}
-                <MonthlySpendingChart
-                    groupId={activeGroupId ?? undefined}
-                    currency={profile?.currency ?? 'USD'}
-                />
-
-                {/* Charts row */}
                 <div className={styles.chartsRow}>
-                    {/* Spending by category doughnut */}
-                    <SpendingByCategoryChart
-                        categories={categories ?? []}
+                    <MonthlySpendingChart
+                        groupId={activeGroupId ?? undefined}
                         currency={profile?.currency ?? 'USD'}
-                        loading={categoriesLoading}
                     />
-
-                    {/* Income vs Expense bar chart */}
                     <IncomeVsExpenseChart
                         monthlyHistory={summary?.monthly_history ?? []}
                         loading={summaryLoading}
+                        currency={profile?.currency ?? 'USD'}
                     />
                 </div>
 

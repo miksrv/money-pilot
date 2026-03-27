@@ -15,10 +15,15 @@
         grid-template-columns: 1fr
 
 .chartsRow
-    display: grid
+    display: flex
     grid-template-columns: 1fr 1fr
     gap: 16px
 
-    @media (max-width: 768px)
-        grid-template-columns: 1fr
+    section
+        flex-basis: 50%
+        width: 50%
+
+        @media (max-width: 768px)
+            flex-basis: 100%
+            width: 100%
 

@@ -219,7 +219,9 @@ export const Settings: React.FC = () => {
             const code = apiErr?.data?.messages?.error
 
             if (code === 'subscription_required') {
-                setCreateGroupError(t('groups.subscriptionRequired', 'A paid subscription is required to create a shared budget'))
+                setCreateGroupError(
+                    t('groups.subscriptionRequired', 'A paid subscription is required to create a shared budget')
+                )
             } else {
                 setCreateGroupError(t('common.errors.unknown', 'An error occurred. Please try again.'))
             }

@@ -27,6 +27,7 @@ export const Transactions: React.FC = () => {
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
     const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
+    const groupSyncVersion = useAppSelector((state) => state.auth.groupSyncVersion)
 
     const { data: groups } = useListGroupsQuery(undefined, { skip: !isAuth })
     const { data: profile } = useGetProfileQuery(undefined, { skip: !isAuth })
@@ -60,9 +61,15 @@ export const Transactions: React.FC = () => {
         listVersionRef.current += 1
         expectedPageRef.current = 1
         setPage(1)
-        setAllTransactions([])
         setSelectedIds([])
     }
+
+    // Reset and refetch from page 1 when group sync detects remote changes
+    useEffect(() => {
+        if (groupSyncVersion > 0) {
+            resetList()
+        }
+    }, [groupSyncVersion])
 
     const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -103,7 +110,6 @@ export const Transactions: React.FC = () => {
         listVersionRef.current += 1
         expectedPageRef.current = 1
         setPage(1)
-        setAllTransactions([])
         setSelectedIds([])
     }, [debouncedSearch, type, accountId, categoryId])
 
@@ -117,12 +123,17 @@ export const Transactions: React.FC = () => {
         ...(activeGroupId && { group_id: activeGroupId })
     }
 
-    const { data: transactionData, isFetching } = useListTransactionsQuery(queryParams, {
+    const {
+        data: transactionData,
+        isLoading: isTransactionsLoading,
+        isFetching
+    } = useListTransactionsQuery(queryParams, {
         refetchOnReconnect: true,
         skip: !isAuth
     })
 
-    // Accumulate pages — only accept responses in expected sequence
+    // Accumulate pages — page 1 always resets the list (handles filter changes and cache invalidation
+    // refetches); higher pages are only accepted in sequence to prevent duplicates
     useEffect(() => {
         if (!transactionData?.data) {
             return
@@ -130,26 +141,21 @@ export const Transactions: React.FC = () => {
 
         const responsePage = transactionData.meta?.page ?? 1
 
-        // Only accept responses that match expected page
-        if (responsePage !== expectedPageRef.current) {
-            return
-        }
-
         if (responsePage === 1) {
-            // Fresh data or refetch — replace entire list
+            // Fresh load, filter change, or cache-invalidation refetch — always replace
             setAllTransactions(transactionData.data)
             setSelectedIds([])
-        } else {
-            // Paginating — append
+            expectedPageRef.current = 2
+        } else if (responsePage === expectedPageRef.current) {
+            // Paginating — append only in-sequence pages
             setAllTransactions((prev) => {
                 const existingIds = new Set(prev.map((t) => t.id))
                 const newTransactions = transactionData.data.filter((t) => !existingIds.has(t.id))
                 return [...prev, ...newTransactions]
             })
+            expectedPageRef.current = responsePage + 1
         }
-
-        // Increment expected page for next load
-        expectedPageRef.current = responsePage + 1
+        // else: ignore out-of-sequence responses
     }, [transactionData])
 
     // IntersectionObserver for infinite scroll
@@ -266,10 +272,12 @@ export const Transactions: React.FC = () => {
             <TransactionTable
                 transactions={allTransactions}
                 currency={profile?.currency ?? 'USD'}
-                isLoading={isFetching}
+                isLoading={isTransactionsLoading}
+                isFetching={isFetching}
                 onSelectionChange={setSelectedIds}
                 isReadOnly={isViewer}
                 onTransactionDeleted={resetList}
+                onTransactionUpdated={resetList}
             />
 
             <div

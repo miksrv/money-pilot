@@ -55,7 +55,11 @@ export const Accounts: React.FC = () => {
     const [deleteTarget, setDeleteTarget] = useState<ApiModel.Account | undefined>()
     const [blockedAccount, setBlockedAccount] = useState<ApiModel.Account | undefined>()
 
-    const { data: accounts, isLoading } = useListAccountQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+    const {
+        data: accounts,
+        isLoading,
+        isFetching
+    } = useListAccountQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
         refetchOnReconnect: true,
         skip: !isAuth
     })
@@ -154,7 +158,7 @@ export const Accounts: React.FC = () => {
                 ) : undefined
             }
         >
-            {!isLoading && (!accounts || accounts.length === 0) && (
+            {!isLoading && !isFetching && (!accounts || accounts.length === 0) && (
                 <div className={styles.emptyState}>
                     <p>{t('accounts.noAccounts', 'No accounts yet')}</p>
                     <p>{t('accounts.addFirst', 'Add your first account to get started.')}</p>
@@ -259,8 +263,8 @@ export const Accounts: React.FC = () => {
                         value={formBalance ?? 0}
                         currency={Currency.USD}
                         locale={i18n.language}
+                        allowNegative={true}
                         onValueChange={(val) => setValue('balance', val ?? 0)}
-                        {...register('balance')}
                     />
 
                     <Button

@@ -20,10 +20,14 @@ export const Recurring: React.FC = () => {
 
     const [openForm, setOpenForm] = useState(false)
 
-    const { data: items, isLoading } = useListRecurringQuery(
-        activeGroupId ? { group_id: activeGroupId } : undefined,
-        { refetchOnReconnect: true, skip: !isAuth }
-    )
+    const {
+        data: items,
+        isLoading,
+        isFetching
+    } = useListRecurringQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        refetchOnReconnect: true,
+        skip: !isAuth
+    })
 
     return (
         <AppLayout
@@ -38,7 +42,7 @@ export const Recurring: React.FC = () => {
         >
             {isLoading && <Skeleton style={{ height: '200px', width: '100%' }} />}
 
-            {!isLoading && (!items || items.length === 0) && (
+            {!isLoading && !isFetching && (!items || items.length === 0) && (
                 <div className={styles.emptyState}>
                     <Message type='info'>{t('recurring.noRecurring', 'No recurring transactions yet')}</Message>
                     <Button

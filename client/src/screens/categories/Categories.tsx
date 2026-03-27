@@ -18,7 +18,11 @@ export const Categories: React.FC = () => {
 
     const [openForm, setOpenForm] = useState(false)
 
-    const { data: categories, isLoading } = useListCategoriesQuery(
+    const {
+        data: categories,
+        isLoading,
+        isFetching
+    } = useListCategoriesQuery(
         activeGroupId
             ? { withSums: true, include_archived: 1, withChildren: true, group_id: activeGroupId }
             : { withSums: true, include_archived: 1, withChildren: true },
@@ -39,15 +43,14 @@ export const Categories: React.FC = () => {
             <CategoriesTable
                 categories={categories ?? []}
                 isLoading={isLoading}
+                isFetching={isFetching}
                 showHeader={true}
                 defaultExpanded={true}
-                groupId={activeGroupId ?? undefined}
             />
 
             <CategoryFormDialog
                 open={openForm}
                 onCloseDialog={() => setOpenForm(false)}
-                groupId={activeGroupId ?? undefined}
             />
         </AppLayout>
     )
