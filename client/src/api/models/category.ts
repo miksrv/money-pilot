@@ -13,5 +13,4 @@ export interface Category {
     archived?: boolean
     transaction_count?: number
     usage_count?: number
-    group_id?: string
 }

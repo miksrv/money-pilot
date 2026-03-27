@@ -259,12 +259,12 @@ export const api = createApi({
         }),
         /* Update payee */
         updatePayee: builder.mutation<ApiModel.Payee, { id: string; name: string }>({
-            invalidatesTags: [{ id: 'LIST', type: 'Payee' }],
+            invalidatesTags: [{ id: 'LIST', type: 'Payee' }, { id: 'LIST', type: 'Transaction' }],
             query: ({ id, ...body }) => ({ url: `/payees/${id}`, method: 'PUT', body })
         }),
         /* Delete payee */
         deletePayee: builder.mutation<void, string>({
-            invalidatesTags: [{ id: 'LIST', type: 'Payee' }],
+            invalidatesTags: [{ id: 'LIST', type: 'Payee' }, { id: 'LIST', type: 'Transaction' }],
             query: (id) => ({ url: `/payees/${id}`, method: 'DELETE' })
         }),
         /* Merge payees */
@@ -359,6 +359,10 @@ export const api = createApi({
         joinGroup: builder.mutation<ApiModel.Group & { owner_name: string }, { token: string }>({
             invalidatesTags: ['Group'],
             query: (body) => ({ url: '/groups/join', method: 'POST', body })
+        }),
+        /* Get group last-modified timestamp (used for lightweight sync polling) */
+        getGroupLastModified: builder.query<{ last_modified: string }, string>({
+            query: (groupId) => `/groups/${groupId}/last-modified`
         })
     })
 })
@@ -412,5 +416,6 @@ export const {
     useInviteMemberMutation,
     useRevokeInvitationMutation,
     useGetPendingInvitationsQuery,
-    useJoinGroupMutation
+    useJoinGroupMutation,
+    useGetGroupLastModifiedQuery
 } = api
