@@ -24,36 +24,38 @@ interface TransactionTableProps {
     transactions: ApiModel.Transaction[]
     currency: string
     isLoading?: boolean
+    isFetching?: boolean
     onSelectionChange?: (ids: string[]) => void
     isReadOnly?: boolean
     hideGrouping?: boolean
     hideCheckboxes?: boolean
     onTransactionDeleted?: () => void
+    onTransactionUpdated?: () => void
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
     transactions,
     currency,
     isLoading,
+    isFetching,
     onSelectionChange,
     isReadOnly,
     hideGrouping,
     hideCheckboxes,
-    onTransactionDeleted
+    onTransactionDeleted,
+    onTransactionUpdated
 }) => {
     const { t } = useTranslation()
     const isAuth = useAppSelector((state) => state.auth.isAuth)
 
     const activeGroupId = useAppSelector((state) => state.auth.activeGroupId)
 
-    const { data: categories } = useListCategoriesQuery(
-        activeGroupId ? { group_id: activeGroupId } : undefined,
-        { skip: !isAuth }
-    )
-    const { data: accounts } = useListAccountQuery(
-        activeGroupId ? { group_id: activeGroupId } : undefined,
-        { skip: !isAuth }
-    )
+    const { data: categories } = useListCategoriesQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        skip: !isAuth
+    })
+    const { data: accounts } = useListAccountQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        skip: !isAuth
+    })
 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [editTransaction, setEditTransaction] = useState<ApiModel.Transaction | undefined>()
@@ -171,7 +173,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                         <CategoryPicker
                             currentCategoryId={tx.category_id}
                             onSelect={(categoryId) => {
-                                void updateTransaction({ id: tx.id, category_id: categoryId })
+                                updateTransaction({ id: tx.id, category_id: categoryId })
+                                    .unwrap()
+                                    .then(() => onTransactionUpdated?.())
+                                    .catch(() => {})
                             }}
                             trigger={
                                 category ? (
@@ -247,7 +252,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     </div>
                 ))}
 
-            {!isLoading && transactions.length === 0 && (
+            {!isLoading && !isFetching && transactions.length === 0 && (
                 <div className={styles.emptyState}>{t('transactions.noResults', 'No transactions found')}</div>
             )}
 

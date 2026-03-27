@@ -1,3 +1,5 @@
+import dayjs from 'dayjs'
+
 import { ApiModel } from '@/api'
 
 export const SKELETON_WIDTHS = [80, 60, 70, 55, 65]
@@ -13,7 +15,7 @@ export const DEFAULT_VALUES: TransactionFormData = {
     account_id: '',
     amount: '' as unknown as number,
     type: 'expense',
-    date: new Date().toISOString().split('T')[0],
+    date: dayjs().format('YYYY-MM-DD'),
     category_id: '',
     payee: '',
     notes: ''

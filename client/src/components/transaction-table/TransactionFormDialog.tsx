@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Button, DatePicker, Dialog, DialogProps, Input, Message, Select } from 'simple-react-ui-kit'
@@ -24,6 +24,8 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
 
     const [payeeSearch, setPayeeSearch] = useState('')
     const [debouncedPayeeSearch, setDebouncedPayeeSearch] = useState('')
+    const [autoSelectedCategory, setAutoSelectedCategory] = useState(false)
+    const payeeSelectedRef = useRef(false)
 
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedPayeeSearch(payeeSearch), 300)
@@ -40,7 +42,6 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
         handleSubmit,
         formState: { errors },
         reset,
-        getValues,
         setValue,
         watch,
         setError
@@ -49,12 +50,39 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
     })
 
     const currentType = watch('type')
+    const currentPayee = watch('payee')
+
+    useEffect(() => {
+        if (props?.transactionData?.id) {
+            return
+        }
+
+        if (!currentPayee) {
+            setAutoSelectedCategory(false)
+            return
+        }
+
+        const matched = (payeeOptions ?? []).find((p) => p.name.toLowerCase() === currentPayee.toLowerCase())
+
+        if (matched?.default_category_id) {
+            setValue('category_id', matched.default_category_id, { shouldValidate: true })
+            setAutoSelectedCategory(true)
+        } else {
+            setAutoSelectedCategory(false)
+        }
+    }, [currentPayee, payeeOptions])
 
     const [createTransaction, { isLoading: isCreateLoading, reset: createReset }] = useAddTransactionMutation()
     const [updateTransaction, { isLoading: isUpdateLoading, reset: updateReset }] = useUpdateTransactionMutation()
 
     const onSubmit = async (data: TransactionFormData) => {
         // Manual validation for select fields
+        if (!data.amount || data.amount < 0.01) {
+            setError('amount', {
+                message: t('screens.transactions.form.amount_required', 'Amount is required')
+            })
+            return
+        }
         if (!data.category_id) {
             setError('category_id', { message: t('common.required', 'Required') })
             return
@@ -98,6 +126,8 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
 
     const isExpense = currentType === 'expense'
 
+    const payeeSelectOptions = (payeeOptions ?? []).map((p) => ({ key: p.name, value: p.name }))
+
     return (
         <Dialog
             title={
@@ -109,6 +139,7 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
             onCloseDialog={() => {
                 props?.onCloseDialog?.()
                 reset(DEFAULT_VALUES)
+                setAutoSelectedCategory(false)
             }}
         >
             <form
@@ -135,28 +166,22 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
                     </button>
                 </div>
 
-                <div
-                    className={[styles.amountWrapper, isExpense ? styles.amountExpense : styles.amountIncome].join(' ')}
-                >
+                <div className={styles.amountWrapper}>
                     <CurrencyInput
-                        value={getValues('amount')}
+                        value={watch('amount')}
                         currency={Currency.USD}
                         locale={i18n.language}
                         error={errors?.amount?.message}
                         placeholder={t('transactions.amount', 'Amount')}
-                        onValueChange={(amount) => setValue('amount', amount || ('' as unknown as number))}
-                        {...register('amount', {
-                            required: t('screens.transactions.form.amount_required', 'Amount is required'),
-                            min: {
-                                value: 0.01,
-                                message: t('screens.transactions.form.amount_min', 'Amount must be at least 0.01')
-                            }
-                        })}
+                        min={0.01}
+                        onValueChange={(amount) => {
+                            setValue('amount', amount ?? ('' as unknown as number), { shouldValidate: true })
+                        }}
                     />
                 </div>
 
                 <DatePicker
-                    datePeriod={[getValues('date'), getValues('date')]}
+                    datePeriod={[watch('date'), watch('date')]}
                     locale={i18n.language === 'en' ? 'en' : 'ru'}
                     buttonMode={'secondary'}
                     placeholder={t('select-date', 'Select date')}
@@ -169,23 +194,38 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
                         clearable
                         value={watch('payee') || undefined}
                         placeholder={t('screens.transactions.payee', 'Payee')}
-                        options={(payeeOptions ?? []).map((p) => ({ key: p.name, value: p.name }))}
-                        onSearch={(q) => setPayeeSearch(q ?? '')}
+                        options={payeeSelectOptions}
+                        onSearch={(q) => {
+                            setPayeeSearch(q ?? '')
+                            if (!payeeSelectedRef.current) {
+                                setValue('payee', q ?? '')
+                            }
+                            payeeSelectedRef.current = false
+                        }}
                         onSelect={(items) => {
-                            setValue('payee', items?.[0]?.value ?? '')
+                            payeeSelectedRef.current = true
+                            setValue('payee', items?.[0]?.key ?? '')
                         }}
                     />
                 </div>
 
-                <CategorySelectField
-                    enableAutoSelect={!props?.transactionData?.id}
-                    groupId={activeGroupId ?? undefined}
-                    value={watch('category_id')}
-                    error={errors?.category_id?.message}
-                    onSelect={(option) => {
-                        setValue('category_id', option?.[0]?.key ?? '', { shouldValidate: true })
-                    }}
-                />
+                <div>
+                    <CategorySelectField
+                        enableAutoSelect={!props?.transactionData?.id}
+                        groupId={activeGroupId ?? undefined}
+                        value={watch('category_id')}
+                        error={errors?.category_id?.message}
+                        onSelect={(option) => {
+                            setValue('category_id', option?.[0]?.key ?? '', { shouldValidate: true })
+                            setAutoSelectedCategory(false)
+                        }}
+                    />
+                    {autoSelectedCategory && (
+                        <span className={styles.categoryHint}>
+                            {t('transactions.categoryAutoSelectedHint', 'Auto-selected based on previous transactions')}
+                        </span>
+                    )}
+                </div>
 
                 <AccountSelectField
                     enableAutoSelect={!props?.transactionData?.id}
