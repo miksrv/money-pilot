@@ -12,12 +12,14 @@ export interface AuthState {
     token: string | null
     isAuth: boolean
     activeGroupId: string | null
+    groupSyncVersion: number
 }
 
 const initialState: AuthState = {
     token: getStorageToken(),
     isAuth: false,
-    activeGroupId: LocalStorage.getItem<string>(ACTIVE_GROUP_KEY)
+    activeGroupId: LocalStorage.getItem<string>(ACTIVE_GROUP_KEY),
+    groupSyncVersion: 0
 }
 
 const authSlice = createSlice({
@@ -46,9 +48,12 @@ const authSlice = createSlice({
             } else {
                 LocalStorage.removeItem(ACTIVE_GROUP_KEY)
             }
+        },
+        bumpGroupSync: (state) => {
+            state.groupSyncVersion += 1
         }
     }
 })
 
-export const { login, logout, setActiveGroup } = authSlice.actions
+export const { login, logout, setActiveGroup, bumpGroupSync } = authSlice.actions
 export default authSlice.reducer

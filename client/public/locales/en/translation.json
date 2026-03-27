@@ -81,7 +81,8 @@
         "types": {
             "income": "Income",
             "expense": "Expense"
-        }
+        },
+        "categoryAutoSelectedHint": "Auto-selected based on previous transactions"
     },
     "accounts": {
         "add": "Add Account",

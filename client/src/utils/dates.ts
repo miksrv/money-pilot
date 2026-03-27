@@ -9,7 +9,7 @@ dayjs.extend(duration)
 dayjs.extend(relativeTime)
 dayjs.extend(timezone)
 
-export const TIME_ZONE = 'Asia/Yekaterinburg'
+export const TIME_ZONE = dayjs.tz.guess()
 export const DEFAULT_SHORT_DATE_FORMAT = 'DD.MM.YYYY, HH:mm'
 export const DEFAULT_FULL_DATE_FORMAT = 'D MMMM YYYY, HH:mm'
 
