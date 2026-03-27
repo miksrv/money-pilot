@@ -1,0 +1,139 @@
+.currencyInputWrapper
+    position: relative
+    width: 100%
+
+.inputContainer
+    position: relative
+    display: flex
+    align-items: center
+    width: 100%
+
+.symbolPrefix,
+.symbolSuffix
+    position: absolute
+    color: var(--text-color-secondary)
+    font-size: var(--font-size)
+    font-family: var(--font-family), sans-serif
+    pointer-events: none
+    user-select: none
+    z-index: 1
+
+.symbolPrefix
+    left: 12px
+
+.symbolSuffix
+    right: 12px
+
+.hasPrefix input
+    padding-left: 28px !important
+
+.hasSuffix input
+    padding-right: 28px !important
+
+.label
+    font-size: var(--font-size)
+    color: var(--input-label-color)
+    display: block
+    overflow: hidden
+    padding-bottom: 6px
+    padding-top: 2px
+    text-overflow: ellipsis
+    white-space: nowrap
+
+.error
+    color: var(--color-red)
+    font-size: var(--font-size-small)
+    margin-top: 4px
+
+.formField
+    border-radius: var(--border-radius)
+    line-height: 20px
+    position: relative
+    -webkit-tap-highlight-color: transparent
+    align-items: center
+    box-sizing: border-box
+    display: flex
+    background-color: var(--input-background-color)
+
+.input
+    font-size: var(--font-size)
+    color: var(--text-color-primary)
+    border: var(--input-border)
+    appearance: none
+    background: transparent
+    border-radius: inherit
+    box-shadow: none
+    box-sizing: border-box
+    height: var(--size-medium)
+    margin: 0
+    padding: 0 12px
+    position: relative
+    width: 100%
+    outline: none
+    font-family: var(--font-family), sans-serif
+    transition: border-color 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, background-color 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms
+    text-align: right
+
+    &:focus,
+    &:active
+        outline: none
+        border-color: var(--input-border-focus-color)
+        box-shadow: rgba(var(--input-border-focus-color)) 0 0 0 0.05rem
+
+    &::placeholder
+        color: var(--text-color-secondary)
+        text-align: left
+
+.inputError
+    background-color: var(--color-red-background) !important
+
+    .input
+        border-color: var(--color-red) !important
+
+.disabled
+    opacity: 0.5
+    pointer-events: none
+
+.small
+    .input
+        height: var(--size-small)
+        font-size: var(--font-size-small)
+        padding: 0 8px
+
+    .symbolPrefix
+        left: 8px
+        font-size: var(--font-size-small)
+
+    .symbolSuffix
+        right: 8px
+        font-size: var(--font-size-small)
+
+    .hasPrefix input
+        padding-left: 24px !important
+
+    .hasSuffix input
+        padding-right: 24px !important
+
+.large
+    .input
+        height: var(--size-large)
+        padding: 0 16px
+
+    .symbolPrefix
+        left: 16px
+
+    .symbolSuffix
+        right: 16px
+
+    .hasPrefix input
+        padding-left: 36px !important
+
+    .hasSuffix input
+        padding-right: 36px !important
+
+.required
+    .label::after
+        content: "*"
+        margin-left: 3px
+        color: var(--color-red)
+

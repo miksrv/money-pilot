@@ -1,2 +1,5 @@
+export type { CurrencyInputProps } from './CurrencyInput'
 export { CurrencyInput } from './CurrencyInput'
-export { Currency } from './types'
+export type { CurrencyConfig } from './types'
+export { Currency, CURRENCY_CONFIGS } from './types'
+export { formatNumber, getCurrencyConfig, parseInputValue } from './utils'
