@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { Button, Input, Select } from 'simple-react-ui-kit'
+import { Button, Icon } from 'simple-react-ui-kit'
 
 import {
     ApiModel,
@@ -13,8 +13,10 @@ import {
     useListGroupsQuery,
     useListTransactionsQuery
 } from '@/api'
-import { AppLayout, TransactionFormDialog, TransactionTable } from '@/components'
+import { AppLayout, TransactionTable } from '@/components'
 import { useAppSelector } from '@/store/hooks'
+
+import { FiltersPanel } from './FiltersPanel'
 
 import styles from './styles.module.sass'
 
@@ -54,6 +56,7 @@ export const Transactions: React.FC = () => {
     const [allTransactions, setAllTransactions] = useState<ApiModel.Transaction[]>([])
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [openAddForm, setOpenAddForm] = useState(false)
+    const [filtersExpanded, setFiltersExpanded] = useState(false)
     const listVersionRef = useRef(0)
     const expectedPageRef = useRef(1)
 
@@ -195,15 +198,9 @@ export const Transactions: React.FC = () => {
         }
     }
 
-    const accountOptions = [
-        { key: '', value: t('transactions.filterByAccount', 'Account') },
-        ...(accounts?.map((acc) => ({ key: acc.id ?? '', value: acc.name ?? '' })) ?? [])
-    ]
-
-    const categoryOptions = [
-        { key: '', value: t('transactions.filterByCategory', 'Category') },
-        ...(categories?.map((cat) => ({ key: cat.id ?? '', value: cat.name ?? '' })) ?? [])
-    ]
+    const accountOptions = accounts?.map((acc) => ({ key: acc.id ?? '', value: acc.name ?? '' })) ?? []
+    const categoryOptions =
+        categories?.map((cat) => ({ key: cat.id ?? '', value: cat.name ?? '', emoji: cat?.icon })) ?? []
 
     const addButton = !isViewer ? (
         <Button
@@ -211,8 +208,6 @@ export const Transactions: React.FC = () => {
             mode='secondary'
             icon='PlusCircle'
             onClick={() => {
-                // TransactionTable handles its own form internally;
-                // expose add via a standalone TransactionForm trigger kept in parent
                 setOpenAddForm(true)
             }}
             label={t('transactions.add', 'Add Transaction')}
@@ -232,64 +227,88 @@ export const Transactions: React.FC = () => {
 
     const actions = [bulkDeleteButton, addButton].filter(Boolean) as React.ReactElement[]
 
+    const activeFiltersCount = [type, accountId, categoryId, debouncedSearch].filter(Boolean).length
+
+    const clearAllFilters = () => {
+        setSearch('')
+        setType('')
+        setAccountId('')
+        setCategoryId('')
+    }
+
     return (
         <AppLayout actions={actions.length > 0 ? actions : undefined}>
-            <div className={styles.filterBar}>
-                <Button
-                    mode={type === 'income' ? 'primary' : 'outline'}
-                    label={t('transactions.income', 'Income')}
-                    onClick={() => setType(type === 'income' ? '' : 'income')}
-                />
-                <Button
-                    mode={type === 'expense' ? 'primary' : 'outline'}
-                    label={t('transactions.expense', 'Expense')}
-                    onClick={() => setType(type === 'expense' ? '' : 'expense')}
-                />
-                {accountOptions.length > 1 && (
-                    <Select<string>
-                        options={accountOptions}
-                        value={accountId}
-                        onSelect={(items) => setAccountId(items?.[0]?.key ?? '')}
-                    />
+            <div className={styles.pageLayout}>
+                {/* Mobile filters toggle */}
+                <div className={styles.mobileFiltersHeader}>
+                    <button
+                        className={styles.filtersToggle}
+                        onClick={() => setFiltersExpanded(!filtersExpanded)}
+                    >
+                        <Icon name='BarChart' />
+                        <span>{t('transactions.filters', 'Filters')}</span>
+                        {activeFiltersCount > 0 && <span className={styles.filtersBadge}>{activeFiltersCount}</span>}
+                        <Icon name={filtersExpanded ? 'ArrowUp' : 'ArrowDown'} />
+                    </button>
+                </div>
+
+                {/* Mobile expandable filters */}
+                {filtersExpanded && (
+                    <div className={styles.mobileFiltersPanel}>
+                        <FiltersPanel
+                            type={type}
+                            search={search}
+                            accountId={accountId}
+                            categoryId={categoryId}
+                            accountOptions={accountOptions}
+                            categoryOptions={categoryOptions}
+                            onTypeChange={setType}
+                            onSearchChange={setSearch}
+                            onClearAll={clearAllFilters}
+                            onCategoryIdChange={setCategoryId}
+                            onAccountIdChange={setAccountId}
+                        />
+                    </div>
                 )}
-                {categoryOptions.length > 1 && (
-                    <Select<string>
-                        options={categoryOptions}
-                        value={categoryId}
-                        onSelect={(items) => setCategoryId(items?.[0]?.key ?? '')}
-                    />
-                )}
-                <Input
-                    id='transactions-search'
-                    type='text'
-                    size='medium'
-                    placeholder={t('transactions.search', 'Search transactions...')}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
+
+                <div className={styles.contentWrapper}>
+                    {/* Transaction list */}
+                    <div className={styles.transactionListContainer}>
+                        <TransactionTable
+                            transactions={allTransactions}
+                            currency={profile?.currency ?? 'USD'}
+                            isLoading={isTransactionsLoading}
+                            isFetching={isFetching}
+                            onSelectionChange={setSelectedIds}
+                            isReadOnly={isViewer}
+                            onTransactionChange={resetList}
+                            openAddForm={openAddForm}
+                            onCloseAddForm={() => setOpenAddForm(false)}
+                        />
+                        <div
+                            ref={sentinelRef}
+                            style={{ height: 1 }}
+                        />
+                    </div>
+
+                    {/* Desktop sidebar filters */}
+                    <aside className={styles.filtersSidebar}>
+                        <FiltersPanel
+                            search={search}
+                            onSearchChange={setSearch}
+                            type={type}
+                            onTypeChange={setType}
+                            accountId={accountId}
+                            onAccountIdChange={setAccountId}
+                            categoryId={categoryId}
+                            onCategoryIdChange={setCategoryId}
+                            onClearAll={clearAllFilters}
+                            accountOptions={accountOptions}
+                            categoryOptions={categoryOptions}
+                        />
+                    </aside>
+                </div>
             </div>
-
-            <TransactionTable
-                transactions={allTransactions}
-                currency={profile?.currency ?? 'USD'}
-                isLoading={isTransactionsLoading}
-                isFetching={isFetching}
-                onSelectionChange={setSelectedIds}
-                isReadOnly={isViewer}
-                onTransactionDeleted={resetList}
-                onTransactionUpdated={resetList}
-            />
-
-            <div
-                ref={sentinelRef}
-                style={{ height: 1 }}
-            />
-
-            <TransactionFormDialog
-                open={openAddForm}
-                onCloseDialog={() => setOpenAddForm(false)}
-                onTransactionSaved={resetList}
-            />
         </AppLayout>
     )
 }

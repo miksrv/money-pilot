@@ -4,26 +4,38 @@
     gap: 16px
 
 .summaryCards
-    display: grid
-    grid-template-columns: repeat(4, 1fr)
-    gap: 16px
-
-    @media (max-width: 1024px)
-        grid-template-columns: repeat(2, 1fr)
-
-    @media (max-width: 600px)
-        grid-template-columns: 1fr
-
-.chartsRow
     display: flex
-    grid-template-columns: 1fr 1fr
     gap: 16px
 
     section
-        flex-basis: 50%
-        width: 50%
+        flex: 1
 
-        @media (max-width: 768px)
-            flex-basis: 100%
-            width: 100%
+    @media (max-width: 768px)
+        flex-wrap: wrap
+
+        section
+            flex: 1 1 calc(50% - 8px)
+            min-width: calc(50% - 8px)
+
+.widgets
+    display: flex
+    gap: 16px
+
+    .transactionsContainer,
+    .chartsContainer
+        flex: 1 1 50%
+        min-width: 0
+
+    .chartsContainer
+        display: flex
+        flex-direction: column
+        gap: 16px
+
+    @media (max-width: 768px)
+        flex-direction: column
+
+        .transactionsContainer,
+        .chartsContainer
+            flex: 1 1 100%
+
 

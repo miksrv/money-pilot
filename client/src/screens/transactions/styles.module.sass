@@ -11,12 +11,151 @@
         & > div
             flex: 1
 
-.filterBar
+// Page layout
+.pageLayout
     display: flex
-    flex-wrap: wrap
-    gap: 8px
+    flex-direction: column
+    height: 100%
+
+.contentWrapper
+    display: flex
+    flex: 1
+    min-height: 0
+    gap: 24px
+
+// Transaction list (left side on desktop)
+.transactionListContainer
+    flex: 1
+    min-width: 0
+    overflow-y: auto
+
+// Desktop sidebar filters (right side)
+.filtersSidebar
+    width: 500px
+    flex-shrink: 0
+    background-color: var(--container-background-color)
+    border-radius: var(--border-radius)
+    padding: 16px
+    height: fit-content
+    position: sticky
+    top: 0
+
+.filtersTitle
+    margin: 0 0 16px 0
+    font-size: 16px
+    font-weight: 600
+    color: var(--text-color-primary)
+
+.filterRow
+    display: flex
+    flex-direction: column
+    gap: 6px
     margin-bottom: 16px
-    align-items: flex-end
+
+    &:last-child
+        margin-bottom: 0
+
+.filterLabel
+    font-size: 13px
+    font-weight: 500
+    color: var(--text-color-secondary)
+
+.typeButtons
+    display: flex
+    gap: 8px
+
+    button
+        flex: 1
+
+// Mobile filters header
+.mobileFiltersHeader
+    display: none
+    margin-bottom: 12px
+
+.filtersToggle
+    display: flex
+    align-items: center
+    gap: 8px
+    width: 100%
+    padding: 10px 14px
+    background-color: var(--container-background-color)
+    border: 1px solid var(--input-border-color)
+    border-radius: var(--border-radius)
+    cursor: pointer
+    font-size: 14px
+    font-weight: 500
+    color: var(--text-color-primary)
+    transition: background-color 0.15s ease
+    outline: none
+
+    &:hover
+        background-color: var(--modal-background)
+
+    svg
+        width: 18px
+        height: 18px
+        fill: var(--icon-color-secondary)
+
+    span:first-of-type
+        flex: 1
+        text-align: left
+
+.filtersBadge
+    background-color: var(--color-main)
+    color: white
+    font-size: 11px
+    font-weight: 600
+    padding: 1px 6px
+    border-radius: 50%
+    width: 22px
+    height: 22px
+    line-height: 22px
+    text-align: center
+
+.mobileFiltersPanel
+    background-color: var(--container-background-color)
+    border: 1px solid var(--input-border-color)
+    border-radius: var(--border-radius)
+    padding: 16px
+    margin-bottom: 12px
+
+// Mobile responsive
+@media (max-width: 900px)
+    .pageLayout
+        padding-top: 56px
+
+    .contentWrapper
+        flex-direction: column
+
+    .filtersSidebar
+        display: none
+
+    .mobileFiltersHeader
+        display: block
+        position: fixed
+        top: 50px
+        left: 0
+        right: 0
+        z-index: 100
+        padding: 8px
+        background-color: var(--body-background)
+        margin-bottom: 0
+
+    .mobileFiltersPanel
+        position: fixed
+        top: 96px
+        left: 0
+        right: 0
+        z-index: 100
+        margin: 0 8px
+        max-height: calc(100vh - 56px - 60px)
+        overflow-y: auto
+        border: 1px solid var(--input-border-color)
+        border-radius: var(--border-radius)
+        border-top: none
+
+    .transactionListContainer
+        overflow-y: visible
 
 .pagination
     display: flex
