@@ -436,6 +436,57 @@ class GroupController extends ResourceController
     }
 
     // ---------------------------------------------------------------------------
+    // GET /groups/{id}/last-modified — latest updated_at across all group data
+    // ---------------------------------------------------------------------------
+    public function lastModified($id = null): ResponseInterface
+    {
+        if (!$this->authLibrary->isAuth) {
+            return $this->failUnauthorized('Invalid token');
+        }
+
+        $currentUserId = $this->authLibrary->user->id;
+
+        if (!$this->getMembership($id, $currentUserId)) {
+            return $this->failForbidden('You are not a member of this group');
+        }
+
+        $db    = db_connect();
+        $group = $db->table('groups')->where('id', $id)->get()->getRowObject();
+
+        if (!$group) {
+            return $this->failNotFound('Group not found');
+        }
+
+        $ownerId = $group->owner_id;
+
+        $txMax = $db->table('transactions')
+            ->selectMax('updated_at', 'max_ts')
+            ->groupStart()
+                ->where('group_id', $id)
+                ->orGroupStart()
+                    ->where('user_id', $ownerId)
+                    ->where('group_id IS NULL')
+                ->groupEnd()
+            ->groupEnd()
+            ->get()->getRow()->max_ts ?? null;
+
+        $catMax = $db->table('categories')
+            ->selectMax('updated_at', 'max_ts')
+            ->where('user_id', $ownerId)
+            ->get()->getRow()->max_ts ?? null;
+
+        $accMax = $db->table('accounts')
+            ->selectMax('updated_at', 'max_ts')
+            ->where('user_id', $ownerId)
+            ->get()->getRow()->max_ts ?? null;
+
+        $timestamps   = array_filter([$txMax, $catMax, $accMax]);
+        $lastModified = empty($timestamps) ? date('Y-m-d H:i:s') : max($timestamps);
+
+        return $this->respond(['last_modified' => $lastModified]);
+    }
+
+    // ---------------------------------------------------------------------------
     // GET /groups/pending-invitations — list pending invitations for current user
     // ---------------------------------------------------------------------------
     public function pendingInvitations(): ResponseInterface

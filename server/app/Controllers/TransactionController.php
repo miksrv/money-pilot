@@ -67,10 +67,23 @@ class TransactionController extends ApplicationBaseController
                 ->groupEnd();
             };
         } else {
-            $ownerId   = null;
-            $baseWhere = function ($builder) use ($currentUserId) {
-                $builder->where('t.user_id', $currentUserId)
-                        ->where('t.group_id IS NULL');
+            $ownerId = null;
+
+            // Also include transactions tagged to any group the current user owns (members' contributions)
+            $db            = db_connect();
+            $ownedGroups   = $db->table('groups')->select('id')->where('owner_id', $currentUserId)->get()->getResultArray();
+            $ownedGroupIds = array_column($ownedGroups, 'id');
+
+            $baseWhere = function ($builder) use ($currentUserId, $ownedGroupIds) {
+                $builder->groupStart()
+                    ->where('t.user_id', $currentUserId)
+                    ->where('t.group_id IS NULL');
+
+                if (!empty($ownedGroupIds)) {
+                    $builder->orWhereIn('t.group_id', $ownedGroupIds);
+                }
+
+                $builder->groupEnd();
             };
         }
 
@@ -148,8 +161,8 @@ class TransactionController extends ApplicationBaseController
         $offset = ($page - 1) * $limit;
 
         $rows = $builder
+            ->orderBy('t.created_at', 'DESC')
             ->orderBy('t.date', 'DESC')
-            ->orderBy('t.updated_at', 'DESC')
             ->limit($limit, $offset)
             ->get()
             ->getResultObject();
@@ -164,6 +177,7 @@ class TransactionController extends ApplicationBaseController
                 'type'        => $row->type,
                 'notes'       => $row->notes,
                 'date'        => $row->date,
+                'created_at'  => $row->created_at,
             ];
         }, $rows);
 
@@ -266,6 +280,11 @@ class TransactionController extends ApplicationBaseController
             ]);
 
             $accountModel->updateById($input['account_id'], $accountOwnerUserId, ['balance' => $newBalance]);
+
+            // Smart categorization: persist the chosen category as the payee's default
+            if ($payeeId && !empty($input['category_id'])) {
+                $payeeModel->update($payeeId, ['default_category_id' => $input['category_id']]);
+            }
 
             return $this->respondCreated();
         } catch (\Exception $e) {
@@ -383,6 +402,15 @@ class TransactionController extends ApplicationBaseController
                 return $this->failValidationErrors($this->model->errors());
             }
 
+            // Smart categorization: persist the chosen category as the payee's default
+            if (isset($updateData['category_id'])) {
+                $effectivePayeeId = $updateData['payee_id'] ?? $transaction->payee_id ?? null;
+                if ($effectivePayeeId) {
+                    $payeeModel = new PayeeModel();
+                    $payeeModel->update($effectivePayeeId, ['default_category_id' => $updateData['category_id']]);
+                }
+            }
+
             return $this->respondUpdated();
         } catch (\Exception $e) {
             log_message('error', __METHOD__ . ': ' . $e->getMessage());
@@ -440,16 +468,12 @@ class TransactionController extends ApplicationBaseController
             $accountModel       = new AccountModel();
             $accountOwnerUserId = $this->authLibrary->user->id;
 
-            // Try current user's account first; fall back to group owner if the transaction is group-tagged
+            // Try current user's account first; fall back to the transaction owner's account
             $account = $accountModel->getById($transaction->account_id, $this->authLibrary->user->id);
-            if (empty($account) && !empty($transaction->group_id)) {
-                $db    = db_connect();
-                $group = $db->table('groups')->where('id', $transaction->group_id)->get()->getRowObject();
-                if ($group) {
-                    $account = $accountModel->getById($transaction->account_id, $group->owner_id);
-                    if (!empty($account)) {
-                        $accountOwnerUserId = $group->owner_id;
-                    }
+            if (empty($account) && $transaction->user_id !== $this->authLibrary->user->id) {
+                $account = $accountModel->getById($transaction->account_id, $transaction->user_id);
+                if (!empty($account)) {
+                    $accountOwnerUserId = $transaction->user_id;
                 }
             }
 
@@ -507,13 +531,32 @@ class TransactionController extends ApplicationBaseController
         $db          = db_connect();
         $transaction = $db->table('transactions')->where('id', $id)->get()->getRowObject();
 
-        if (!$transaction || empty($transaction->group_id)) {
+        if (!$transaction) {
             return null;
         }
 
         $groupMemberModel = new GroupMemberModel();
-        $membership       = $groupMemberModel
-            ->where('group_id', $transaction->group_id)
+
+        // Case A: transaction is tagged with a group_id — check direct membership
+        if (!empty($transaction->group_id)) {
+            $membership = $groupMemberModel
+                ->where('group_id', $transaction->group_id)
+                ->where('user_id', $currentUserId)
+                ->whereIn('role', ['owner', 'editor'])
+                ->first();
+
+            return $membership ? $transaction : null;
+        }
+
+        // Case B: transaction has no group_id but belongs to a group owner —
+        // allow editors of that owner's group to mutate it
+        $ownedGroup = $db->table('groups')->where('owner_id', $transaction->user_id)->get()->getRowObject();
+        if (!$ownedGroup) {
+            return null;
+        }
+
+        $membership = $groupMemberModel
+            ->where('group_id', $ownedGroup->id)
             ->where('user_id', $currentUserId)
             ->whereIn('role', ['owner', 'editor'])
             ->first();

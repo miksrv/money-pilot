@@ -139,7 +139,6 @@ class CategoryController extends ApplicationBaseController
         try {
             $this->model->insert([
                 'user_id'   => $this->authLibrary->user->id,
-                'group_id'  => !empty($input['group_id']) ? $input['group_id'] : null,
                 'name'      => $input['name'],
                 'type'      => $input['type'] ?? null,
                 'is_parent' => $isParent ? 1 : 0,

@@ -20,7 +20,7 @@ class PayeeController extends ApplicationBaseController
     }
 
     /**
-     * GET /payees — List all payees with usage_count and last_used, sorted by usage DESC.
+     * GET /payees — List all payees with usage_count and last_used, sorted by name ASC.
      * Supports ?search= and ?limit= query params.
      */
     public function index(): ResponseInterface
@@ -36,10 +36,10 @@ class PayeeController extends ApplicationBaseController
         $db = db_connect();
 
         $builder = $db->table('payees p')
-            ->select('p.id, p.name, COUNT(t.id) AS usage_count, MAX(t.date) AS last_used')
+            ->select('p.id, p.name, p.default_category_id, COUNT(t.id) AS usage_count, MAX(t.date) AS last_used')
             ->join('transactions t', 't.payee_id = p.id', 'left')
             ->groupBy('p.id')
-            ->orderBy('usage_count', 'DESC')
+            ->orderBy('p.name', 'ASC')
             ->limit($limit);
 
         if ($search) {
@@ -50,10 +50,11 @@ class PayeeController extends ApplicationBaseController
 
         $payees = array_map(function (array $row) {
             return [
-                'id'          => $row['id'],
-                'name'        => $row['name'],
-                'usage_count' => (int)$row['usage_count'],
-                'last_used'   => $row['last_used'],
+                'id'                  => $row['id'],
+                'name'                => $row['name'],
+                'default_category_id' => $row['default_category_id'],
+                'usage_count'         => (int)$row['usage_count'],
+                'last_used'           => $row['last_used'],
             ];
         }, $rows);
 
