@@ -38,6 +38,7 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->put('(:segment)', 'AccountController::update/$1');
         $routes->delete('(:segment)', 'AccountController::delete/$1');
         $routes->options('', static function () {});
+        $routes->options('(:segment)', static function () {});
     });
 
     // TransactionController Routes

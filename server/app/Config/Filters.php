@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Filters\AuthFilter;
 use App\Filters\CorsFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
 use CodeIgniter\Filters\Cors;
@@ -36,6 +37,7 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'auth'          => AuthFilter::class,
     ];
 
     /**
@@ -77,7 +79,8 @@ class Filters extends BaseFilters
             // 'honeypot',
             // 'csrf',
             'invalidchars',
-            'cors'
+            'cors',
+            'auth' => ['except' => ['auth/*', 'register', 'register/*']],
         ],
         'after' => [
             // 'honeypot',

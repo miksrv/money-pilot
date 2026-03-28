@@ -169,15 +169,16 @@ class TransactionController extends ApplicationBaseController
 
         $data = array_map(function ($row) {
             return [
-                'id'          => $row->id,
-                'account_id'  => $row->account_id,
-                'category_id' => $row->category_id,
-                'payee'       => $row->payee,
-                'amount'      => (float)$row->amount,
-                'type'        => $row->type,
-                'notes'       => $row->notes,
-                'date'        => $row->date,
-                'created_at'  => $row->created_at,
+                'id'             => $row->id,
+                'account_id'     => $row->account_id,
+                'to_account_id'  => $row->to_account_id ?? null,
+                'category_id'    => $row->category_id,
+                'payee'          => $row->payee,
+                'amount'         => (float)$row->amount,
+                'type'           => $row->type,
+                'notes'          => $row->notes,
+                'date'           => $row->date,
+                'created_at'     => $row->created_at,
             ];
         }, $rows);
 
@@ -212,12 +213,6 @@ class TransactionController extends ApplicationBaseController
             $accountModel = new AccountModel();
             $payeeModel   = new PayeeModel();
 
-            // Increment usage_count for the selected category
-            if (!empty($input['category_id'])) {
-                $categoryModel = new CategoryModel();
-                $categoryModel->incrementUsageCount($input['category_id']);
-            }
-
             $inputGroupId       = !empty($input['group_id']) ? $input['group_id'] : null;
             $accountOwnerUserId = $this->authLibrary->user->id;
 
@@ -248,17 +243,68 @@ class TransactionController extends ApplicationBaseController
                 return $this->failNotFound(['error' => '1002', 'messages' => ['account' => 'Account not found']]);
             }
 
-            $amount     = (float)$input['amount'];
+            // Combine input date with current UTC time
+            $dateTime = new \DateTime($input['date'], new \DateTimeZone('UTC'));
+            $dateTime->setTime((int)gmdate('H'), (int)gmdate('i'), (int)gmdate('s'));
+            $formattedDateTime = $dateTime->format('Y-m-d H:i:s');
+
+            $amount = (float)$input['amount'];
+
+            // --- Transfer flow ---
+            if ($input['type'] === 'transfer') {
+                if (empty($input['to_account_id'])) {
+                    return $this->failValidationErrors(['to_account_id' => 'to_account_id is required for transfers']);
+                }
+
+                if ($input['to_account_id'] === $input['account_id']) {
+                    return $this->failValidationErrors(['to_account_id' => 'Source and destination accounts must be different']);
+                }
+
+                if ($amount <= 0) {
+                    return $this->failValidationErrors(['amount' => 'Transfer amount must be greater than zero']);
+                }
+
+                $destAccount = $accountModel->getById($input['to_account_id'], $accountOwnerUserId);
+                if (!$destAccount) {
+                    return $this->failNotFound(['error' => '1005', 'messages' => ['to_account_id' => 'Destination account not found']]);
+                }
+
+                $this->model->insert([
+                    'user_id'        => $this->authLibrary->user->id,
+                    'group_id'       => $inputGroupId,
+                    'account_id'     => $input['account_id'],
+                    'to_account_id'  => $input['to_account_id'],
+                    'category_id'    => null,
+                    'payee_id'       => null,
+                    'amount'         => $amount,
+                    'type'           => 'transfer',
+                    'date'           => $formattedDateTime,
+                    'notes'          => $input['notes'] ?? null,
+                ]);
+
+                $accountModel->updateById($input['account_id'], $accountOwnerUserId, [
+                    'balance' => $account[0]->balance - $amount,
+                ]);
+
+                $accountModel->updateById($input['to_account_id'], $accountOwnerUserId, [
+                    'balance' => $destAccount[0]->balance + $amount,
+                ]);
+
+                return $this->respondCreated();
+            }
+
+            // --- Income / Expense flow ---
             $newBalance = $input['type'] === 'income' ? $account[0]->balance + $amount : $account[0]->balance - $amount;
 
             if ($newBalance < 0 && !$accountModel->where('id', $input['account_id'])->where('type', 'credit')->first()) {
                 return $this->fail(['error' => '1004', 'messages' => ['balance' => 'Insufficient funds for non-credit account']]);
             }
 
-            // Combine input date with current UTC time
-            $dateTime = new \DateTime($input['date'], new \DateTimeZone('UTC'));
-            $dateTime->setTime((int)gmdate('H'), (int)gmdate('i'), (int)gmdate('s'));
-            $formattedDateTime = $dateTime->format('Y-m-d H:i:s');
+            // Increment usage_count for the selected category
+            if (!empty($input['category_id'])) {
+                $categoryModel = new CategoryModel();
+                $categoryModel->incrementUsageCount($input['category_id']);
+            }
 
             if ($input['payee']) {
                 // Ensure payee exists or create a new one
@@ -273,7 +319,7 @@ class TransactionController extends ApplicationBaseController
                 'account_id'  => $input['account_id'],
                 'category_id' => $input['category_id'] ?? null,
                 'payee_id'    => $payeeId,
-                'amount'      => $input['amount'],
+                'amount'      => $amount,
                 'type'        => $input['type'],
                 'date'        => $formattedDateTime,
                 'notes'       => $input['notes'] ?? null,
@@ -366,6 +412,10 @@ class TransactionController extends ApplicationBaseController
         $transaction = $this->resolveAccessibleTransaction($id);
         if (!$transaction) {
             return $this->failNotFound();
+        }
+
+        if ($transaction->type === 'transfer') {
+            return $this->fail('Transfers cannot be edited. Delete and recreate if needed.', 422);
         }
 
         try {
@@ -477,12 +527,34 @@ class TransactionController extends ApplicationBaseController
                 }
             }
 
-            if (!empty($account)) {
+            $amount = (float)$transaction->amount;
+
+            if ($transaction->type === 'transfer' && !empty($transaction->to_account_id)) {
+                // Reverse transfer: return funds to source, remove from destination
+                if (!empty($account)) {
+                    $accountModel->updateById(
+                        $transaction->account_id,
+                        $accountOwnerUserId,
+                        ['balance' => (float)$account[0]->balance + $amount]
+                    );
+                }
+
+                $destAccount = $accountModel->getById($transaction->to_account_id, $accountOwnerUserId);
+                if (!empty($destAccount)) {
+                    $destNewBalance = (float)$destAccount[0]->balance - $amount;
+
+                    $accountModel->updateById(
+                        $transaction->to_account_id,
+                        $accountOwnerUserId,
+                        ['balance' => $destNewBalance]
+                    );
+                }
+            } elseif (!empty($account)) {
                 $currentBalance = (float)$account[0]->balance;
                 // Reverse: if expense was deducted, add it back; if income was added, subtract it
                 $newBalance = $transaction->type === 'expense'
-                    ? $currentBalance + (float)$transaction->amount
-                    : $currentBalance - (float)$transaction->amount;
+                    ? $currentBalance + $amount
+                    : $currentBalance - $amount;
                 $accountModel->updateById($transaction->account_id, $accountOwnerUserId, ['balance' => $newBalance]);
             }
 

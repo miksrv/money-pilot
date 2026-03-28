@@ -71,6 +71,8 @@ class AccountController extends ApplicationBaseController
                 'balance'           => (float)$account->balance,
                 'institution'       => $account->institution,
                 'transaction_count' => $count,
+                'payment_due_day'   => $account->payment_due_day,
+                'payment_reminder'  => (bool)$account->payment_reminder,
             ];
         }, $accounts);
 
@@ -95,11 +97,13 @@ class AccountController extends ApplicationBaseController
 
         try {
             $this->model->insert([
-                'name'        => $input['name'],
-                'type'        => $input['type'],
-                'user_id'     => $this->authLibrary->user->id,
-                'institution' => $input['institution'] ?? null,
-                'balance'     => $input['balance'] ?? 0,
+                'name'             => $input['name'],
+                'type'             => $input['type'],
+                'user_id'          => $this->authLibrary->user->id,
+                'institution'      => $input['institution'] ?? null,
+                'balance'          => $input['balance'] ?? 0,
+                'payment_due_day'  => $input['payment_due_day'] ?? null,
+                'payment_reminder' => isset($input['payment_reminder']) ? (int)$input['payment_reminder'] : 0,
             ]);
 
             return $this->respondCreated();
@@ -148,6 +152,10 @@ class AccountController extends ApplicationBaseController
 
         try {
             unset($input['id'], $input['user_id']);
+
+            if (isset($input['payment_reminder'])) {
+                $input['payment_reminder'] = (int)$input['payment_reminder'];
+            }
 
             if (!$this->model->updateById($id, $this->authLibrary->user->id, $input)) {
                 return $this->failValidationErrors($this->model->errors());
