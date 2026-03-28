@@ -154,3 +154,146 @@ export const formatMoneyCompact = (amount?: number | string | null, currency?: s
         return formatMoney(amount, currency)
     }
 }
+
+/**
+ * Result type for formatMoneyParts function
+ */
+export interface MoneyParts {
+    /** The currency symbol (e.g., "$", "€", "₽") */
+    symbol: string
+    /** The formatted number without currency symbol */
+    value: string
+    /** Whether the symbol appears before the number */
+    symbolFirst: boolean
+    /** Full formatted string (for fallback) */
+    full: string
+}
+
+/**
+ * Format money and return separate parts for custom styling.
+ * Useful when you need to style the currency symbol differently from the amount.
+ *
+ * @example
+ * const parts = formatMoneyParts(1234.56, 'USD')
+ * // { symbol: '$', value: '1,234.56', symbolFirst: true, full: '$1,234.56' }
+ *
+ * const parts = formatMoneyParts(1234.56, 'EUR')
+ * // { symbol: '€', value: '1.234,56', symbolFirst: false, full: '1.234,56 €' }
+ */
+export const formatMoneyParts = (amount?: number | string | null, currency?: string): MoneyParts => {
+    const numericAmount = Number(amount) || 0
+    const currencyCode = (currency || Currency.USD) as Currency
+    const locale = CURRENCY_LOCALE_MAP[currencyCode] || i18n.language || 'en-US'
+    const isZeroDecimal = ZERO_DECIMAL_CURRENCIES.includes(currencyCode)
+    const fractionDigits = isZeroDecimal ? 0 : 2
+
+    try {
+        const formatter = new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency: currencyCode,
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits
+        })
+
+        const parts = formatter.formatToParts(numericAmount)
+        const full = formatter.format(numericAmount)
+
+        let symbol = ''
+        let value = ''
+        let symbolFirst = true
+        let foundValue = false
+
+        for (const part of parts) {
+            if (part.type === 'currency') {
+                symbol = part.value
+                if (foundValue) {
+                    symbolFirst = false
+                }
+            } else if (part.type !== 'literal' || foundValue) {
+                // Include everything except leading/trailing literals around the symbol
+                if (
+                    part.type === 'integer' ||
+                    part.type === 'decimal' ||
+                    part.type === 'fraction' ||
+                    part.type === 'group'
+                ) {
+                    foundValue = true
+                    value += part.value
+                } else if (foundValue && part.type === 'literal') {
+                    // Don't include trailing space before symbol
+                    if (parts.indexOf(part) < parts.length - 1 || parts[parts.length - 1].type !== 'currency') {
+                        value += part.value
+                    }
+                }
+            }
+        }
+
+        // Clean up any trailing/leading whitespace from value
+        value = value.trim()
+
+        return { symbol, value, symbolFirst, full }
+    } catch {
+        // Fallback
+        const formatted = numericAmount.toFixed(fractionDigits)
+        return {
+            symbol: currencyCode,
+            value: formatted,
+            symbolFirst: true,
+            full: `${currencyCode} ${formatted}`
+        }
+    }
+}
+
+/**
+ * Format money with compact notation and return separate parts.
+ *
+ * @example
+ * const parts = formatMoneyPartsCompact(1500000, 'USD')
+ * // { symbol: '$', value: '1.5M', symbolFirst: true, full: '$1.5M' }
+ */
+export const formatMoneyPartsCompact = (amount?: number | string | null, currency?: string): MoneyParts => {
+    const numericAmount = Number(amount) || 0
+    const currencyCode = (currency || Currency.USD) as Currency
+    const locale = CURRENCY_LOCALE_MAP[currencyCode] || i18n.language || 'en-US'
+
+    try {
+        const formatter = new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency: currencyCode,
+            notation: 'compact',
+            maximumFractionDigits: 1
+        })
+
+        const parts = formatter.formatToParts(numericAmount)
+        const full = formatter.format(numericAmount)
+
+        let symbol = ''
+        let value = ''
+        let symbolFirst = true
+        let foundValue = false
+
+        for (const part of parts) {
+            if (part.type === 'currency') {
+                symbol = part.value
+                if (foundValue) {
+                    symbolFirst = false
+                }
+            } else if (part.type !== 'literal' || foundValue) {
+                if (['integer', 'decimal', 'fraction', 'group', 'compact'].includes(part.type)) {
+                    foundValue = true
+                    value += part.value
+                } else if (foundValue && part.type === 'literal') {
+                    if (parts.indexOf(part) < parts.length - 1 || parts[parts.length - 1].type !== 'currency') {
+                        value += part.value
+                    }
+                }
+            }
+        }
+
+        value = value.trim()
+
+        return { symbol, value, symbolFirst, full }
+    } catch {
+        return formatMoneyParts(amount, currency)
+    }
+}

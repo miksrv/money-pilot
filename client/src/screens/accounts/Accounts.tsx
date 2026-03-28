@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Badge, Button, Container, Dialog, Input, Message, Popout, Select } from 'simple-react-ui-kit'
+import { Badge, Button, Checkbox, Container, Dialog, Input, Message, Popout, Select } from 'simple-react-ui-kit'
 
 import {
     ApiModel,
@@ -19,14 +19,24 @@ import { formatMoney } from '@/utils/money'
 
 import styles from './styles.module.sass'
 
-type AccountFormData = Pick<ApiModel.Account, 'name' | 'type' | 'balance' | 'institution'>
+type AccountFormData = Pick<ApiModel.Account, 'name' | 'type' | 'balance' | 'institution'> & {
+    payment_due_day?: number | null
+    payment_reminder?: boolean
+}
 
 const DEFAULT_FORM: AccountFormData = {
     name: '',
     type: 'checking',
     balance: 0,
-    institution: ''
+    institution: '',
+    payment_due_day: null,
+    payment_reminder: false
 }
+
+const DUE_DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => ({
+    key: String(i + 1),
+    value: String(i + 1)
+}))
 
 export const Accounts: React.FC = () => {
     const { t, i18n } = useTranslation()
@@ -79,6 +89,8 @@ export const Accounts: React.FC = () => {
 
     const formBalance = watch('balance')
     const formType = watch('type')
+    const formPaymentDueDay = watch('payment_due_day')
+    const formPaymentReminder = watch('payment_reminder')
 
     useEffect(() => {
         if (editAccount) {
@@ -86,7 +98,9 @@ export const Accounts: React.FC = () => {
                 name: editAccount.name ?? '',
                 type: editAccount.type ?? 'checking',
                 balance: editAccount.balance ?? 0,
-                institution: editAccount.institution ?? ''
+                institution: editAccount.institution ?? '',
+                payment_due_day: editAccount.payment_due_day ?? null,
+                payment_reminder: editAccount.payment_reminder ?? false
             })
         } else {
             reset(DEFAULT_FORM)
@@ -240,10 +254,39 @@ export const Accounts: React.FC = () => {
                         label={t('accounts.type.checking', 'Type')}
                         options={typeOptions}
                         value={formType}
-                        onSelect={(items) =>
-                            setValue('type', (items?.[0]?.key ?? 'checking') as ApiModel.Account['type'])
-                        }
+                        onSelect={(items) => {
+                            const newType = (items?.[0]?.key ?? 'checking') as ApiModel.Account['type']
+                            setValue('type', newType)
+                            if (newType !== 'credit') {
+                                setValue('payment_due_day', null)
+                                setValue('payment_reminder', false)
+                            }
+                        }}
                     />
+
+                    {formType === 'credit' && (
+                        <>
+                            <Select<string>
+                                label={t('accounts.paymentDueDay', 'Payment due day')}
+                                clearable
+                                options={DUE_DAY_OPTIONS}
+                                value={formPaymentDueDay != null ? String(formPaymentDueDay) : undefined}
+                                onSelect={(items) => {
+                                    const val = items?.[0]?.key
+                                    setValue('payment_due_day', val ? Number(val) : null)
+                                    if (!val) {
+                                        setValue('payment_reminder', false)
+                                    }
+                                }}
+                            />
+                            <Checkbox
+                                label={t('accounts.paymentReminder', 'Remind me 5 days before due date')}
+                                checked={formPaymentReminder ?? false}
+                                disabled={!formPaymentDueDay}
+                                onChange={(e) => setValue('payment_reminder', e.target.checked)}
+                            />
+                        </>
+                    )}
 
                     <Input
                         id='institution'

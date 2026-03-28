@@ -69,6 +69,7 @@ export const Dashboard: React.FC = () => {
                             (summary?.current_month.expenses ?? 0)
                         }
                         loading={summaryLoading}
+                        currency={profile?.currency ?? 'USD'}
                     />
 
                     <SummaryCard
@@ -78,6 +79,7 @@ export const Dashboard: React.FC = () => {
                         previous={summary?.previous_month.expenses ?? 0}
                         loading={summaryLoading}
                         invertPositive
+                        currency={profile?.currency ?? 'USD'}
                     />
 
                     <SummaryCard
@@ -86,6 +88,7 @@ export const Dashboard: React.FC = () => {
                         current={summary?.current_month.income ?? 0}
                         previous={summary?.previous_month.income ?? 0}
                         loading={summaryLoading}
+                        currency={profile?.currency ?? 'USD'}
                     />
 
                     <SummaryCard
@@ -94,6 +97,7 @@ export const Dashboard: React.FC = () => {
                         current={summary?.current_month.savings_rate ?? 0}
                         previous={summary?.previous_month.savings_rate ?? 0}
                         loading={summaryLoading}
+                        hideDiff
                     />
                 </div>
 

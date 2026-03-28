@@ -52,6 +52,32 @@ export const getSecondsUntilUTCDate = (date?: string | Date): number | undefined
 dayjs.extend(duration)
 
 /**
+ * Compute how many calendar days until the next occurrence of the given day-of-month.
+ * Handles month-end edge cases: if dueDay exceeds the last day of the target month, uses the last day.
+ * @param dueDay - Day of month (1–31)
+ */
+export const daysUntilNextDueDate = (dueDay: number): number => {
+    const today = dayjs().startOf('day')
+    const currentDay = today.date()
+    const lastDayOfMonth = today.daysInMonth()
+
+    // Clamp dueDay to the last day of the current month
+    const effectiveDayThisMonth = Math.min(dueDay, lastDayOfMonth)
+
+    if (effectiveDayThisMonth >= currentDay) {
+        return effectiveDayThisMonth - currentDay
+    }
+
+    // Due day has passed this month — look at next month
+    const nextMonth = today.add(1, 'month')
+    const lastDayOfNextMonth = nextMonth.daysInMonth()
+    const effectiveDayNextMonth = Math.min(dueDay, lastDayOfNextMonth)
+    const nextDueDate = nextMonth.date(effectiveDayNextMonth)
+
+    return nextDueDate.diff(today, 'day')
+}
+
+/**
  * Get date time format based on the difference between start and end dates
  * @param startDate
  * @param endDate
