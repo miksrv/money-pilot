@@ -38,8 +38,12 @@ export const api = createApi({
         prepareHeaders: (headers, { getState }) => {
             const token = (getState() as RootState).auth.token
 
-            if (token) {
-                headers.set('Authorization', String(token))
+            if (token && typeof token === 'string' && token.trim()) {
+                try {
+                    headers.set('Authorization', `Bearer ${token}`)
+                } catch {
+                    // Token contains invalid characters, skip setting header
+                }
             }
 
             return headers

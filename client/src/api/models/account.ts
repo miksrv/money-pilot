@@ -7,4 +7,6 @@ export interface Account {
     institution?: string | null
     last_synced: string | null
     transaction_count?: number
+    payment_due_day?: number | null
+    payment_reminder?: boolean
 }
