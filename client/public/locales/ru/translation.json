@@ -80,7 +80,8 @@
         "deleteTransaction": "Удалить транзакцию",
         "types": {
             "income": "Доход",
-            "expense": "Расход"
+            "expense": "Расход",
+            "transfer": "Перевод"
         },
         "categoryAutoSelectedHint": "Категория подобрана на основе предыдущих транзакций"
     },
@@ -99,12 +100,32 @@
         "balance": "Баланс",
         "noAccounts": "Счетов пока нет",
         "addFirst": "Добавьте первый счёт, чтобы начать.",
+        "paymentDueDay": "День оплаты",
+        "paymentReminder": "Напомнить за 5 дней до срока",
+        "paymentReminderHint": "Доступно только при указанном дне оплаты",
         "type": {
             "checking": "Текущий",
             "savings": "Сберегательный",
             "credit": "Кредитный",
             "investment": "Инвестиционный"
         }
+    },
+    "creditReminder": {
+        "title": "Срок оплаты кредитной карты",
+        "dueInDays": "Через {{count}} день",
+        "dueInDays_other": "Через {{count}} дней",
+        "dueToday": "Сегодня последний день",
+        "balance": "Баланс",
+        "payNow": "Оплатить",
+        "dismiss": "Скрыть"
+    },
+    "transfers": {
+        "paymentDialog": "Оплата кредитной карты",
+        "fromAccount": "Со счёта",
+        "amount": "Сумма",
+        "date": "Дата",
+        "submit": "Перевести",
+        "noEditNote": "Переводы нельзя редактировать. Удалите и создайте заново."
     },
     "categories": {
         "add": "Добавить категорию",

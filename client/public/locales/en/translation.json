@@ -80,7 +80,8 @@
         "deleteTransaction": "Delete Transaction",
         "types": {
             "income": "Income",
-            "expense": "Expense"
+            "expense": "Expense",
+            "transfer": "Transfer"
         },
         "categoryAutoSelectedHint": "Auto-selected based on previous transactions"
     },
@@ -99,12 +100,32 @@
         "balance": "Balance",
         "noAccounts": "No accounts yet",
         "addFirst": "Add your first account to get started.",
+        "paymentDueDay": "Payment due day",
+        "paymentReminder": "Remind me 5 days before due date",
+        "paymentReminderHint": "Enabled only when due day is set",
         "type": {
             "checking": "Checking",
             "savings": "Savings",
             "credit": "Credit",
             "investment": "Investment"
         }
+    },
+    "creditReminder": {
+        "title": "Credit card payment due",
+        "dueInDays": "Due in {{count}} day",
+        "dueInDays_other": "Due in {{count}} days",
+        "dueToday": "Due today",
+        "balance": "Balance",
+        "payNow": "Pay now",
+        "dismiss": "Dismiss"
+    },
+    "transfers": {
+        "paymentDialog": "Pay credit card",
+        "fromAccount": "From account",
+        "amount": "Amount",
+        "date": "Date",
+        "submit": "Transfer",
+        "noEditNote": "Transfers cannot be edited. Delete and recreate if needed."
     },
     "categories": {
         "add": "Add Category",
