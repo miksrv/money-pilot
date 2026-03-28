@@ -26,7 +26,6 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
 
     const [payeeSearch, setPayeeSearch] = useState('')
     const [debouncedPayeeSearch, setDebouncedPayeeSearch] = useState('')
-    const [autoSelectedCategory, setAutoSelectedCategory] = useState(false)
     const payeeSelectedRef = useRef(false)
 
     useEffect(() => {
@@ -55,12 +54,7 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
     const currentPayee = watch('payee')
 
     useEffect(() => {
-        if (props?.transactionData?.id) {
-            return
-        }
-
-        if (!currentPayee) {
-            setAutoSelectedCategory(false)
+        if (props?.transactionData?.id || !currentPayee) {
             return
         }
 
@@ -68,9 +62,6 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
 
         if (matched?.default_category_id) {
             setValue('category_id', matched.default_category_id, { shouldValidate: true })
-            setAutoSelectedCategory(true)
-        } else {
-            setAutoSelectedCategory(false)
         }
     }, [currentPayee, payeeOptions])
 
@@ -137,6 +128,34 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
 
     const payeeSelectOptions = (payeeOptions ?? []).map((p) => ({ key: p.name, value: p.name }))
 
+    const isTransfer = props?.transactionData?.type === 'transfer'
+
+    if (isTransfer) {
+        return (
+            <Dialog
+                title={t('transactions.types.transfer', 'Transfer')}
+                open={props?.open}
+                onCloseDialog={props?.onCloseDialog}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Message type='warning'>
+                        {t('transfers.noEditNote', 'Transfers cannot be edited. Delete and recreate if needed.')}
+                    </Message>
+                    {props.onDelete && props.transactionData && (
+                        <Button
+                            type='button'
+                            mode='outline'
+                            variant='negative'
+                            stretched={true}
+                            label={t('transactions.deleteTransaction', 'Delete Transaction')}
+                            onClick={() => props.onDelete?.(props.transactionData!)}
+                        />
+                    )}
+                </div>
+            </Dialog>
+        )
+    }
+
     return (
         <Dialog
             title={
@@ -148,7 +167,6 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
             onCloseDialog={() => {
                 props?.onCloseDialog?.()
                 reset(DEFAULT_VALUES)
-                setAutoSelectedCategory(false)
             }}
         >
             <form
@@ -227,14 +245,8 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
                         error={errors?.category_id?.message}
                         onSelect={(option) => {
                             setValue('category_id', option?.[0]?.key ?? '', { shouldValidate: true })
-                            setAutoSelectedCategory(false)
                         }}
                     />
-                    {autoSelectedCategory && (
-                        <span className={styles.categoryHint}>
-                            {t('transactions.categoryAutoSelectedHint', 'Auto-selected based on previous transactions')}
-                        </span>
-                    )}
                 </div>
 
                 <AccountSelectField
@@ -250,7 +262,6 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
                 <Input
                     type='text'
                     placeholder={t('transactions.notesPlaceholder', 'Optional note\u2026')}
-                    label={t('transactions.notes', 'Notes')}
                     {...register('notes')}
                 />
 

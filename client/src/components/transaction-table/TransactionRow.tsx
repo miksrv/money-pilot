@@ -4,7 +4,8 @@ import { Checkbox } from 'simple-react-ui-kit'
 
 import { ApiModel } from '@/api'
 import { ColorName, getColorHex } from '@/components/color-picker'
-import { formatMoney } from '@/utils/money'
+
+import FormattedMoney from '../formatted-money/FormattedMoney.tsx'
 
 import styles from './styles.module.sass'
 
@@ -12,6 +13,7 @@ interface TransactionRowProps {
     transaction: ApiModel.Transaction
     category: ApiModel.Category | undefined
     account: ApiModel.Account | undefined
+    toAccount: ApiModel.Account | undefined
     currency: string
     isSelected: boolean
     isReadOnly?: boolean
@@ -26,6 +28,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = memo(
         transaction,
         category,
         account,
+        toAccount,
         currency,
         isSelected,
         isReadOnly,
@@ -38,6 +41,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = memo(
         const categoryButtonRef = useRef<HTMLButtonElement>(null)
 
         const isIncome = transaction.type === 'income'
+        const isTransfer = transaction.type === 'transfer'
 
         const handleRowClick = useCallback(() => {
             if (!isReadOnly) {
@@ -95,20 +99,37 @@ export const TransactionRow: React.FC<TransactionRowProps> = memo(
                         </div>
                     )}
 
-                    <span className={isIncome ? styles.amountIncome : styles.amountExpense}>
-                        {formatMoney(Math.abs(transaction.amount), currency)}
+                    <span
+                        className={
+                            isTransfer ? styles.amountTransfer : isIncome ? styles.amountIncome : styles.amountExpense
+                        }
+                    >
+                        <FormattedMoney
+                            amount={Math.abs(transaction.amount)}
+                            currency={currency}
+                        />
                     </span>
                 </div>
 
-                {/* Cell 2: payee + account */}
+                {/* Cell 2: payee + account (or transfer: source → destination) */}
                 <div className={styles.cellPayee}>
-                    <span className={styles.payeeName}>{transaction.payee ?? '—'}</span>
-                    {account && <span className={styles.accountName}>{account.name}</span>}
+                    {isTransfer ? (
+                        <>
+                            <span className={styles.payeeName}>{account?.name ?? '—'}</span>
+                            <span className={styles.transferArrow}>→</span>
+                            <span className={styles.accountName}>{toAccount?.name ?? '—'}</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className={styles.payeeName}>{transaction.payee ?? '—'}</span>
+                            {account && <span className={styles.accountName}>{account.name}</span>}
+                        </>
+                    )}
                 </div>
 
-                {/* Cell 3: category badge */}
+                {/* Cell 3: category badge (empty for transfers) */}
                 <div className={styles.cellCategory}>
-                    {!isReadOnly ? (
+                    {isTransfer ? null : !isReadOnly ? (
                         category ? (
                             <button
                                 ref={categoryButtonRef}

@@ -193,6 +193,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             transaction={tx}
             category={categoriesMap.get(tx.category_id)}
             account={accountsMap.get(tx.account_id)}
+            toAccount={accountsMap.get(tx.to_account_id ?? '')}
             currency={currency}
             isSelected={selectedIds.has(tx.id)}
             isReadOnly={isReadOnly}
