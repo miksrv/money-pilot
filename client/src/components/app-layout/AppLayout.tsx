@@ -1,15 +1,18 @@
-import React, { PropsWithChildren, useEffect, useState } from 'react'
+import React, { PropsWithChildren, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, cn } from 'simple-react-ui-kit'
 
-import { useGetGroupMembersQuery, useGetProfileQuery, useListGroupsQuery } from '@/api'
+import { useGetGroupMembersQuery, useGetProfileQuery, useListAccountQuery, useListGroupsQuery } from '@/api'
 import { useGroupSync } from '@/hooks/useGroupSync'
 import { setActiveGroup } from '@/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { daysUntilNextDueDate } from '@/utils/dates'
 
 import { AppBar, AppBarProps } from '../app-bar'
 
+import { CreditPaymentDialog } from './CreditPaymentDialog'
+import { CreditReminderBanner } from './CreditReminderBanner'
 import Menu from './Menu'
 import { PendingInvitationBanner } from './PendingInvitationBanner'
 
@@ -50,6 +53,26 @@ export const AppLayout: React.FC<AppLayoutProps> = (props) => {
     if (activeGroup) {
         myRole = activeGroup.owner_id === profile?.id ? 'owner' : (myMember?.role ?? 'viewer')
     }
+
+    const { data: accounts } = useListAccountQuery(activeGroupId ? { group_id: activeGroupId } : undefined, {
+        skip: !isAuth
+    })
+
+    const dueCards = useMemo(
+        () =>
+            (accounts ?? []).filter(
+                (a) =>
+                    a.type === 'credit' &&
+                    a.payment_due_day != null &&
+                    a.payment_reminder === true &&
+                    (a.balance ?? 0) < 0 &&
+                    daysUntilNextDueDate(a.payment_due_day) <= 5
+            ),
+        [accounts]
+    )
+
+    const [dismissedIds, setDismissedIds] = useState<string[]>([])
+    const [payingAccount, setPayingAccount] = useState<(typeof dueCards)[0] | null>(null)
 
     const [isMobile, setIsMobile] = useState(isMobileViewport)
 
@@ -149,8 +172,28 @@ export const AppLayout: React.FC<AppLayoutProps> = (props) => {
 
                 <div className={styles.content}>
                     <PendingInvitationBanner />
+                    {dueCards
+                        .filter((a) => !dismissedIds.includes(a.id ?? ''))
+                        .map((a) => (
+                            <CreditReminderBanner
+                                key={a.id}
+                                account={a}
+                                daysUntil={daysUntilNextDueDate(a.payment_due_day!)}
+                                currency={profile?.currency ?? 'USD'}
+                                onDismiss={() => setDismissedIds((prev) => [...prev, a.id ?? ''])}
+                                onPayNow={() => setPayingAccount(a)}
+                            />
+                        ))}
                     {props.children}
                 </div>
+
+                {payingAccount && (
+                    <CreditPaymentDialog
+                        creditAccount={payingAccount}
+                        isOpen={true}
+                        onClose={() => setPayingAccount(null)}
+                    />
+                )}
             </main>
         </div>
     )
