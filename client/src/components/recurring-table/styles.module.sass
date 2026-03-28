@@ -153,3 +153,77 @@
     > *
         flex: 1
 
+// Mobile responsive
+@media (max-width: 768px)
+    .row
+        flex-wrap: wrap
+        padding: 12px 10px
+        gap: 8px
+
+    .cellName
+        flex: 1 1 50%
+        min-width: 0
+        order: 1
+
+    .cellAmount
+        flex: 0 0 auto
+        order: 2
+        min-width: auto
+        text-align: right
+
+    .cellCategory
+        flex: 1 1 auto
+        width: auto
+        max-width: 100%
+        order: 3
+
+    .cellSchedule
+        flex: 1 1 auto
+        width: auto
+        flex-direction: row
+        align-items: center
+        gap: 8px
+        order: 4
+
+    .cellStatus
+        flex: 0 0 auto
+        order: 5
+        margin-left: auto
+
+@media (max-width: 480px)
+    .row
+        position: relative
+        padding: 12px 10px 42px
+
+    .cellName
+        flex: 1 1 calc(100% - 100px)
+        order: 1
+
+    .cellAmount
+        flex: 0 0 auto
+        order: 2
+
+    .cellCategory
+        flex: 1 1 auto
+        order: 3
+        margin-top: 4px
+
+    .cellSchedule
+        flex: 0 0 auto
+        order: 4
+        margin-top: 4px
+
+    .cellStatus
+        position: absolute
+        bottom: 8px
+        right: 10px
+        order: 5
+
+    .categoryBadge
+        max-width: 100%
+
+    .skeletonRow
+        flex-direction: column
+        align-items: flex-start
+        gap: 8px
+

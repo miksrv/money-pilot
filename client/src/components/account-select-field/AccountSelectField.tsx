@@ -9,9 +9,15 @@ import { useAppSelector } from '@/store/hooks'
 interface AccountSelectFieldProps extends SelectProps<string> {
     enableAutoSelect?: boolean
     groupId?: string
+    excludeId?: string
 }
 
-export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAutoSelect, groupId, ...props }) => {
+export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({
+    enableAutoSelect,
+    groupId,
+    excludeId,
+    ...props
+}) => {
     const { t } = useTranslation()
 
     const isAuth = useAppSelector((state) => state.auth.isAuth)
@@ -24,11 +30,13 @@ export const AccountSelectField: React.FC<AccountSelectFieldProps> = ({ enableAu
 
     const options: Array<SelectOptionType<string>> = useMemo(
         () =>
-            data?.map((account) => ({
-                key: account?.id || '',
-                value: account?.name || ''
-            })) || [],
-        [data]
+            (data ?? [])
+                .filter((account) => account.id !== excludeId)
+                .map((account) => ({
+                    key: account?.id || '',
+                    value: account?.name || ''
+                })),
+        [data, excludeId]
     )
 
     useEffect(() => {

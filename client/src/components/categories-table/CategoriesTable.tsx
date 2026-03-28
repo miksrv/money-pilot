@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Progress, Skeleton } from 'simple-react-ui-kit'
 
 import { ApiModel, useGetProfileQuery } from '@/api'
+import { FormattedMoney } from '@/components'
 import { ColorName, getColorHex } from '@/components/color-picker'
 import { useAppSelector } from '@/store/hooks'
 import { formatMoney } from '@/utils/money'
@@ -259,7 +260,10 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
                 </div>
 
                 <div className={styles.cellExpenses}>
-                    <span className={styles.expensesAmount}>{formatMoney(cat.expenses ?? 0, effectiveCurrency)}</span>
+                    <FormattedMoney
+                        amount={cat.expenses ?? 0}
+                        currency={effectiveCurrency}
+                    />
                 </div>
 
                 <div className={styles.cellProgress}>
@@ -274,7 +278,10 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
 
                 <div className={styles.cellBudget}>
                     {cat.budget ? (
-                        <span className={styles.budgetAmount}>{formatMoney(cat.budget, effectiveCurrency)}</span>
+                        <FormattedMoney
+                            amount={cat.budget}
+                            currency={effectiveCurrency}
+                        />
                     ) : null}
                 </div>
             </div>
