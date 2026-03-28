@@ -135,6 +135,11 @@ class Auth
             return null;
         }
 
+        // Strip 'Bearer ' prefix if present
+        if (str_starts_with($token, 'Bearer ')) {
+            $token = substr($token, 7);
+        }
+
         try {
             $decoded  = JWT::decode($token, new Key(getenv('auth.token.secret'), 'HS256'));
 

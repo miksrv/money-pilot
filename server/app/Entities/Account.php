@@ -9,9 +9,11 @@ class Account extends Entity
     protected $datamap = [];
     protected $dates = ['created_at', 'updated_at', 'last_synced'];
     protected $casts = [
-        'id'       => 'string',
-        'user_id'  => 'string',
-        'group_id' => '?string',
-        'balance'  => 'float',
+        'id'               => 'string',
+        'user_id'          => 'string',
+        'group_id'         => '?string',
+        'balance'          => 'float',
+        'payment_due_day'  => '?integer',
+        'payment_reminder' => 'boolean',
     ];
 }
