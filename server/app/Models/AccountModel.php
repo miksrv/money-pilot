@@ -9,7 +9,7 @@ class AccountModel extends ApplicationBaseModel
 {
     protected $table          = 'accounts';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['user_id', 'name', 'type', 'balance', 'institution', 'last_synced'];
+    protected $allowedFields  = ['user_id', 'name', 'type', 'balance', 'institution', 'last_synced', 'payment_due_day', 'payment_reminder'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
@@ -34,8 +34,10 @@ class AccountModel extends ApplicationBaseModel
         'name'        => 'required|string|max_length[100]',
         'type'        => 'required|in_list[checking,savings,credit,investment]',
         'balance'     => 'permit_empty|decimal',
-        'institution' => 'permit_empty|string|max_length[100]',
-        'last_synced' => 'permit_empty|valid_date',
+        'institution'      => 'permit_empty|string|max_length[100]',
+        'last_synced'      => 'permit_empty|valid_date',
+        'payment_due_day'  => 'permit_empty|integer|greater_than_equal_to[1]|less_than_equal_to[31]',
+        'payment_reminder' => 'permit_empty|is_boolean',
     ];
 
     protected $validationMessages = [

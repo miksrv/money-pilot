@@ -9,7 +9,7 @@ class TransactionModel extends ApplicationBaseModel
 {
     protected $table         = 'transactions';
     protected $primaryKey    = 'id';
-    protected $allowedFields = ['user_id', 'group_id', 'account_id', 'category_id', 'payee_id', 'amount', 'type', 'date', 'notes'];
+    protected $allowedFields = ['user_id', 'group_id', 'account_id', 'to_account_id', 'category_id', 'payee_id', 'amount', 'type', 'date', 'notes'];
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
@@ -36,7 +36,7 @@ class TransactionModel extends ApplicationBaseModel
         'category_id' => 'permit_empty',
         'payee_id'    => 'permit_empty',
         'amount'      => 'required|decimal',
-        'type'        => 'required|in_list[income,expense]',
+        'type'        => 'required|in_list[income,expense,transfer]',
         'date'        => 'required|valid_date',
         'notes'       => 'permit_empty'
     ];
@@ -62,7 +62,7 @@ class TransactionModel extends ApplicationBaseModel
         ],
         'type' => [
             'required' => 'Transaction type is required.',
-            'in_list' => 'Transaction type must be either income or expense.',
+            'in_list' => 'Transaction type must be one of: income, expense, transfer.',
         ],
         'date' => [
             'required' => 'Transaction date is required.',
