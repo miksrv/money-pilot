@@ -63,6 +63,10 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
         if (matched?.default_category_id) {
             setValue('category_id', matched.default_category_id, { shouldValidate: true })
         }
+
+        if (matched?.default_account_id) {
+            setValue('account_id', matched.default_account_id, { shouldValidate: true })
+        }
     }, [currentPayee, payeeOptions])
 
     const [createTransaction, { isLoading: isCreateLoading, reset: createReset }] = useAddTransactionMutation()
@@ -196,11 +200,12 @@ export const TransactionFormDialog: React.FC<TransactionFormDialogProps> = (prop
                 <div className={styles.amountWrapper}>
                     <CurrencyInput
                         ref={amountInputRef}
+                        variant='hero'
                         value={watch('amount')}
                         currency={Currency.USD}
                         locale={i18n.language}
                         error={errors?.amount?.message}
-                        placeholder={t('transactions.amount', 'Amount')}
+                        placeholder='0'
                         min={0.01}
                         onValueChange={(amount) => {
                             setValue('amount', amount ?? ('' as unknown as number), { shouldValidate: true })
