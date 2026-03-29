@@ -6,7 +6,6 @@ import { ApiModel, useGetProfileQuery } from '@/api'
 import { FormattedMoney } from '@/components'
 import { ColorName, getColorHex } from '@/components/color-picker'
 import { useAppSelector } from '@/store/hooks'
-import { formatMoney } from '@/utils/money'
 
 import { CategoryFormDialog } from './CategoryFormDialog'
 import { SKELETON_WIDTHS } from './constants'
@@ -123,7 +122,12 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
                 </div>
 
                 <div className={styles.cellExpenses}>
-                    <span className={styles.expensesAmount}>{formatMoney(cat.expenses ?? 0, effectiveCurrency)}</span>
+                    <span className={styles.expensesAmount}>
+                        <FormattedMoney
+                            amount={cat.expenses ?? 0}
+                            currency={effectiveCurrency}
+                        />
+                    </span>
                 </div>
 
                 <div className={styles.cellProgress}>
@@ -138,7 +142,12 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
 
                 <div className={styles.cellBudget}>
                     {cat.budget ? (
-                        <span className={styles.budgetAmount}>{formatMoney(cat.budget, effectiveCurrency)}</span>
+                        <span className={styles.budgetAmount}>
+                            <FormattedMoney
+                                amount={cat.budget}
+                                currency={effectiveCurrency}
+                            />
+                        </span>
                     ) : null}
                 </div>
             </div>
@@ -206,7 +215,10 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
                     <div className={styles.cellExpenses}>
                         {totalExpenses > 0 && (
                             <span className={styles.expensesAmount}>
-                                {formatMoney(totalExpenses, effectiveCurrency)}
+                                <FormattedMoney
+                                    amount={totalExpenses}
+                                    currency={effectiveCurrency}
+                                />
                             </span>
                         )}
                     </div>
@@ -223,7 +235,12 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
 
                     <div className={styles.cellBudget}>
                         {totalBudget > 0 ? (
-                            <span className={styles.budgetAmount}>{formatMoney(totalBudget, effectiveCurrency)}</span>
+                            <span className={styles.budgetAmount}>
+                                <FormattedMoney
+                                    amount={totalBudget}
+                                    currency={effectiveCurrency}
+                                />
+                            </span>
                         ) : null}
                     </div>
                 </div>
@@ -260,10 +277,12 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
                 </div>
 
                 <div className={styles.cellExpenses}>
-                    <FormattedMoney
-                        amount={cat.expenses ?? 0}
-                        currency={effectiveCurrency}
-                    />
+                    <span className={styles.expensesAmount}>
+                        <FormattedMoney
+                            amount={cat.expenses ?? 0}
+                            currency={effectiveCurrency}
+                        />
+                    </span>
                 </div>
 
                 <div className={styles.cellProgress}>
@@ -278,10 +297,12 @@ export const CategoriesTable: React.FC<CategoriesTableProps> = ({
 
                 <div className={styles.cellBudget}>
                     {cat.budget ? (
-                        <FormattedMoney
-                            amount={cat.budget}
-                            currency={effectiveCurrency}
-                        />
+                        <span className={styles.budgetAmount}>
+                            <FormattedMoney
+                                amount={cat.budget}
+                                currency={effectiveCurrency}
+                            />
+                        </span>
                     ) : null}
                 </div>
             </div>
