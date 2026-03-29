@@ -182,6 +182,18 @@
             "themeSystem": "Системная",
             "language": "Язык"
         },
+        "importCsv": {
+            "title": "Импорт",
+            "chooseFile": "Выбрать CSV файл",
+            "changeFile": "Изменить",
+            "import": "Импортировать",
+            "importedCount": "Импортировано транзакций: {{count}}",
+            "accountsCreated": "Счетов создано: {{count}}",
+            "payeesCreated": "Получателей создано: {{count}}",
+            "categoriesCreated": "Категорий создано: {{count}}",
+            "skipped": "Пропущено: {{count}}",
+            "importAnother": "Импортировать ещё один файл"
+        },
         "dangerZone": {
             "title": "Опасная зона",
             "deleteAccount": "Удалить мой аккаунт",

@@ -14,6 +14,7 @@ export {
     type InviteMemberBody,
     type PendingInvitation
 } from './group'
+export { type ImportCsvResponse } from './import'
 export { type Payee } from './payee'
 export { type CreateRecurringBody, type RecurringTransaction } from './recurring'
 export {

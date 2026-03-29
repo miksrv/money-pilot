@@ -143,6 +143,12 @@ $routes->group('', ['namespace' => 'App\Controllers'], static function ($routes)
         $routes->options('(:segment)/toggle', static function () {});
     });
 
+    // ImportController Routes
+    $routes->group('import', static function ($routes) {
+        $routes->post('csv', 'ImportController::csv');
+        $routes->options('csv', static function () {});
+    });
+
     // ReportsController Routes
     $routes->group('reports', static function ($routes) {
         $routes->get('spending-by-category', 'ReportsController::spendingByCategory');

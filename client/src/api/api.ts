@@ -373,6 +373,20 @@ export const api = createApi({
         /* Get group last-modified timestamp (used for lightweight sync polling) */
         getGroupLastModified: builder.query<{ last_modified: string }, string>({
             query: (groupId) => `/groups/${groupId}/last-modified`
+        }),
+        /* Import transactions from CSV */
+        importCsv: builder.mutation<ApiModel.ImportCsvResponse, FormData>({
+            invalidatesTags: [
+                { id: 'LIST', type: 'Transaction' },
+                { id: 'LIST', type: 'Account' },
+                { id: 'LIST', type: 'Category' },
+                { id: 'LIST', type: 'Payee' }
+            ],
+            query: (formData) => ({
+                url: '/import/csv',
+                method: 'POST',
+                body: formData
+            })
         })
     })
 })
@@ -427,5 +441,6 @@ export const {
     useRevokeInvitationMutation,
     useGetPendingInvitationsQuery,
     useJoinGroupMutation,
-    useGetGroupLastModifiedQuery
+    useGetGroupLastModifiedQuery,
+    useImportCsvMutation
 } = api

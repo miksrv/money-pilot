@@ -17,7 +17,7 @@ import {
     useListGroupsQuery,
     useUpdateProfileMutation
 } from '@/api'
-import { AppLayout } from '@/components'
+import { AppLayout, ImportCsv } from '@/components'
 import { logout, setActiveGroup } from '@/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { formatUTCDate } from '@/utils/dates'
@@ -555,6 +555,11 @@ export const Settings: React.FC = () => {
                             }}
                         />
                     </div>
+                </Container>
+
+                {/* Import */}
+                <Container title={t('settings.importCsv.title', 'Import')}>
+                    <ImportCsv />
                 </Container>
 
                 {/* Danger Zone */}

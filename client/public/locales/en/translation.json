@@ -182,6 +182,18 @@
             "themeSystem": "System",
             "language": "Language"
         },
+        "importCsv": {
+            "title": "Import",
+            "chooseFile": "Choose CSV file",
+            "changeFile": "Change",
+            "import": "Import",
+            "importedCount": "Imported {{count}} transactions",
+            "accountsCreated": "Accounts created: {{count}}",
+            "payeesCreated": "Payees created: {{count}}",
+            "categoriesCreated": "Categories created: {{count}}",
+            "skipped": "Skipped: {{count}}",
+            "importAnother": "Import another file"
+        },
         "dangerZone": {
             "title": "Danger Zone",
             "deleteAccount": "Delete My Account",
