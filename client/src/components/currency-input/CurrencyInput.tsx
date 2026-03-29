@@ -24,8 +24,12 @@ export interface CurrencyInputProps {
     disabled?: boolean
     /** Required field indicator */
     required?: boolean
-    /** Input size variant */
-    size?: 'small' | 'medium' | 'large'
+    /**
+     * Input size variant.
+     * Accepts legacy values ('small' | 'medium' | 'large') and new aliases ('sm' | 'md' | 'lg').
+     * Default: 'medium' / 'md'
+     */
+    size?: 'small' | 'medium' | 'large' | 'sm' | 'md' | 'lg'
     /** Show currency symbol */
     showSymbol?: boolean
     /** Allow negative values */
@@ -46,6 +50,34 @@ export interface CurrencyInputProps {
     onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void
     /** onFocus callback */
     onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void
+    /**
+     * Visual variant.
+     * 'default' — standard input style (border, background).
+     * 'hero'    — large centered display text, no border, colored by sign.
+     * Default: 'default'
+     */
+    variant?: 'default' | 'hero'
+    /**
+     * Enable color indication based on value sign (green for positive, red for zero/negative).
+     * Only applies when variant='hero'. Default: true
+     */
+    colorize?: boolean
+}
+
+// Normalise legacy size strings to a canonical 3-key set
+function resolveSize(size: CurrencyInputProps['size']): 'sm' | 'md' | 'lg' {
+    switch (size) {
+        case 'small':
+        case 'sm':
+            return 'sm'
+        case 'large':
+        case 'lg':
+            return 'lg'
+        case 'medium':
+        case 'md':
+        case undefined:
+            return 'md'
+    }
 }
 
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
@@ -70,7 +102,9 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
             name,
             id,
             onBlur,
-            onFocus
+            onFocus,
+            variant = 'default',
+            colorize = true
         },
         ref
     ) => {
@@ -78,7 +112,10 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         const displayLocale = locale || config.locale
         const inputRef = useRef<HTMLInputElement>(null)
 
-        // Combine refs
+        const resolvedSize = resolveSize(size)
+        const isHero = variant === 'hero'
+
+        // Combine external ref with local ref
         const setRefs = useCallback(
             (node: HTMLInputElement | null) => {
                 inputRef.current = node
@@ -100,7 +137,6 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
         const [isFocused, setIsFocused] = useState(false)
 
-        // Format value for display when not focused
         const formatForDisplay = useCallback(
             (num: number | null | undefined): string => {
                 if (num == null || isNaN(num)) {
@@ -111,22 +147,17 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
             [currency, displayLocale]
         )
 
-        // Handle input change
         const handleChange = useCallback(
             (e: React.ChangeEvent<HTMLInputElement>) => {
                 const rawValue = e.target.value
-
-                // Allow only digits, decimal separators, minus sign, and spaces
                 const allowedChars = allowNegative ? /[^0-9.,\-\s]/g : /[^0-9.,\s]/g
                 const sanitized = rawValue.replace(allowedChars, '')
 
                 setInputValue(sanitized)
 
-                // Parse and notify parent
                 const parsed = parseInputValue(sanitized)
 
                 if (parsed != null) {
-                    // Apply min/max constraints
                     let constrained = parsed
                     if (min !== undefined && parsed < min) {
                         constrained = min
@@ -136,7 +167,6 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
                     }
 
                     if (constrained !== parsed) {
-                        // Value was constrained, update display
                         setInputValue(formatForDisplay(constrained))
                     }
 
@@ -148,47 +178,37 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
             [allowNegative, min, max, onValueChange, formatForDisplay]
         )
 
-        // Handle focus
         const handleFocus = useCallback(
             (e: React.FocusEvent<HTMLInputElement>) => {
                 setIsFocused(true)
-
-                // Select all text on focus for easier editing
                 setTimeout(() => {
                     inputRef.current?.select()
                 }, 0)
-
                 onFocus?.(e)
             },
             [onFocus]
         )
 
-        // Handle blur - format the number nicely
         const handleBlur = useCallback(
             (e: React.FocusEvent<HTMLInputElement>) => {
                 setIsFocused(false)
-
                 const parsed = parseInputValue(inputValue)
                 if (parsed != null) {
                     setInputValue(formatForDisplay(parsed))
                 } else {
                     setInputValue('')
                 }
-
                 onBlur?.(e)
             },
             [inputValue, formatForDisplay, onBlur]
         )
 
-        // Handle keyboard shortcuts and validation
         const handleKeyDown = useCallback(
             (e: React.KeyboardEvent<HTMLInputElement>) => {
-                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
                 if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase())) {
                     return
                 }
 
-                // Allow: navigation keys
                 const navigationKeys = [
                     'Backspace',
                     'Delete',
@@ -202,15 +222,14 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
                     'Home',
                     'End'
                 ]
+
                 if (navigationKeys.includes(e.key)) {
-                    // Increment/decrement with arrow keys
                     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                         e.preventDefault()
                         const current = parseInputValue(inputValue) || 0
                         const step = e.shiftKey ? 10 : 1
                         const newValue = e.key === 'ArrowUp' ? current + step : current - step
 
-                        // Apply constraints
                         let constrained = newValue
                         if (!allowNegative && constrained < 0) {
                             constrained = 0
@@ -228,21 +247,17 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
                     return
                 }
 
-                // Allow: digits
                 if (e.key >= '0' && e.key <= '9') {
                     return
                 }
 
-                // Allow: decimal separator (comma or dot)
                 if (e.key === ',' || e.key === '.') {
-                    // Only allow one decimal separator
                     if (inputValue.includes(',') || inputValue.includes('.')) {
                         e.preventDefault()
                     }
                     return
                 }
 
-                // Allow: minus sign at start (if negative allowed)
                 if (e.key === '-' && allowNegative) {
                     const input = e.target as HTMLInputElement
                     if (input.selectionStart === 0 && !inputValue.includes('-')) {
@@ -250,13 +265,12 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
                     }
                 }
 
-                // Block everything else
                 e.preventDefault()
             },
             [inputValue, allowNegative, min, max, onValueChange, formatForDisplay]
         )
 
-        // Sync with external value changes
+        // Sync with external value changes when not focused
         useEffect(() => {
             if (!isFocused) {
                 const newDisplayValue = formatForDisplay(value)
@@ -266,12 +280,98 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
             }
         }, [value, isFocused, formatForDisplay])
 
-        // Determine symbol position
         const symbolPosition = showSymbol ? config.symbolPosition : null
+        const numericValue = parseInputValue(inputValue)
 
+        // Color class for hero variant
+        const heroColorClass =
+            isHero && colorize
+                ? numericValue != null && numericValue > 0
+                    ? styles.heroPositive
+                    : styles.heroNeutral
+                : ''
+
+        if (isHero) {
+            const heroWrapperClasses = [
+                styles.heroWrapper,
+                styles['hero' + resolvedSize.charAt(0).toUpperCase() + resolvedSize.slice(1)],
+                disabled && styles.disabled,
+                required && styles.required,
+                isFocused && styles.heroFocused,
+                className
+            ]
+                .filter(Boolean)
+                .join(' ')
+
+            const heroInputClasses = [styles.heroInput, heroColorClass, error && styles.heroError]
+                .filter(Boolean)
+                .join(' ')
+
+            const effectivePlaceholder = placeholder ?? '0'
+
+            return (
+                <div className={heroWrapperClasses}>
+                    {label && <label className={styles.label}>{label}</label>}
+
+                    <div className={styles.heroFieldRow}>
+                        {symbolPosition === 'before' && (
+                            <span
+                                className={[styles.heroCurrency, heroColorClass].filter(Boolean).join(' ')}
+                                aria-hidden='true'
+                            >
+                                {config.symbol}
+                            </span>
+                        )}
+
+                        <input
+                            ref={setRefs}
+                            type='text'
+                            inputMode='decimal'
+                            autoComplete='off'
+                            className={heroInputClasses}
+                            value={inputValue}
+                            onChange={handleChange}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
+                            placeholder={effectivePlaceholder}
+                            disabled={disabled}
+                            required={required}
+                            name={name}
+                            id={id}
+                            autoFocus={autoFocus}
+                            aria-invalid={!!error}
+                            aria-describedby={error ? (id ?? name) + '-error' : undefined}
+                            aria-label={label ?? 'Amount'}
+                        />
+
+                        {symbolPosition === 'after' && (
+                            <span
+                                className={[styles.heroCurrency, heroColorClass].filter(Boolean).join(' ')}
+                                aria-hidden='true'
+                            >
+                                {config.symbol}
+                            </span>
+                        )}
+                    </div>
+
+                    {error && (
+                        <div
+                            className={styles.error}
+                            id={(id ?? name) + '-error'}
+                            role='alert'
+                        >
+                            {error}
+                        </div>
+                    )}
+                </div>
+            )
+        }
+
+        // Default variant — original input style, fully backwards-compatible
         const containerClasses = [
             styles.currencyInputWrapper,
-            styles[size],
+            styles[resolvedSize],
             disabled && styles.disabled,
             required && styles.required,
             className
@@ -314,7 +414,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
                             id={id}
                             autoFocus={autoFocus}
                             aria-invalid={!!error}
-                            aria-describedby={error ? `${id || name}-error` : undefined}
+                            aria-describedby={error ? (id ?? name) + '-error' : undefined}
                         />
 
                         {symbolPosition === 'after' && <span className={styles.symbolSuffix}>{config.symbol}</span>}
@@ -324,7 +424,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
                 {error && (
                     <div
                         className={styles.error}
-                        id={`${id || name}-error`}
+                        id={(id ?? name) + '-error'}
                         role='alert'
                     >
                         {error}

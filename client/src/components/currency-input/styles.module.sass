@@ -1,3 +1,5 @@
+// ─── Default variant ────────────────────────────────────────────────────────
+
 .currencyInputWrapper
     position: relative
     width: 100%
@@ -94,7 +96,9 @@
     opacity: 0.5
     pointer-events: none
 
-.small
+// ─── Default size modifiers ──────────────────────────────────────────────────
+
+.sm
     .input
         height: var(--size-small)
         font-size: var(--font-size-small)
@@ -114,7 +118,18 @@
     .hasSuffix input
         padding-right: 24px !important
 
-.large
+// Legacy alias
+.small
+    @extend .sm
+
+.md
+    // inherits default `.input` styles — no override needed
+
+// Legacy alias
+.medium
+    @extend .md
+
+.lg
     .input
         height: var(--size-large)
         padding: 0 16px
@@ -131,9 +146,129 @@
     .hasSuffix input
         padding-right: 36px !important
 
+// Legacy alias
+.large
+    @extend .lg
+
 .required
     .label::after
         content: "*"
         margin-left: 3px
         color: var(--color-red)
 
+// ─── Hero variant ────────────────────────────────────────────────────────────
+
+.heroWrapper
+    position: relative
+    width: 100%
+    display: flex
+    flex-direction: column
+    align-items: center
+    -webkit-tap-highlight-color: transparent
+
+.heroFieldRow
+    display: flex
+    align-items: baseline
+    justify-content: center
+    width: 100%
+    gap: 4px
+
+.heroInput
+    appearance: none
+    background: transparent
+    border: none
+    border-bottom: 2px solid transparent
+    border-radius: 0
+    box-shadow: none
+    box-sizing: border-box
+    color: var(--text-color-secondary)
+    cursor: text
+    font-family: var(--font-family), sans-serif
+    font-size: 2.75rem
+    font-weight: 700
+    letter-spacing: -0.02em
+    line-height: 1.1
+    margin: 0
+    min-width: 2ch
+    outline: none
+    padding: 4px 0
+    text-align: center
+    transition: color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, border-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms
+    width: auto
+
+    // Size the input to its content so it stays centered
+    // CSS trick: ghost span with same text drives the width, but here we use
+    // a simple min-width plus auto. Real elastic sizing requires JS; the
+    // centred flex layout keeps it visually centred regardless.
+
+    &::placeholder
+        color: var(--text-color-secondary)
+        opacity: 0.45
+
+    &:focus,
+    &:active
+        outline: none
+
+    // Suppress browser number-input spinners (text type, but guard anyway)
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button
+        -webkit-appearance: none
+        margin: 0
+
+.heroCurrency
+    color: var(--text-color-secondary)
+    font-family: var(--font-family), sans-serif
+    font-size: 1.75rem
+    font-weight: 600
+    letter-spacing: -0.01em
+    line-height: 1
+    pointer-events: none
+    transition: color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms
+    user-select: none
+
+// Color states for hero
+.heroPositive
+    color: var(--color-green) !important
+
+.heroNeutral
+    color: var(--text-color-secondary)
+
+// Focus: show subtle underline glow
+.heroFocused
+    .heroInput
+        border-bottom-color: var(--input-border-focus-color)
+
+    .heroInput.heroPositive
+        border-bottom-color: var(--color-green)
+
+// Error state
+.heroError
+    color: var(--color-red) !important
+    border-bottom-color: var(--color-red) !important
+
+.heroWrapper .error
+    margin-top: 6px
+    text-align: center
+
+// ─── Hero size modifiers ─────────────────────────────────────────────────────
+
+.heroSm
+    .heroInput
+        font-size: 1.75rem
+
+    .heroCurrency
+        font-size: 1.1rem
+
+.heroMd
+    .heroInput
+        font-size: 2.25rem
+
+    .heroCurrency
+        font-size: 1.4rem
+
+.heroLg
+    .heroInput
+        font-size: 2.75rem
+
+    .heroCurrency
+        font-size: 1.75rem
