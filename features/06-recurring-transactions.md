@@ -2,7 +2,7 @@
 
 ## Goal
 
-Allow users to define repeating financial events (rent, salary, subscriptions) so Money Pilot can show upcoming obligations and automatically create transaction entries on their scheduled dates.
+Allow users to define repeating financial events (rent, salary, subscriptions) so Monetka can show upcoming obligations and automatically create transaction entries on their scheduled dates.
 
 This feature requires **new backend infrastructure** (model + migration + controller) and a new frontend screen to replace the empty Recurring stub.
 

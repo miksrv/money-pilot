@@ -20,15 +20,6 @@ import { store } from '@/store'
 import { login, logout } from '@/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
-const savedTheme = localStorage.getItem('theme') ?? 'light'
-const resolvedTheme =
-    savedTheme === 'system'
-        ? window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light'
-        : savedTheme
-document.documentElement.setAttribute('data-theme', resolvedTheme)
-
 const App: React.FC = () => (
     <Provider store={store}>
         <BrowserRouter>

@@ -274,7 +274,7 @@
         "inviteRoleViewer": "Viewer (read-only)",
         "inviteWarning": "Once user accepts this invitation, they will have complete visibility into ALL of your accounts and ALL of your transactions, including all historical data. They will see your budget exactly as you see it.",
         "sendInvitation": "Send Invitation",
-        "errorUserNotFound": "No Money Pilot account found with this email address. Ask them to register first.",
+        "errorUserNotFound": "No Monetka account found with this email address. Ask them to register first.",
         "errorAlreadyMember": "This person already has access to your budget.",
         "errorInvitationPending": "An invitation is already pending for this email.",
         "revokeInvitation": "Revoke",

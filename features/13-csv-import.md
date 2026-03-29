@@ -2,7 +2,7 @@
 
 ## Goal
 
-Allow users to upload a bank statement CSV and bulk-import transactions. This is the most-requested missing feature — it eliminates the need to manually enter historical data and enables users to switch to Money Pilot from other tools.
+Allow users to upload a bank statement CSV and bulk-import transactions. This is the most-requested missing feature — it eliminates the need to manually enter historical data and enables users to switch to Monetka from other tools.
 
 ---
 

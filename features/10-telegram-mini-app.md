@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build a Telegram Mini App (TMA) that gives users access to their Money Pilot account directly inside Telegram. The TMA provides a mobile-optimized view for checking balances, recent transactions, and quickly adding new transactions — all backed by the same REST API as the web app.
+Build a Telegram Mini App (TMA) that gives users access to their Monetka account directly inside Telegram. The TMA provides a mobile-optimized view for checking balances, recent transactions, and quickly adding new transactions — all backed by the same REST API as the web app.
 
 > **Status: Future / Phase 4.** No implementation work starts until all Phase 1–3 features are complete. This document defines the design constraints so API decisions made today remain compatible.
 
@@ -29,7 +29,7 @@ These requirements must be considered when building the REST API in Phases 1–3
    - Accepts `initData` string from `window.Telegram.WebApp.initData`.
    - Validates the HMAC signature using the bot token.
    - Returns a JWT (same format as regular login).
-   - Links the Telegram `user_id` to an existing Money Pilot account by email or auto-creates one.
+   - Links the Telegram `user_id` to an existing Monetka account by email or auto-creates one.
 3. **Lean responses.** Keep response payloads small — TMA users are on mobile networks. Avoid embedding large nested objects; use IDs and let the client fetch details on demand.
 4. **Pagination everywhere.** All list endpoints must support `limit` + `page`. TMA will use small pages (10–15 items).
 5. **Quick-add transaction.** The TMA's primary action is adding a transaction in as few taps as possible. The `POST /transactions` endpoint must remain lightweight — only `amount`, `type`, `account_id`, and optionally `category_id` should be required.
@@ -54,7 +54,7 @@ These requirements must be considered when building the REST API in Phases 1–3
 2. TMA calls `window.Telegram.WebApp.initData` → sends to `POST /auth/telegram`.
 3. Backend validates HMAC → returns JWT.
 4. JWT stored in `localStorage` (within the WebApp context) and used for all subsequent requests.
-5. If the Telegram account is not yet linked to a Money Pilot account: show a one-time link/register flow.
+5. If the Telegram account is not yet linked to a Monetka account: show a one-time link/register flow.
 
 ### Tech Stack (TMA)
 
@@ -88,7 +88,7 @@ Add migration:
 ALTER TABLE `users` ADD COLUMN `telegram_id` BIGINT NULL UNIQUE AFTER `phone`;
 ```
 
-This allows linking a Money Pilot account to a Telegram user ID.
+This allows linking a Monetka account to a Telegram user ID.
 
 ### `POST /auth/telegram` endpoint (implement in Phase 4)
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Money Pilot** is a personal finance management web app (PWA) — monorepo with a React/TypeScript frontend (`client/`) and a CodeIgniter 4 PHP backend (`server/`).
+**Monetka** is a personal finance management web app (PWA) — monorepo with a React/TypeScript frontend (`client/`) and a CodeIgniter 4 PHP backend (`server/`).
 
 ## Commands
 

@@ -200,7 +200,9 @@ export const Transactions: React.FC = () => {
 
     const accountOptions = accounts?.map((acc) => ({ key: acc.id ?? '', value: acc.name ?? '' })) ?? []
     const categoryOptions =
-        categories?.map((cat) => ({ key: cat.id ?? '', value: cat.name ?? '', emoji: cat?.icon })) ?? []
+        categories
+            ?.filter((cat) => !cat.is_parent)
+            .map((cat) => ({ key: cat.id ?? '', value: cat.name ?? '', emoji: cat?.icon })) ?? []
 
     const addButton = !isViewer ? (
         <Button

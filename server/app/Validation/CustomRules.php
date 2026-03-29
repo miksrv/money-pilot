@@ -5,7 +5,7 @@ namespace App\Validation;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 
 /**
- * Custom validation rules for the Money Pilot application.
+ * Custom validation rules for the Monetka application.
  */
 class CustomRules
 {

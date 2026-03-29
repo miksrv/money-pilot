@@ -1,4 +1,4 @@
-# Money Pilot — Development Roadmap
+# Monetka — Development Roadmap
 
 > Personal finance management PWA inspired by [Copilot Money](https://www.copilot.money/).
 > Monorepo: React/TypeScript frontend (`client/`) + CodeIgniter 4 PHP backend (`server/`).

@@ -234,7 +234,7 @@ Title: "Invite Someone to View Your Budget"
 ```
 
 **Error states in the dialog:**
-- `user_not_found` → `Message type="error"`: "No Money Pilot account found with this email address. Ask them to register at [app URL] first."
+- `user_not_found` → `Message type="error"`: "No Monetka account found with this email address. Ask them to register at [app URL] first."
 - `already_member` → `Message type="error"`: "This person already has access to your budget."
 - `invitation_pending` → `Message type="warning"`: "An invitation is already pending for this email."
 

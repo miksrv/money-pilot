@@ -73,6 +73,10 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
 
     const currentDayValue = data.current_month.find((d) => d.day === data.current_day)?.cumulative ?? 0
 
+    // Вычисляем позицию метки: если точка близко к правому краю, смещаем метку влево
+    const dayRatio = data.current_day / data.days_in_current_month
+    const labelPosition = dayRatio > 0.8 ? 'left' : 'right'
+
     // Создаем pieces для visualMap — по одному для каждого сегмента между точками
     const pieces: Array<{ min: number; max: number; color: string }> = []
 
@@ -138,7 +142,8 @@ export const MonthlySpendingChart: React.FC<MonthlySpendingChartProps> = ({ grou
                                 borderRadius: 10,
                                 padding: [3, 8],
                                 fontSize: 11,
-                                fontWeight: 600
+                                fontWeight: 600,
+                                position: labelPosition
                             }
                         }
                     ]

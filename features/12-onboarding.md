@@ -20,7 +20,7 @@ Onboarding is shown to a user when ALL of the following are true:
 
 Replace the empty Dashboard with a full-width welcome `Container` that includes:
 
-1. **Header:** "Welcome to Money Pilot! Let's get you set up."
+1. **Header:** "Welcome to Monetka! Let's get you set up."
 2. **Step list** (vertical, with checkmarks as steps complete):
    - Step 1: Add your first account ✗ → `Button "Add Account"` (opens account form inline)
    - Step 2: Create a spending category ✗ → `Button "Add Category"` (opens category form inline)
