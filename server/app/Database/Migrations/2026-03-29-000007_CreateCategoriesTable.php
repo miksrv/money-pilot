@@ -10,42 +10,42 @@ class CreateCategoriesTable extends Migration
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'VARCHAR',
-                'constraint'     => 15
+                'type'       => 'VARCHAR',
+                'constraint' => 15,
             ],
             'user_id' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 15,
-                'null'       => true, // NULL для глобальных категорий
-            ],
-            'group_id' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 15,
-                'null'       => true
+                'null'       => true,
             ],
             'name' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '50',
+                'constraint' => 50,
             ],
             'type' => [
-                'type' => 'ENUM',
+                'type'       => 'ENUM',
                 'constraint' => ['income', 'expense'],
-                'default' => 'expense',
+                'default'    => 'expense',
             ],
             'parent_id' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 15,
-                'null'       => true, // Для подкатегорий
+                'null'       => true,
+            ],
+            'is_parent' => [
+                'type'       => 'TINYINT',
+                'constraint' => 1,
+                'default'    => 0,
             ],
             'icon' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '50',
-                'null'       => true, // Для UI (эмодзи или SVG)
+                'constraint' => 50,
+                'null'       => true,
             ],
             'color' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '50',
-                'null'       => true, // Для UI (эмодзи или SVG)
+                'constraint' => 50,
+                'null'       => true,
             ],
             'budget' => [
                 'type'       => 'DECIMAL',
@@ -53,9 +53,14 @@ class CreateCategoriesTable extends Migration
                 'null'       => true,
             ],
             'usage_count' => [
-                'type'    => 'INT',
+                'type'     => 'INT',
                 'unsigned' => true,
-                'default' => 0,
+                'default'  => 0,
+            ],
+            'archived' => [
+                'type'       => 'TINYINT',
+                'constraint' => 1,
+                'default'    => 0,
             ],
             'created_at' => [
                 'type' => 'TIMESTAMP',
@@ -69,10 +74,9 @@ class CreateCategoriesTable extends Migration
 
         $this->forge->addPrimaryKey('id');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('group_id', 'groups', 'id', 'SET NULL', 'SET NULL');
         $this->forge->addForeignKey('parent_id', 'categories', 'id', 'CASCADE', 'SET NULL');
-        $this->forge->addUniqueKey(['user_id', 'name']); // Уникальность имени в рамках user_id или глобально
-        $this->forge->addKey('usage_count'); // Индекс для сортировки по популярности
+        $this->forge->addUniqueKey(['user_id', 'name']);
+        $this->forge->addKey('usage_count');
         $this->forge->createTable('categories', true);
     }
 

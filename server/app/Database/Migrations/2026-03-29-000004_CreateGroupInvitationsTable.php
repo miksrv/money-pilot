@@ -10,29 +10,34 @@ class CreateGroupInvitationsTable extends Migration
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'VARCHAR',
-                'constraint'     => 15
+                'type'       => 'VARCHAR',
+                'constraint' => 15,
             ],
             'group_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'invited_user_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'inviter_user_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'status' => [
                 'type'       => 'ENUM',
                 'constraint' => ['pending', 'accepted', 'declined'],
                 'default'    => 'pending',
             ],
+            'role' => [
+                'type'       => 'ENUM',
+                'constraint' => ['editor', 'viewer'],
+                'default'    => 'editor',
+            ],
             'token' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '255',
+                'constraint' => 255,
                 'unique'     => true,
             ],
             'expires_at' => [

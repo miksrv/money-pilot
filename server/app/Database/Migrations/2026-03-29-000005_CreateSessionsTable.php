@@ -10,26 +10,26 @@ class CreateSessionsTable extends Migration
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'VARCHAR',
-                'constraint'     => 15
+                'type'       => 'VARCHAR',
+                'constraint' => 15,
             ],
             'user_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'token' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '255',
+                'constraint' => 255,
                 'unique'     => true,
             ],
             'device' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '100',
+                'constraint' => 100,
                 'null'       => true,
             ],
             'ip_address' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '45', // Поддержка IPv6
+                'constraint' => 45,
                 'null'       => true,
             ],
             'expires_at' => [
@@ -48,7 +48,7 @@ class CreateSessionsTable extends Migration
 
         $this->forge->addPrimaryKey('id');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addKey('expires_at'); // Индекс для очистки устаревших сессий
+        $this->forge->addKey('expires_at');
         $this->forge->createTable('sessions', true);
     }
 

@@ -5,7 +5,6 @@ namespace App\Controllers;
 use App\Libraries\Auth;
 use App\Models\AccountModel;
 use App\Models\CategoryModel;
-use App\Models\GroupMemberModel;
 use App\Models\PayeeModel;
 use App\Models\TransactionModel;
 use CodeIgniter\API\ResponseTrait;
@@ -35,57 +34,10 @@ class TransactionController extends ApplicationBaseController
         }
 
         $currentUserId = $this->authLibrary->user->id;
-        $groupId       = $this->request->getGet('group_id');
 
-        if ($groupId) {
-            $groupMemberModel = new GroupMemberModel();
-            $membership = $groupMemberModel
-                ->where(['group_id' => $groupId, 'user_id' => $currentUserId])
-                ->first();
-
-            if (!$membership) {
-                return $this->failForbidden('You are not a member of this group');
-            }
-
-            $db    = db_connect();
-            $group = $db->table('groups')->where('id', $groupId)->get()->getRowObject();
-
-            if (!$group) {
-                return $this->failNotFound('Group not found');
-            }
-
-            $ownerId = $group->owner_id;
-
-            // Show: tagged group transactions (all members) + owner's untagged personal transactions
-            $baseWhere = function ($builder) use ($groupId, $ownerId) {
-                $builder->groupStart()
-                    ->where('t.group_id', $groupId)
-                    ->orGroupStart()
-                        ->where('t.user_id', $ownerId)
-                        ->where('t.group_id IS NULL')
-                    ->groupEnd()
-                ->groupEnd();
-            };
-        } else {
-            $ownerId = null;
-
-            // Also include transactions tagged to any group the current user owns (members' contributions)
-            $db            = db_connect();
-            $ownedGroups   = $db->table('groups')->select('id')->where('owner_id', $currentUserId)->get()->getResultArray();
-            $ownedGroupIds = array_column($ownedGroups, 'id');
-
-            $baseWhere = function ($builder) use ($currentUserId, $ownedGroupIds) {
-                $builder->groupStart()
-                    ->where('t.user_id', $currentUserId)
-                    ->where('t.group_id IS NULL');
-
-                if (!empty($ownedGroupIds)) {
-                    $builder->orWhereIn('t.group_id', $ownedGroupIds);
-                }
-
-                $builder->groupEnd();
-            };
-        }
+        $baseWhere = function ($builder) use ($currentUserId) {
+            $builder->where('t.user_id', $currentUserId);
+        };
 
         $page       = max(1, (int)($this->request->getGet('page') ?? 1));
         $limit      = min(100, max(1, (int)($this->request->getGet('limit') ?? 25)));
@@ -213,31 +165,7 @@ class TransactionController extends ApplicationBaseController
             $accountModel = new AccountModel();
             $payeeModel   = new PayeeModel();
 
-            $inputGroupId       = !empty($input['group_id']) ? $input['group_id'] : null;
-            $accountOwnerUserId = $this->authLibrary->user->id;
-
-            if ($inputGroupId) {
-                // Verify membership
-                $groupMemberModel = new GroupMemberModel();
-                $membership = $groupMemberModel
-                    ->where(['group_id' => $inputGroupId, 'user_id' => $this->authLibrary->user->id])
-                    ->first();
-                if (!$membership) {
-                    return $this->failForbidden('You are not a member of this group');
-                }
-
-                // For group mode, the account might belong to the group owner — try owner first
-                $db    = db_connect();
-                $group = $db->table('groups')->where('id', $inputGroupId)->get()->getRowObject();
-                if ($group) {
-                    $ownerAccount = $accountModel->getById($input['account_id'], $group->owner_id);
-                    if ($ownerAccount) {
-                        $accountOwnerUserId = $group->owner_id;
-                    }
-                }
-            }
-
-            $account = $accountModel->getById($input['account_id'], $accountOwnerUserId);
+            $account = $accountModel->getById($input['account_id'], $this->authLibrary->user->id);
 
             if (!$account) {
                 return $this->failNotFound(['error' => '1002', 'messages' => ['account' => 'Account not found']]);
@@ -264,14 +192,13 @@ class TransactionController extends ApplicationBaseController
                     return $this->failValidationErrors(['amount' => 'Transfer amount must be greater than zero']);
                 }
 
-                $destAccount = $accountModel->getById($input['to_account_id'], $accountOwnerUserId);
+                $destAccount = $accountModel->getById($input['to_account_id'], $this->authLibrary->user->id);
                 if (!$destAccount) {
                     return $this->failNotFound(['error' => '1005', 'messages' => ['to_account_id' => 'Destination account not found']]);
                 }
 
                 $this->model->insert([
                     'user_id'        => $this->authLibrary->user->id,
-                    'group_id'       => $inputGroupId,
                     'account_id'     => $input['account_id'],
                     'to_account_id'  => $input['to_account_id'],
                     'category_id'    => null,
@@ -282,11 +209,11 @@ class TransactionController extends ApplicationBaseController
                     'notes'          => $input['notes'] ?? null,
                 ]);
 
-                $accountModel->updateById($input['account_id'], $accountOwnerUserId, [
+                $accountModel->updateById($input['account_id'], $this->authLibrary->user->id, [
                     'balance' => $account[0]->balance - $amount,
                 ]);
 
-                $accountModel->updateById($input['to_account_id'], $accountOwnerUserId, [
+                $accountModel->updateById($input['to_account_id'], $this->authLibrary->user->id, [
                     'balance' => $destAccount[0]->balance + $amount,
                 ]);
 
@@ -315,7 +242,6 @@ class TransactionController extends ApplicationBaseController
 
             $this->model->insert([
                 'user_id'     => $this->authLibrary->user->id,
-                'group_id'    => $inputGroupId,
                 'account_id'  => $input['account_id'],
                 'category_id' => $input['category_id'] ?? null,
                 'payee_id'    => $payeeId,
@@ -325,7 +251,7 @@ class TransactionController extends ApplicationBaseController
                 'notes'       => $input['notes'] ?? null,
             ]);
 
-            $accountModel->updateById($input['account_id'], $accountOwnerUserId, ['balance' => $newBalance]);
+            $accountModel->updateById($input['account_id'], $this->authLibrary->user->id, ['balance' => $newBalance]);
 
             // Smart categorization: persist the chosen category and account as the payee's defaults
             if ($payeeId && !empty($input['category_id'])) {
@@ -446,11 +372,7 @@ class TransactionController extends ApplicationBaseController
                 }
             }
 
-            // Use direct update (no user_id check) for group transactions; scoped update for own
-            $isOwnTransaction = $transaction->user_id === $this->authLibrary->user->id;
-            $success = $isOwnTransaction
-                ? $this->model->updateById($id, $this->authLibrary->user->id, $updateData)
-                : $this->model->updateByIdDirect($id, $updateData);
+            $success = $this->model->updateById($id, $this->authLibrary->user->id, $updateData);
 
             if (!$success) {
                 return $this->failValidationErrors($this->model->errors());
@@ -524,38 +446,27 @@ class TransactionController extends ApplicationBaseController
         }
 
         try {
-            $accountModel       = new AccountModel();
-            $accountOwnerUserId = $this->authLibrary->user->id;
-
-            // Try current user's account first; fall back to the transaction owner's account
-            $account = $accountModel->getById($transaction->account_id, $this->authLibrary->user->id);
-            if (empty($account) && $transaction->user_id !== $this->authLibrary->user->id) {
-                $account = $accountModel->getById($transaction->account_id, $transaction->user_id);
-                if (!empty($account)) {
-                    $accountOwnerUserId = $transaction->user_id;
-                }
-            }
-
-            $amount = (float)$transaction->amount;
+            $accountModel  = new AccountModel();
+            $userId        = $this->authLibrary->user->id;
+            $account       = $accountModel->getById($transaction->account_id, $userId);
+            $amount        = (float)$transaction->amount;
 
             if ($transaction->type === 'transfer' && !empty($transaction->to_account_id)) {
                 // Reverse transfer: return funds to source, remove from destination
                 if (!empty($account)) {
                     $accountModel->updateById(
                         $transaction->account_id,
-                        $accountOwnerUserId,
+                        $userId,
                         ['balance' => (float)$account[0]->balance + $amount]
                     );
                 }
 
-                $destAccount = $accountModel->getById($transaction->to_account_id, $accountOwnerUserId);
+                $destAccount = $accountModel->getById($transaction->to_account_id, $userId);
                 if (!empty($destAccount)) {
-                    $destNewBalance = (float)$destAccount[0]->balance - $amount;
-
                     $accountModel->updateById(
                         $transaction->to_account_id,
-                        $accountOwnerUserId,
-                        ['balance' => $destNewBalance]
+                        $userId,
+                        ['balance' => (float)$destAccount[0]->balance - $amount]
                     );
                 }
             } elseif (!empty($account)) {
@@ -564,14 +475,10 @@ class TransactionController extends ApplicationBaseController
                 $newBalance = $transaction->type === 'expense'
                     ? $currentBalance + $amount
                     : $currentBalance - $amount;
-                $accountModel->updateById($transaction->account_id, $accountOwnerUserId, ['balance' => $newBalance]);
+                $accountModel->updateById($transaction->account_id, $userId, ['balance' => $newBalance]);
             }
 
-            // Use direct delete (no user_id check) for group transactions; scoped delete for own
-            $isOwnTransaction = $transaction->user_id === $this->authLibrary->user->id;
-            $deleted = $isOwnTransaction
-                ? $this->model->deleteById($id, $this->authLibrary->user->id)
-                : $this->model->deleteByIdDirect($id);
+            $deleted = $this->model->deleteById($id, $userId);
 
             if (!$deleted) {
                 return $this->fail(['error' => '1003', 'messages' => 'Failed to delete transaction']);
@@ -586,13 +493,7 @@ class TransactionController extends ApplicationBaseController
 
     /**
      * Resolve a transaction the current user is authorised to access.
-     *
-     * Returns the transaction object when:
-     *   a) The current user owns it (user_id = current user), OR
-     *   b) The transaction belongs to a group the current user is a member of
-     *      with role 'owner' or 'editor' (viewers cannot mutate data).
-     *
-     * Returns null if not found or the user lacks access.
+     * Returns the transaction object when the current user owns it; null otherwise.
      */
     private function resolveAccessibleTransaction(?string $id): ?object
     {
@@ -600,48 +501,8 @@ class TransactionController extends ApplicationBaseController
             return null;
         }
 
-        $currentUserId = $this->authLibrary->user->id;
+        $own = $this->model->getById($id, $this->authLibrary->user->id);
 
-        // Fast path: own transaction
-        $own = $this->model->getById($id, $currentUserId);
-        if (!empty($own)) {
-            return $own[0];
-        }
-
-        // Slow path: look up by ID only and verify group membership
-        $db          = db_connect();
-        $transaction = $db->table('transactions')->where('id', $id)->get()->getRowObject();
-
-        if (!$transaction) {
-            return null;
-        }
-
-        $groupMemberModel = new GroupMemberModel();
-
-        // Case A: transaction is tagged with a group_id — check direct membership
-        if (!empty($transaction->group_id)) {
-            $membership = $groupMemberModel
-                ->where('group_id', $transaction->group_id)
-                ->where('user_id', $currentUserId)
-                ->whereIn('role', ['owner', 'editor'])
-                ->first();
-
-            return $membership ? $transaction : null;
-        }
-
-        // Case B: transaction has no group_id but belongs to a group owner —
-        // allow editors of that owner's group to mutate it
-        $ownedGroup = $db->table('groups')->where('owner_id', $transaction->user_id)->get()->getRowObject();
-        if (!$ownedGroup) {
-            return null;
-        }
-
-        $membership = $groupMemberModel
-            ->where('group_id', $ownedGroup->id)
-            ->where('user_id', $currentUserId)
-            ->whereIn('role', ['owner', 'editor'])
-            ->first();
-
-        return $membership ? $transaction : null;
+        return !empty($own) ? $own[0] : null;
     }
 }

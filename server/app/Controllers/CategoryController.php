@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use App\Libraries\Auth;
 use App\Models\CategoryModel;
-use App\Models\GroupMemberModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -35,29 +34,9 @@ class CategoryController extends ApplicationBaseController
         $includeArchived = (bool)$this->request->getGet('include_archived');
         $withSums        = (bool)$this->request->getGet('withSums');
         $withChildren    = (bool)$this->request->getGet('withChildren');
-        $groupId         = $this->request->getGet('group_id');
         $db              = db_connect();
 
         $queryUserId = $this->authLibrary->user->id;
-
-        if ($groupId) {
-            $groupMemberModel = new GroupMemberModel();
-            $membership = $groupMemberModel
-                ->where(['group_id' => $groupId, 'user_id' => $this->authLibrary->user->id])
-                ->first();
-
-            if (!$membership) {
-                return $this->failForbidden('You are not a member of this group');
-            }
-
-            $group = $db->table('groups')->where('id', $groupId)->get()->getRowObject();
-
-            if (!$group) {
-                return $this->failNotFound('Group not found');
-            }
-
-            $queryUserId = $group->owner_id;
-        }
 
         if ($withSums) {
             $categories = $this->model->findByUserIdWithSums($queryUserId);

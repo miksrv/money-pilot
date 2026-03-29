@@ -11,26 +11,33 @@ class CreateUsersTable extends Migration
         $this->forge->addField([
             'id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'email' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '255',
+                'constraint' => 255,
                 'unique'     => true,
             ],
             'password' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '255',
+                'constraint' => 255,
             ],
             'name' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '100',
+                'constraint' => 100,
                 'null'       => true,
             ],
-            'phone' => [
+            'language' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '20',
+                'constraint' => 10,
                 'null'       => true,
+                'default'    => null,
+            ],
+            'currency' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 3,
+                'null'       => false,
+                'default'    => 'USD',
             ],
             'created_at' => [
                 'type' => 'TIMESTAMP',

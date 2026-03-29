@@ -10,21 +10,22 @@ class CreateTransactionsTable extends Migration
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'VARCHAR',
-                'constraint'     => 15
+                'type'       => 'VARCHAR',
+                'constraint' => 15,
             ],
             'user_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'account_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
-            'group_id' => [
+            'to_account_id' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 15,
                 'null'       => true,
+                'default'    => null,
             ],
             'category_id' => [
                 'type'       => 'VARCHAR',
@@ -42,7 +43,7 @@ class CreateTransactionsTable extends Migration
             ],
             'type' => [
                 'type'       => 'ENUM',
-                'constraint' => ['income', 'expense'],
+                'constraint' => ['income', 'expense', 'transfer'],
                 'default'    => 'expense',
             ],
             'date' => [
@@ -81,10 +82,11 @@ class CreateTransactionsTable extends Migration
         $this->forge->addPrimaryKey('id');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('account_id', 'accounts', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('group_id', 'groups', 'id', 'SET NULL', 'SET NULL', 'transactions_group_id_foreign');
+        $this->forge->addForeignKey('to_account_id', 'accounts', 'id', 'SET NULL', 'CASCADE', 'fk_transactions_to_account');
         $this->forge->addForeignKey('category_id', 'categories', 'id', 'SET NULL', 'SET NULL');
         $this->forge->addForeignKey('payee_id', 'payees', 'id', 'SET NULL', 'SET NULL');
         $this->forge->addKey('account_id');
+        $this->forge->addKey('to_account_id');
         $this->forge->addKey('date');
         $this->forge->createTable('transactions', true);
     }

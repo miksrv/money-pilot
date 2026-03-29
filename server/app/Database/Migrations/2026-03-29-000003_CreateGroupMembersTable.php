@@ -10,16 +10,16 @@ class CreateGroupMembersTable extends Migration
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'VARCHAR',
-                'constraint'     => 15
+                'type'       => 'VARCHAR',
+                'constraint' => 15,
             ],
             'group_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'user_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
+                'constraint' => 15,
             ],
             'role' => [
                 'type'       => 'ENUM',
@@ -35,7 +35,7 @@ class CreateGroupMembersTable extends Migration
         $this->forge->addPrimaryKey('id');
         $this->forge->addForeignKey('group_id', 'groups', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addUniqueKey(['group_id', 'user_id']); // Избежать дубликатов участников
+        $this->forge->addUniqueKey(['group_id', 'user_id']);
         $this->forge->createTable('group_members', true);
     }
 

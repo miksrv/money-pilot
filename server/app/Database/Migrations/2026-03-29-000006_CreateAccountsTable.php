@@ -10,21 +10,16 @@ class CreateAccountsTable extends Migration
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'VARCHAR',
-                'constraint'     => 15
+                'type'       => 'VARCHAR',
+                'constraint' => 15,
             ],
             'user_id' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 15
-            ],
-            'group_id' => [
-                'type'       => 'VARCHAR',
                 'constraint' => 15,
-                'null'       => true
             ],
             'name' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '100',
+                'constraint' => 100,
             ],
             'type' => [
                 'type'       => 'ENUM',
@@ -38,8 +33,20 @@ class CreateAccountsTable extends Migration
             ],
             'institution' => [
                 'type'       => 'VARCHAR',
-                'constraint' => '100',
+                'constraint' => 100,
                 'null'       => true,
+            ],
+            'payment_due_day' => [
+                'type'       => 'TINYINT',
+                'constraint' => 3,
+                'unsigned'   => true,
+                'null'       => true,
+                'default'    => null,
+            ],
+            'payment_reminder' => [
+                'type'       => 'TINYINT',
+                'constraint' => 1,
+                'default'    => 0,
             ],
             'last_synced' => [
                 'type' => 'TIMESTAMP',
@@ -57,8 +64,7 @@ class CreateAccountsTable extends Migration
 
         $this->forge->addPrimaryKey('id');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('group_id', 'groups', 'id', 'SET NULL', 'SET NULL');
-        $this->forge->addKey(['user_id', 'name'], false, true); // Уникальность имени в рамках user_id
+        $this->forge->addKey(['user_id', 'name'], false, true);
         $this->forge->createTable('accounts', true);
     }
 
