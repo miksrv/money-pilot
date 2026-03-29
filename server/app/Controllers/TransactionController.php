@@ -327,9 +327,13 @@ class TransactionController extends ApplicationBaseController
 
             $accountModel->updateById($input['account_id'], $accountOwnerUserId, ['balance' => $newBalance]);
 
-            // Smart categorization: persist the chosen category as the payee's default
+            // Smart categorization: persist the chosen category and account as the payee's defaults
             if ($payeeId && !empty($input['category_id'])) {
-                $payeeModel->update($payeeId, ['default_category_id' => $input['category_id']]);
+                $updatePayload = ['default_category_id' => $input['category_id']];
+                if (!empty($input['account_id'])) {
+                    $updatePayload['default_account_id'] = $input['account_id'];
+                }
+                $payeeModel->update($payeeId, $updatePayload);
             }
 
             return $this->respondCreated();
@@ -452,12 +456,17 @@ class TransactionController extends ApplicationBaseController
                 return $this->failValidationErrors($this->model->errors());
             }
 
-            // Smart categorization: persist the chosen category as the payee's default
+            // Smart categorization: persist the chosen category and account as the payee's defaults
             if (isset($updateData['category_id'])) {
                 $effectivePayeeId = $updateData['payee_id'] ?? $transaction->payee_id ?? null;
                 if ($effectivePayeeId) {
                     $payeeModel = new PayeeModel();
-                    $payeeModel->update($effectivePayeeId, ['default_category_id' => $updateData['category_id']]);
+                    $updatePayload = ['default_category_id' => $updateData['category_id']];
+                    $effectiveAccountId = $updateData['account_id'] ?? $transaction->account_id ?? null;
+                    if (!empty($effectiveAccountId)) {
+                        $updatePayload['default_account_id'] = $effectiveAccountId;
+                    }
+                    $payeeModel->update($effectivePayeeId, $updatePayload);
                 }
             }
 

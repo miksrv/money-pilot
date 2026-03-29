@@ -36,7 +36,7 @@ class PayeeController extends ApplicationBaseController
         $db = db_connect();
 
         $builder = $db->table('payees p')
-            ->select('p.id, p.name, p.default_category_id, COUNT(t.id) AS usage_count, MAX(t.date) AS last_used')
+            ->select('p.id, p.name, p.default_category_id, p.default_account_id, COUNT(t.id) AS usage_count, MAX(t.date) AS last_used')
             ->join('transactions t', 't.payee_id = p.id', 'left')
             ->groupBy('p.id')
             ->orderBy('p.name', 'ASC')
@@ -53,6 +53,7 @@ class PayeeController extends ApplicationBaseController
                 'id'                  => $row['id'],
                 'name'                => $row['name'],
                 'default_category_id' => $row['default_category_id'],
+                'default_account_id'  => $row['default_account_id'],
                 'usage_count'         => (int)$row['usage_count'],
                 'last_used'           => $row['last_used'],
             ];

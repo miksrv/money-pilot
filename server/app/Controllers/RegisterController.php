@@ -31,13 +31,33 @@ class RegisterController extends ApplicationBaseController
             return $this->failValidationErrors($this->validator->getErrors());
         }
 
+        if (empty(trim($input['name'] ?? ''))) {
+            return $this->failValidationErrors(['name' => 'Name is required']);
+        }
+
+        if (strlen(trim($input['name'])) > 100) {
+            return $this->failValidationErrors(['name' => 'Name cannot exceed 100 characters']);
+        }
+
         try {
-            $userId = $this->userModel->insert([
+            $language = $input['language'] ?? 'en';
+
+            $this->userModel->insert([
                 'email'     => $input['email'],
                 'password'  => $input['password'],
-                'name'      => $input['name'] ?? null,
+                'name'      => trim($input['name']),
+                'language'  => $language,
                 'is_active' => true,
             ]);
+
+            $userId = $this->userModel->getInsertID();
+
+            try {
+                $seeder = new \App\Libraries\DefaultDataSeeder();
+                $seeder->seed($userId, $language);
+            } catch (\Exception $e) {
+                log_message('error', 'DefaultDataSeeder failed for user ' . $userId . ': ' . $e->getMessage());
+            }
 
             $token = (new Auth())->login($userId);
 

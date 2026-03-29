@@ -34,7 +34,7 @@ class UserController extends ApplicationBaseController
             'id'         => $user->id,
             'name'       => $user->name,
             'email'      => $user->email,
-            'phone'      => $user->phone,
+            'language'   => $user->language ?? 'en',
             'currency'   => $user->currency ?? 'USD',
             'created_at' => $user->created_at instanceof \CodeIgniter\I18n\Time
                 ? $user->created_at->toDateTimeString()
@@ -62,16 +62,24 @@ class UserController extends ApplicationBaseController
             return $this->failValidationErrors(['currency' => 'Currency must be a 3-letter ISO 4217 code (e.g. USD)']);
         }
 
+        $language = trim($input['language'] ?? '');
+        if ($language !== '' && !in_array($language, ['en', 'ru'], true)) {
+            return $this->failValidationErrors(['language' => 'Language must be one of: en, ru']);
+        }
+
         try {
             $userModel = new UserModel();
 
             $updateData = [
-                'name'  => trim($input['name']),
-                'phone' => $input['phone'] ?? null,
+                'name' => trim($input['name']),
             ];
 
             if ($currency !== '') {
                 $updateData['currency'] = $currency;
+            }
+
+            if ($language !== '') {
+                $updateData['language'] = $language;
             }
 
             $userModel->update($this->authLibrary->user->id, $updateData);
@@ -83,7 +91,7 @@ class UserController extends ApplicationBaseController
                 'id'       => $updated->id,
                 'name'     => $updated->name,
                 'email'    => $updated->email,
-                'phone'    => $updated->phone,
+                'language' => $updated->language ?? 'en',
                 'currency' => $updated->currency ?? 'USD',
             ]);
         } catch (\Exception $e) {
