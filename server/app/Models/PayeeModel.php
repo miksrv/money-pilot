@@ -20,6 +20,7 @@ class PayeeModel extends ApplicationBaseModel
         'id',
         'name',
         'default_category_id',
+        'default_account_id',
         'created_by_user_id',
         'usage_count',
         'created_at',

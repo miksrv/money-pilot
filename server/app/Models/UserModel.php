@@ -8,7 +8,7 @@ class UserModel extends ApplicationBaseModel
 {
     protected $table          = 'users';
     protected $primaryKey     = 'id';
-    protected $allowedFields  = ['email', 'password', 'name', 'phone', 'currency', 'is_active', 'last_login'];
+    protected $allowedFields  = ['email', 'password', 'name', 'language', 'currency', 'is_active', 'last_login'];
     protected $createdField   = 'created_at';
     protected $updatedField   = 'updated_at';
 
@@ -32,7 +32,7 @@ class UserModel extends ApplicationBaseModel
         'email'    => 'required|valid_email|is_unique[users.email,id,{id}]',
         'password' => 'required',
         'name'     => 'permit_empty|string|max_length[100]',
-        'phone'    => 'permit_empty|string|max_length[20]',
+        'language' => 'permit_empty|in_list[en,ru]',
         'currency' => 'permit_empty|string|max_length[3]',
     ];
 
