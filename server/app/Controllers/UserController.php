@@ -160,14 +160,29 @@ class UserController extends ApplicationBaseController
 
         try {
             $db = db_connect();
+            $db->transStart();
 
-            // Hard delete in FK-safe order
+            // Hard delete in FK-safe order (most dependent first)
             $db->table('sessions')->where('user_id', $userId)->delete();
+            $db->table('subscriptions')->where('user_id', $userId)->delete();
             $db->table('transactions')->where('user_id', $userId)->delete();
+            $db->table('recurring_transactions')->where('user_id', $userId)->delete();
             $db->table('accounts')->where('user_id', $userId)->delete();
             $db->table('categories')->where('user_id', $userId)->delete();
-            $db->table('payees')->where('user_id', $userId)->delete();
+            $db->table('payees')->where('created_by_user_id', $userId)->delete();
+            $db->table('group_invitations')->where('invited_user_id', $userId)->delete();
+            $db->table('group_invitations')->where('inviter_user_id', $userId)->delete();
+            $db->table('group_members')->where('user_id', $userId)->delete();
+
+            // Finally delete the user
             $db->table('users')->where('id', $userId)->delete();
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                log_message('error', __METHOD__ . ': Transaction failed for user ' . $userId);
+                return $this->fail('Failed to delete user account');
+            }
 
             return $this->respond(null, 204);
         } catch (\Exception $e) {

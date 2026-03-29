@@ -16,7 +16,6 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, value }) => 
     const { t, i18n } = useTranslation()
     const lang = i18n.language?.startsWith('ru') ? 'ru' : 'en'
 
-    const [selectedEmoji, setSelectedEmoji] = useState(value || '💵')
     const [searchQuery, setSearchQuery] = useState('')
     const [activeCategory, setActiveCategory] = useState<EmojiCategory>('objects')
     const [recentEmojis, setRecentEmojis] = useState<string[]>([])
@@ -25,15 +24,12 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, value }) => 
     const searchInputRef = useRef<HTMLInputElement>(null)
     const listRef = useRef<HTMLDivElement>(null)
 
+    // Use value from props directly, fallback to default
+    const selectedEmoji = value || '💵'
+
     useEffect(() => {
         setRecentEmojis(getRecentEmojis())
     }, [])
-
-    useEffect(() => {
-        if (value && value !== selectedEmoji) {
-            setSelectedEmoji(value)
-        }
-    }, [value])
 
     const filteredEmojis = useMemo(() => {
         if (!searchQuery.trim()) {
@@ -58,7 +54,6 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, value }) => 
 
     const handleEmojiSelect = useCallback(
         (emoji: string) => {
-            setSelectedEmoji(emoji)
             onSelect(emoji)
             saveRecentEmoji(emoji)
             setRecentEmojis(getRecentEmojis())
@@ -77,20 +72,22 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, value }) => 
         [filteredEmojis, handleEmojiSelect]
     )
 
-    const handlePopoutOpen = () => {
-        setSearchQuery('')
-        setRecentEmojis(getRecentEmojis())
-        // Focus search input when popout opens
-        setTimeout(() => {
-            searchInputRef.current?.focus()
-        }, 100)
-    }
+    const handlePopoutOpenChange = useCallback((isOpen: boolean) => {
+        if (isOpen) {
+            setSearchQuery('')
+            setRecentEmojis(getRecentEmojis())
+            // Focus search input when popout opens
+            setTimeout(() => {
+                searchInputRef.current?.focus()
+            }, 100)
+        }
+    }, [])
 
     return (
         <Popout
             ref={popoutRef}
             position={'left'}
-            onOpenChange={handlePopoutOpen}
+            onOpenChange={handlePopoutOpenChange}
             trigger={
                 <Button
                     className={styles.emojiTrigger}
@@ -106,7 +103,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, value }) => 
                     <Input
                         type='text'
                         placeholder={t('emoji.search', 'Search emoji...')}
-                        value={searchQuery}
+                        // value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
                         className={styles.searchInput}

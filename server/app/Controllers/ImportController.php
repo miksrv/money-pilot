@@ -6,7 +6,6 @@ use App\Libraries\Auth;
 use App\Models\AccountModel;
 use App\Models\CategoryModel;
 use App\Models\PayeeModel;
-use App\Models\TransactionModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 
@@ -88,6 +87,7 @@ class ImportController extends ApplicationBaseController
         $categoryCol    = $this->findCol($colMap, ["\xD0\x9A\xD0\xB0\xD1\x82\xD0\xB5\xD0\xB3\xD0\xBE\xD1\x80\xD0\xB8\xD1\x8F", 'category', 'Category']);
         $descCol        = $this->findCol($colMap, ["\xD0\x9E\xD0\xBF\xD0\xB8\xD1\x81\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xB5", 'description', 'Description', "\xD0\x9F\xD1\x80\xD0\xB8\xD0\xBC\xD0\xB5\xD1\x87\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xB5"]);
         $transferCol    = $this->findCol($colMap, ["\xD0\xA2\xD1\x80\xD0\xB0\xD0\xBD\xD1\x81\xD1\x84\xD0\xB5\xD1\x80\xD1\x8B", 'transfer', 'Transfer']);
+        $timeCol        = $this->findCol($colMap, ["\xD0\x92\xD1\x80\xD0\xB5\xD0\xBC\xD1\x8F", 'time', 'Time']); // "Время"
 
         if ($accountCol === null || $dateCol === null || $amountCol === null) {
             return $this->failValidationErrors([
@@ -99,7 +99,6 @@ class ImportController extends ApplicationBaseController
         $accountModel  = new AccountModel();
         $categoryModel = new CategoryModel();
         $payeeModel    = new PayeeModel();
-        $txModel       = new TransactionModel();
 
         // accountCache: name (lowercase) => account object
         $accountCache = [];
@@ -192,14 +191,17 @@ class ImportController extends ApplicationBaseController
                 continue;
             }
 
-            // --- Date ---
+            // --- Date + Time ---
             $rawDate = trim($row[$dateCol]);
+            $rawTime = $timeCol !== null ? trim($row[$timeCol]) : '';
             $date    = $this->parseDate($rawDate);
 
             if ($date === null) {
                 $skipped++;
                 continue;
             }
+
+            $datetime = $this->parseDateTime($rawDate, $rawTime) ?? ($date . ' 00:00:00');
 
             // --- Account ---
             $rawAccount  = trim($row[$accountCol]);
@@ -283,6 +285,7 @@ class ImportController extends ApplicationBaseController
                             'name'      => $parentName,
                             'type'      => $categoryType,
                             'is_parent' => 1,
+                            'color'     => 'grey',
                         ]);
                         $newParent = $categoryModel->where('user_id', $userId)->where('name', $parentName)->first();
                         if ($newParent) {
@@ -305,6 +308,7 @@ class ImportController extends ApplicationBaseController
                                 'type'      => $categoryType,
                                 'is_parent' => 0,
                                 'parent_id' => $parentId,
+                                'color'     => 'grey',
                             ]);
                             $newChild = $categoryModel->where('user_id', $userId)->where('name', $childName)->first();
                             if ($newChild) {
@@ -326,6 +330,7 @@ class ImportController extends ApplicationBaseController
                             'name'      => $rawCategory,
                             'type'      => $categoryType,
                             'is_parent' => 0,
+                            'color'     => 'grey',
                         ]);
                         $newCat = $categoryModel->where('user_id', $userId)->where('name', $rawCategory)->first();
                         if ($newCat) {
@@ -342,7 +347,10 @@ class ImportController extends ApplicationBaseController
             $notes = $notes !== '' ? $notes : null;
 
             // --- Insert transaction ---
-            $txModel->insert([
+            // Use Query Builder directly to bypass model's auto-timestamps and set created_at/updated_at from CSV.
+            $txId = uniqid();
+            $db->table('transactions')->insert([
+                'id'          => $txId,
                 'user_id'     => $userId,
                 'account_id'  => $accountId,
                 'payee_id'    => $payeeId,
@@ -351,6 +359,8 @@ class ImportController extends ApplicationBaseController
                 'type'        => $type,
                 'date'        => $date,
                 'notes'       => $notes,
+                'created_at'  => $datetime,
+                'updated_at'  => $datetime,
             ]);
 
             $imported++;
@@ -361,6 +371,58 @@ class ImportController extends ApplicationBaseController
         if ($db->transStatus() === false) {
             log_message('error', 'ImportController::csv — DB transaction failed.');
             return $this->fail('Database error while importing transactions.', 500);
+        }
+
+        // --- Recalculate balances for all affected accounts (after transaction commit) ---
+        foreach ($accountCache as $account) {
+            $accountId = $account->id;
+
+            // Sum all income transactions
+            $incomeSum = $db->table('transactions')
+                ->selectSum('amount')
+                ->where('account_id', $accountId)
+                ->where('user_id', $userId)
+                ->where('type', 'income')
+                ->get()
+                ->getRow()
+                ->amount ?? 0;
+
+            // Sum all expense transactions
+            $expenseSum = $db->table('transactions')
+                ->selectSum('amount')
+                ->where('account_id', $accountId)
+                ->where('user_id', $userId)
+                ->where('type', 'expense')
+                ->get()
+                ->getRow()
+                ->amount ?? 0;
+
+            // Sum all outgoing transfers (this account is source)
+            $transferOutSum = $db->table('transactions')
+                ->selectSum('amount')
+                ->where('account_id', $accountId)
+                ->where('user_id', $userId)
+                ->where('type', 'transfer')
+                ->get()
+                ->getRow()
+                ->amount ?? 0;
+
+            // Sum all incoming transfers (this account is destination)
+            $transferInSum = $db->table('transactions')
+                ->selectSum('amount')
+                ->where('to_account_id', $accountId)
+                ->where('user_id', $userId)
+                ->where('type', 'transfer')
+                ->get()
+                ->getRow()
+                ->amount ?? 0;
+
+            $newBalance = (float)$incomeSum - (float)$expenseSum - (float)$transferOutSum + (float)$transferInSum;
+
+            $db->table('accounts')
+                ->where('id', $accountId)
+                ->where('user_id', $userId)
+                ->update(['balance' => $newBalance]);
         }
 
         return $this->respond([
@@ -388,6 +450,36 @@ class ImportController extends ApplicationBaseController
             }
         }
         return null;
+    }
+
+    /**
+     * Combine a date string and a time string (e.g. "2:51 PM") into a Y-m-d H:i:s datetime.
+     * Returns null if either part cannot be parsed.
+     */
+    private function parseDateTime(string $rawDate, string $rawTime): ?string
+    {
+        $date = $this->parseDate($rawDate);
+        if ($date === null) {
+            return null;
+        }
+
+        if ($rawTime === '') {
+            return $date . ' 00:00:00';
+        }
+
+        // Parse "2:51 PM", "14:51", "2:51:00 PM", etc.
+        $dt = \DateTime::createFromFormat('Y-m-d g:i A', $date . ' ' . strtoupper($rawTime));
+        if (!$dt) {
+            $dt = \DateTime::createFromFormat('Y-m-d g:i:s A', $date . ' ' . strtoupper($rawTime));
+        }
+        if (!$dt) {
+            $dt = \DateTime::createFromFormat('Y-m-d H:i', $date . ' ' . $rawTime);
+        }
+        if (!$dt) {
+            $dt = \DateTime::createFromFormat('Y-m-d H:i:s', $date . ' ' . $rawTime);
+        }
+
+        return $dt ? $dt->format('Y-m-d H:i:s') : ($date . ' 00:00:00');
     }
 
     /**

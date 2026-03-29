@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Input, Message, Select } from 'simple-react-ui-kit'
+import { Button, Checkbox, Input, Message, Select } from 'simple-react-ui-kit'
 
 import { ApiError, useRegistrationMutation } from '@/api'
 import { login } from '@/store/authSlice'
@@ -17,6 +17,7 @@ type RegisterFormData = {
     password: string
     name: string
     language: string
+    demoData: boolean
 }
 
 export const Register: React.FC = () => {
@@ -35,7 +36,8 @@ export const Register: React.FC = () => {
         setError
     } = useForm<RegisterFormData>({
         defaultValues: {
-            language: navigator.language.startsWith('ru') ? 'ru' : 'en'
+            language: navigator.language.startsWith('ru') ? 'ru' : 'en',
+            demoData: true
         }
     })
 
@@ -47,7 +49,8 @@ export const Register: React.FC = () => {
                 email: data.email,
                 password: data.password,
                 name: data.name,
-                language: data.language
+                language: data.language,
+                demo_data: data.demoData
             }).unwrap()
             if (result?.token) {
                 dispatch(login(result.token))
@@ -166,6 +169,12 @@ export const Register: React.FC = () => {
                                 {showPassword ? t('login.password_hide', 'Hide') : t('login.password_show', 'Show')}
                             </button>
                         </div>
+
+                        <Checkbox
+                            label={t('register.sampleData', 'Populate with sample data')}
+                            checked={watch('demoData')}
+                            onChange={(e) => setValue('demoData', e.target.checked)}
+                        />
 
                         <Button
                             type='submit'

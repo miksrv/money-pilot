@@ -41,6 +41,7 @@ class RegisterController extends ApplicationBaseController
 
         try {
             $language = $input['language'] ?? 'en';
+            $demoData = isset($input['demo_data']) ? (bool)$input['demo_data'] : true;
 
             $this->userModel->insert([
                 'email'     => $input['email'],
@@ -54,7 +55,7 @@ class RegisterController extends ApplicationBaseController
 
             try {
                 $seeder = new \App\Libraries\DefaultDataSeeder();
-                $seeder->seed($userId, $language);
+                $seeder->seed($userId, $language, $demoData);
             } catch (\Exception $e) {
                 log_message('error', 'DefaultDataSeeder failed for user ' . $userId . ': ' . $e->getMessage());
             }

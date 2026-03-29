@@ -187,6 +187,7 @@ export const Settings: React.FC = () => {
         }
         try {
             await deleteMyAccount().unwrap()
+            localStorage.clear()
             dispatch(logout())
             void navigate('/login')
         } catch {

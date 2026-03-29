@@ -1,6 +1,7 @@
 {
     "register": {
-        "title": "Register"
+        "title": "Register",
+        "sampleData": "Populate with sample data"
     },
     "currency": {
         "USD": "US Dollar",

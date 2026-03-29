@@ -4,10 +4,16 @@ namespace App\Libraries;
 
 class DefaultDataSeeder
 {
-    public function seed(string $userId, string $language): void
+    public function seed(string $userId, string $language, bool $demoData = true): void
     {
+        if ($demoData === false) {
+            return;
+        }
+
         $this->createDefaultGroup($userId, $language);
-        $this->createDefaultCategories($userId, $language);
+        $categoryIds = $this->createDefaultCategories($userId, $language);
+        $accountId   = $this->createDemoAccount($userId, $language);
+        $this->createDemoTransactions($userId, $accountId, $language, $categoryIds);
     }
 
     private function createDefaultGroup(string $userId, string $language): void
@@ -31,7 +37,7 @@ class DefaultDataSeeder
         ]);
     }
 
-    private function createDefaultCategories(string $userId, string $language): void
+    private function createDefaultCategories(string $userId, string $language): array
     {
         $categoryModel = model('CategoryModel');
         $templates     = $this->getCategoryTemplates($language);
@@ -52,7 +58,8 @@ class DefaultDataSeeder
             }
         }
 
-        // Second pass — insert child categories
+        // Second pass — insert child categories, collect IDs by name
+        $childIds = [];
         foreach ($templates as $tpl) {
             if ($tpl['is_parent'] === 0) {
                 $parentId = $parentIds[$tpl['parent']] ?? null;
@@ -65,7 +72,66 @@ class DefaultDataSeeder
                     'icon'      => $tpl['icon'],
                     'color'     => $tpl['color'],
                 ]);
+                $childIds[$tpl['name']] = $categoryModel->getInsertID();
             }
+        }
+
+        return $childIds;
+    }
+
+    private function createDemoAccount(string $userId, string $language): string
+    {
+        $name = $language === 'ru' ? 'Основной счёт' : 'Main Account';
+
+        $accountModel = model('AccountModel');
+        $accountModel->insert([
+            'user_id' => $userId,
+            'name'    => $name,
+            'type'    => 'checking',
+            'balance' => 3500.00,
+        ]);
+
+        return $accountModel->getInsertID();
+    }
+
+    private function createDemoTransactions(string $userId, string $accountId, string $language, array $categoryIds): void
+    {
+        $transactionModel = model('TransactionModel');
+
+        $transactions = $language === 'ru'
+            ? [
+                ['type' => 'income',  'amount' => 85000.00, 'category' => 'Зарплата',  'days' => 25, 'notes' => 'Зарплата за месяц'],
+                ['type' => 'expense', 'amount' => 3200.00,  'category' => 'Продукты',  'days' => 20, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 1800.00,  'category' => 'Рестораны', 'days' => 18, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 2500.00,  'category' => 'Топливо',   'days' => 15, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 399.00,   'category' => 'Подписки',  'days' => 12, 'notes' => 'Netflix'],
+                ['type' => 'expense', 'amount' => 4500.00,  'category' => 'Коммуналка','days' => 10, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 2800.00,  'category' => 'Продукты',  'days' => 5,  'notes' => ''],
+                ['type' => 'expense', 'amount' => 950.00,   'category' => 'Рестораны', 'days' => 2,  'notes' => ''],
+            ]
+            : [
+                ['type' => 'income',  'amount' => 3500.00, 'category' => 'Salary',        'days' => 25, 'notes' => 'Monthly salary'],
+                ['type' => 'expense', 'amount' => 85.40,   'category' => 'Groceries',     'days' => 20, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 32.00,   'category' => 'Restaurants',   'days' => 18, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 45.00,   'category' => 'Fuel',          'days' => 15, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 9.99,    'category' => 'Subscriptions', 'days' => 12, 'notes' => 'Netflix'],
+                ['type' => 'expense', 'amount' => 120.00,  'category' => 'Utilities',     'days' => 10, 'notes' => ''],
+                ['type' => 'expense', 'amount' => 67.30,   'category' => 'Groceries',     'days' => 5,  'notes' => ''],
+                ['type' => 'expense', 'amount' => 24.50,   'category' => 'Restaurants',   'days' => 2,  'notes' => ''],
+            ];
+
+        foreach ($transactions as $tx) {
+            $categoryId = $categoryIds[$tx['category']] ?? null;
+
+            $transactionModel->insert([
+                'user_id'     => $userId,
+                'account_id'  => $accountId,
+                'category_id' => $categoryId,
+                'type'        => $tx['type'],
+                'amount'      => $tx['amount'],
+                'date'        => date('Y-m-d', strtotime('-' . $tx['days'] . ' days')),
+                'notes'       => $tx['notes'],
+            ]);
         }
     }
 
