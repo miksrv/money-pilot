@@ -262,7 +262,10 @@ export const api = createApi({
             query: (params) => `/payees${encodeQueryData(params)}`
         }),
         /* Update payee */
-        updatePayee: builder.mutation<ApiModel.Payee, { id: string; name: string }>({
+        updatePayee: builder.mutation<
+            ApiModel.Payee,
+            { id: string; name?: string; default_category_id?: string | null; default_account_id?: string | null }
+        >({
             invalidatesTags: [
                 { id: 'LIST', type: 'Payee' },
                 { id: 'LIST', type: 'Transaction' }

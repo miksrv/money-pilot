@@ -18,28 +18,6 @@ class CreatePayeesTable extends Migration
                 'constraint' => 100,
                 'unique'     => true,
             ],
-            'default_category_id' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 15,
-                'null'       => true,
-                'default'    => null,
-            ],
-            'default_account_id' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 15,
-                'null'       => true,
-                'default'    => null,
-            ],
-            'created_by_user_id' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 15,
-                'null'       => true,
-            ],
-            'usage_count' => [
-                'type'     => 'INT',
-                'unsigned' => true,
-                'default'  => 0,
-            ],
             'created_at' => [
                 'type' => 'TIMESTAMP',
                 'null' => true,
@@ -51,10 +29,6 @@ class CreatePayeesTable extends Migration
         ]);
 
         $this->forge->addPrimaryKey('id');
-        $this->forge->addForeignKey('default_category_id', 'categories', 'id', 'SET NULL', 'SET NULL', 'fk_payees_category');
-        $this->forge->addForeignKey('default_account_id', 'accounts', 'id', 'SET NULL', 'SET NULL', 'fk_payees_default_account');
-        $this->forge->addForeignKey('created_by_user_id', 'users', 'id', 'SET NULL', 'SET NULL');
-        $this->forge->addKey('usage_count');
         $this->forge->createTable('payees', true);
     }
 

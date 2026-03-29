@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Entities\Payee;
 use ReflectionException;
 
 class PayeeModel extends ApplicationBaseModel
@@ -10,7 +9,7 @@ class PayeeModel extends ApplicationBaseModel
     protected $table = 'payees';
     protected $primaryKey = 'id';
 
-    protected $returnType = Payee::class;
+    protected $returnType = 'array';
 
     protected $useSoftDeletes = false;
     protected $useAutoIncrement = false;
@@ -19,12 +18,6 @@ class PayeeModel extends ApplicationBaseModel
     protected $allowedFields = [
         'id',
         'name',
-        'default_category_id',
-        'default_account_id',
-        'created_by_user_id',
-        'usage_count',
-        'created_at',
-        'updated_at',
     ];
 
     protected $useTimestamps = true;
@@ -34,63 +27,44 @@ class PayeeModel extends ApplicationBaseModel
 
     protected $validationRules = [
         'name' => 'required|max_length[100]|is_unique[payees.name,id,{id}]',
-        'created_by_user_id' => 'permit_empty|is_not_unique[users.id]',
     ];
 
     protected $validationMessages = [
         'name' => [
-            'required' => 'Payee name is required.',
+            'required'   => 'Payee name is required.',
             'max_length' => 'Payee name cannot exceed 100 characters.',
-            'is_unique' => 'This payee name already exists.',
-        ],
-        'created_by_user_id' => [
-            'is_not_unique' => 'Invalid user ID.',
+            'is_unique'  => 'This payee name already exists.',
         ],
     ];
 
-    protected $skipValidation = false;
+    protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
     protected $allowCallbacks = true;
-    protected $beforeInsert = ['generateId'];
-    protected $afterInsert = [];
-    protected $beforeUpdate = [];
-    protected $afterUpdate = [];
-    protected $beforeFind = [];
-    protected $afterFind = [];
-    protected $beforeDelete = [];
-    protected $afterDelete = [];
+    protected $beforeInsert   = ['generateId'];
+    protected $afterInsert    = [];
+    protected $beforeUpdate   = [];
+    protected $afterUpdate    = [];
+    protected $beforeFind     = [];
+    protected $afterFind      = [];
+    protected $beforeDelete   = [];
+    protected $afterDelete    = [];
 
     /**
-     * @param string $name
-     * @param string|null $createdByUserId
-     * @return string
+     * Find a global payee by name or create one, returning its ID.
+     *
      * @throws ReflectionException
      */
-    public function getOrCreateByName(string $name, string $createdByUserId = null): string
+    public function getOrCreateByName(string $name): string
     {
         $payee = $this->select('id')->where('name', $name)->first();
 
         if ($payee) {
-            $this->set('usage_count', 'usage_count + 1', false)
-                ->where('id', $payee->id)
-                ->update();
-
-            return $payee->id;
+            return $payee['id'];
         }
 
-        $data = [
-            'name'        => $name,
-            'usage_count' => 1,
-        ];
-
-        if ($createdByUserId !== null) {
-            $data['created_by_user_id'] = $createdByUserId;
-        }
-
-        $this->insert($data, true);
+        $this->insert(['name' => $name], true);
 
         return $this->getInsertID();
     }
-
 }
