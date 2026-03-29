@@ -2,19 +2,21 @@ import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Input, Message } from 'simple-react-ui-kit'
+import { Button, Input, Message, Select } from 'simple-react-ui-kit'
 
 import { ApiError, useRegistrationMutation } from '@/api'
 import { login } from '@/store/authSlice'
 import { useAppDispatch } from '@/store/hooks'
 
-import { MIN_PASSWORD_LENGTH } from './constants'
+import { LANGUAGE_OPTIONS, MIN_PASSWORD_LENGTH } from './constants'
 
 import styles from './styles.module.sass'
 
 type RegisterFormData = {
     email: string
     password: string
+    name: string
+    language: string
 }
 
 export const Register: React.FC = () => {
@@ -27,15 +29,26 @@ export const Register: React.FC = () => {
     const {
         register,
         handleSubmit,
+        watch,
+        setValue,
         formState: { errors },
         setError
-    } = useForm<RegisterFormData>()
+    } = useForm<RegisterFormData>({
+        defaultValues: {
+            language: navigator.language.startsWith('ru') ? 'ru' : 'en'
+        }
+    })
 
     const [registerMutation, { isLoading }] = useRegistrationMutation()
 
     const onSubmit = async (data: RegisterFormData) => {
         try {
-            const result = await registerMutation({ email: data.email, password: data.password }).unwrap()
+            const result = await registerMutation({
+                email: data.email,
+                password: data.password,
+                name: data.name,
+                language: data.language
+            }).unwrap()
             if (result?.token) {
                 dispatch(login(result.token))
                 await navigate('/')
@@ -94,6 +107,19 @@ export const Register: React.FC = () => {
                         {errors.root && <Message type='error'>{errors.root.message}</Message>}
 
                         <Input
+                            label={t('register.input_name_title', 'Full name')}
+                            placeholder={t('register.input_name_placeholder', 'Your name')}
+                            error={errors.name?.message}
+                            {...register('name', {
+                                required: t('register.input_name_required_error', 'Name is required'),
+                                maxLength: {
+                                    value: 100,
+                                    message: t('register.input_name_max_length', 'Max 100 characters')
+                                }
+                            })}
+                        />
+
+                        <Input
                             type='email'
                             label={t('register.input_email_title', 'Email')}
                             placeholder={t('register.input_email_placeholder', 'your@email.com')}
@@ -105,6 +131,13 @@ export const Register: React.FC = () => {
                                     message: t('register.input_email_invalid_error', 'Invalid email address')
                                 }
                             })}
+                        />
+
+                        <Select
+                            label={t('register.input_language_title', 'Language')}
+                            options={LANGUAGE_OPTIONS}
+                            value={watch('language')}
+                            onSelect={(items) => setValue('language', items?.[0]?.key ?? 'en')}
                         />
 
                         <div className={styles.passwordWrapper}>

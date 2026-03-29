@@ -23,6 +23,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { formatUTCDate } from '@/utils/dates'
 import { getCurrencyOptions } from '@/utils/money'
 
+import { LANGUAGE_OPTIONS } from '../register/constants'
+
 import { AccessedGroupRow } from './AccessedGroupRow'
 import { OwnedGroupCard } from './OwnedGroupCard'
 
@@ -109,7 +111,11 @@ export const Settings: React.FC = () => {
 
     useEffect(() => {
         if (profile) {
-            resetProfile({ name: profile.name, phone: profile.phone ?? '', currency: profile.currency ?? 'USD' })
+            resetProfile({
+                name: profile.name,
+                currency: profile.currency ?? 'USD',
+                language: profile.language ?? 'en'
+            })
         }
     }, [profile])
 
@@ -264,6 +270,7 @@ export const Settings: React.FC = () => {
     }
 
     const profileCurrency = watchProfile('currency') ?? 'USD'
+    const profileLanguage = watchProfile('language') ?? 'en'
 
     const currencyOptions = getCurrencyOptions()
 
@@ -271,11 +278,6 @@ export const Settings: React.FC = () => {
         { key: 'light', value: t('settings.preferences.themeLight', 'Light') },
         { key: 'dark', value: t('settings.preferences.themeDark', 'Dark') },
         { key: 'system', value: t('settings.preferences.themeSystem', 'System') }
-    ]
-
-    const languageOptions = [
-        { key: 'en', value: 'English' },
-        { key: 'ru', value: 'Русский' }
     ]
 
     const roleOptions = [
@@ -327,20 +329,18 @@ export const Settings: React.FC = () => {
                                 disabled
                             />
 
-                            <Input
-                                id='profile-phone'
-                                type='text'
-                                size='medium'
-                                label={t('settings.profile.phone', 'Phone')}
-                                placeholder={t('settings.profile.phone', 'Phone')}
-                                {...registerProfile('phone')}
-                            />
-
                             <Select<string>
                                 label={t('settings.profile.currency', 'Currency')}
                                 options={currencyOptions}
                                 value={profileCurrency}
                                 onSelect={(items) => setProfileValue('currency', items?.[0]?.key ?? 'USD')}
+                            />
+
+                            <Select<string>
+                                label={t('settings.language', 'Language')}
+                                options={LANGUAGE_OPTIONS}
+                                value={profileLanguage}
+                                onSelect={(items) => setProfileValue('language', items?.[0]?.key ?? 'en')}
                             />
 
                             <Button
@@ -545,7 +545,7 @@ export const Settings: React.FC = () => {
                     <div className={styles.prefRow}>
                         <label>{t('settings.preferences.language', 'Language')}</label>
                         <Select<string>
-                            options={languageOptions}
+                            options={LANGUAGE_OPTIONS}
                             value={i18n.language}
                             onSelect={(items) => {
                                 const key = items?.[0]?.key
