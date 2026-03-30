@@ -7,6 +7,7 @@ use App\Models\AccountModel;
 use App\Models\CategoryModel;
 use App\Models\PayeeModel;
 use App\Models\TransactionModel;
+use App\Models\UserPayeeSettingsModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 
@@ -235,7 +236,7 @@ class TransactionController extends ApplicationBaseController
 
             if ($input['payee']) {
                 // Ensure payee exists or create a new one
-                $payeeId = $payeeModel->getOrCreateByName($input['payee'], $this->authLibrary->user->id);
+                $payeeId = $payeeModel->getOrCreateByName($input['payee']);
             } else {
                 $payeeId = null;
             }
@@ -255,11 +256,12 @@ class TransactionController extends ApplicationBaseController
 
             // Smart categorization: persist the chosen category and account as the payee's defaults
             if ($payeeId && !empty($input['category_id'])) {
+                $settingsModel = new UserPayeeSettingsModel();
                 $updatePayload = ['default_category_id' => $input['category_id']];
                 if (!empty($input['account_id'])) {
                     $updatePayload['default_account_id'] = $input['account_id'];
                 }
-                $payeeModel->update($payeeId, $updatePayload);
+                $settingsModel->upsertForUser($this->authLibrary->user->id, $payeeId, $updatePayload);
             }
 
             return $this->respondCreated();
@@ -366,7 +368,7 @@ class TransactionController extends ApplicationBaseController
 
                 if (!empty($payeeName)) {
                     $payeeModel = new PayeeModel();
-                    $updateData['payee_id'] = $payeeModel->getOrCreateByName($payeeName, $this->authLibrary->user->id);
+                    $updateData['payee_id'] = $payeeModel->getOrCreateByName($payeeName);
                 } else {
                     $updateData['payee_id'] = null;
                 }
@@ -382,13 +384,13 @@ class TransactionController extends ApplicationBaseController
             if (isset($updateData['category_id'])) {
                 $effectivePayeeId = $updateData['payee_id'] ?? $transaction->payee_id ?? null;
                 if ($effectivePayeeId) {
-                    $payeeModel = new PayeeModel();
+                    $settingsModel = new UserPayeeSettingsModel();
                     $updatePayload = ['default_category_id' => $updateData['category_id']];
                     $effectiveAccountId = $updateData['account_id'] ?? $transaction->account_id ?? null;
                     if (!empty($effectiveAccountId)) {
                         $updatePayload['default_account_id'] = $effectiveAccountId;
                     }
-                    $payeeModel->update($effectivePayeeId, $updatePayload);
+                    $settingsModel->upsertForUser($this->authLibrary->user->id, $effectivePayeeId, $updatePayload);
                 }
             }
 
