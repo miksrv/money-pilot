@@ -6,6 +6,7 @@ use App\Libraries\Auth;
 use App\Models\AccountModel;
 use App\Models\CategoryModel;
 use App\Models\PayeeModel;
+use App\Models\UserPayeeSettingsModel;
 use CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\ResponseInterface;
 
@@ -110,8 +111,15 @@ class ImportController extends ApplicationBaseController
         $payeeCache = [];
         $allPayees  = $payeeModel->findAll();
         foreach ($allPayees as $p) {
-            $payeeCache[mb_strtolower($p->name)] = $p->id;
+            $payeeCache[mb_strtolower($p['name'])] = $p['id'];
         }
+
+        // userPayeeSettingsModel for updating default category/account per payee
+        $userPayeeSettingsModel = new UserPayeeSettingsModel();
+
+        // payeeSettingsCache: payee_id => ['category_id' => ..., 'account_id' => ...]
+        // Tracks the most recent category/account used per payee during import
+        $payeeSettingsCache = [];
 
         // categoryCache: name (lowercase) => category object
         $categoryCache = [];
@@ -356,6 +364,14 @@ class ImportController extends ApplicationBaseController
             ]);
 
             $imported++;
+
+            // --- Track payee settings for later upsert ---
+            if ($payeeId !== null) {
+                $payeeSettingsCache[$payeeId] = [
+                    'category_id' => $categoryId,
+                    'account_id'  => $accountId,
+                ];
+            }
         }
 
         $db->transComplete();
@@ -417,12 +433,26 @@ class ImportController extends ApplicationBaseController
                 ->update(['balance' => $newBalance]);
         }
 
+        // --- Update user_payee_settings with default category/account per payee ---
+        $payeeSettingsCreated = 0;
+        foreach ($payeeSettingsCache as $pId => $settings) {
+            // Only upsert if at least one of category or account is set
+            if ($settings['category_id'] !== null || $settings['account_id'] !== null) {
+                $userPayeeSettingsModel->upsertForUser($userId, $pId, [
+                    'default_category_id' => $settings['category_id'],
+                    'default_account_id'  => $settings['account_id'],
+                ]);
+                $payeeSettingsCreated++;
+            }
+        }
+
         return $this->respond([
-            'imported'           => $imported,
-            'skipped'            => $skipped,
-            'accounts_created'   => $accountsCreated,
-            'payees_created'     => $payeesCreated,
-            'categories_created' => $categoriesCreated,
+            'imported'                => $imported,
+            'skipped'                 => $skipped,
+            'accounts_created'        => $accountsCreated,
+            'payees_created'          => $payeesCreated,
+            'categories_created'      => $categoriesCreated,
+            'payee_settings_updated'  => $payeeSettingsCreated,
         ]);
     }
 

@@ -169,10 +169,9 @@ class UserController extends ApplicationBaseController
             $db->table('recurring_transactions')->where('user_id', $userId)->delete();
             $db->table('accounts')->where('user_id', $userId)->delete();
             $db->table('categories')->where('user_id', $userId)->delete();
-            $db->table('payees')->where('created_by_user_id', $userId)->delete();
             $db->table('group_invitations')->where('invited_user_id', $userId)->delete();
-            $db->table('group_invitations')->where('inviter_user_id', $userId)->delete();
             $db->table('group_members')->where('user_id', $userId)->delete();
+            $db->table('user_payee_settings')->where('user_id', $userId)->delete();
 
             // Finally delete the user
             $db->table('users')->where('id', $userId)->delete();

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import dayjs from 'dayjs'
 import { Button, Checkbox, Input, Message, Select } from 'simple-react-ui-kit'
 
 import { ApiError, useRegistrationMutation } from '@/api'
@@ -21,7 +22,7 @@ type RegisterFormData = {
 }
 
 export const Register: React.FC = () => {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const dispatch = useAppDispatch()
     const navigate = useNavigate()
 
@@ -42,6 +43,13 @@ export const Register: React.FC = () => {
     })
 
     const [registerMutation, { isLoading }] = useRegistrationMutation()
+
+    const handleLanguageChange = (lang: string) => {
+        setValue('language', lang)
+        void i18n.changeLanguage(lang).then(() => {
+            dayjs.locale(lang)
+        })
+    }
 
     const onSubmit = async (data: RegisterFormData) => {
         try {
@@ -140,7 +148,7 @@ export const Register: React.FC = () => {
                             label={t('register.input_language_title', 'Language')}
                             options={LANGUAGE_OPTIONS}
                             value={watch('language')}
-                            onSelect={(items) => setValue('language', items?.[0]?.key ?? 'en')}
+                            onSelect={(items) => handleLanguageChange(items?.[0]?.key ?? 'en')}
                         />
 
                         <div className={styles.passwordWrapper}>
