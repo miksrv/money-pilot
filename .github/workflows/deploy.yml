@@ -123,7 +123,7 @@ jobs:
           path: |
             client/node_modules
             ~/.npm
-          key: ${{ runner.os }}-modules-${{ hashFiles('client/package-lock.json') }}
+          key: ${{ runner.os }}-modules-${{ hashFiles('client/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-modules-
             ${{ runner.os }}-
@@ -131,7 +131,7 @@ jobs:
       - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
         name: Install dependencies
         working-directory: client
-        run: npm install
+        run: yarn install
 
       - name: Build UI
         run: |
