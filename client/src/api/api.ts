@@ -20,7 +20,7 @@ export const encodeQueryData = (data: Record<string, string | number | boolean |
     return ret.length ? '?' + ret.join('&') : ''
 }
 
-export const HOST_API = 'http://localhost:8080/'
+export const HOST_API = '/api/'
 
 export interface ApiError {
     status: number
