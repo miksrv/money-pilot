@@ -11,8 +11,8 @@ export default defineConfig({
         VitePWA({
             registerType: 'autoUpdate',
             manifest: {
-                name: 'MoneyFlow',
-                short_name: 'MoneyFlow',
+                name: 'Monetka',
+                short_name: 'Monetka',
                 theme_color: '#2e7d32',
                 icons: [
                     {
